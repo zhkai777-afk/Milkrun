@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>博格华纳 · 新增出货检验</title>
+  <style>
+    :root {
+      --primary: #07868d;
+      --primary-dark: #046b71;
+      --primary-soft: #e9f7f7;
+      --primary-light: #eef9f9;
+      --text: #27313a;
+      --text-2: #5e6975;
+      --text-3: #8b95a1;
+      --surface: #ffffff;
+      --canvas: #f4f6f8;
+      --muted: #f6f8fa;
+      --border: #e5e9ef;
+      --border-strong: #d8dee7;
+      --danger: #e95d62;
+      --danger-soft: #fff0f0;
+      --success: #48a66b;
+      --success-soft: #eef9f1;
+      --warning: #d99026;
+      --warning-soft: #fff7e8;
+      --info: #3b82f6;
+      --info-soft: #eff6ff;
+      --shadow: 0 12px 30px rgba(27, 39, 51, .08);
+      --shadow-sm: 0 1px 3px rgba(27,39,51,.06);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body {
+      background: var(--canvas); color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px; line-height: 1.5;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(7,134,141,.22); outline-offset: 1px; }
+    .app-shell { min-height: 100dvh; display: flex; flex-direction: column; }
+    .top-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; min-height: 52px; display: flex; align-items: center; justify-content: space-between; }
+    .top-bar .logo { font-size: 15px; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+    .top-bar .logo-icon { width: 28px; height: 28px; border-radius: 6px; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+    .user-info { display: flex; align-items: center; gap: 12px; color: var(--text-2); font-size: 13px; }
+    .user-info .company { color: var(--text-3); font-size: 12px; }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+    .divider { width: 1px; height: 18px; background: var(--border-strong); }
+    .page-body { flex: 1; padding: 24px; width: 100%; }
+    .welcome-section { margin-bottom: 20px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .welcome-section h1 { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .supplier-info { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-2); flex-wrap: wrap; }
+    .supplier-info strong { color: var(--text); font-weight: 600; }
+    .supplier-info .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border-strong); }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 7px 16px; border-radius: 6px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-size: 13px; font-weight: 500; transition: all .18s; white-space: nowrap; text-decoration: none; }
+    .btn:hover { background: var(--muted); border-color: #cdd3db; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+    .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+    .btn-success:hover { background: #3d8f5b; border-color: #3d8f5b; }
+    .btn-danger { border-color: #f4c9cb; background: var(--danger-soft); color: #c94349; }
+    .btn-danger:hover { border-color: var(--danger); background: #ffe8e9; color: #b73238; }
+    .btn-outline { border-color: var(--border-strong); background: var(--surface); }
+    .btn-sm { min-height: 30px; padding: 5px 11px; font-size: 12px; }
+    .btn-block { width: 100%; }
+    .svg-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .svg-icon.sm { width: 14px; height: 14px; }
+
+    .section-title-bar { display: flex; align-items: center; gap: 10px; margin: 4px 0 16px; font-size: 15px; font-weight: 600; color: var(--text); }
+    .section-title-bar::before { content: ""; width: 4px; height: 16px; border-radius: 2px; background: var(--primary); }
+
+    .form-field { display: flex; flex-direction: column; gap: 6px; }
+    .form-field label { font-size: 12px; color: var(--text-2); font-weight: 500; }
+    .form-field label .req { color: var(--danger); margin-left: 2px; }
+    .form-field input, .form-field select, .form-field textarea { min-height: 38px; border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 11px; font-size: 13px; color: var(--text); background: var(--surface); width: 100%; }
+    .form-field input:read-only, .form-field input.disabled { background: var(--muted); color: var(--text-2); cursor: not-allowed; }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); outline: none; }
+    .form-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 20px; }
+    .form-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 20px; }
+    .field-note { font-size: 12px; color: var(--text-3); }
+
+    /* 关联物料 */
+    .link-plan-row { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+    .link-plan-row .form-field { flex: 1; min-width: 260px; margin-bottom: 0; }
+    .linked-plan-card { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 16px; background: var(--primary-soft); border: 1px solid #cce5e6; border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 20px; }
+    .linked-plan-card .lp-item { display: flex; flex-direction: column; gap: 3px; }
+    .linked-plan-card .lp-label { font-size: 11px; color: var(--text-2); }
+    .linked-plan-card .lp-value { font-size: 14px; font-weight: 600; color: var(--text); }
+    .linked-plan-card .lp-value.muted { font-weight: 400; color: var(--text-2); }
+
+    /* 左-右布局 */
+    .create-layout { display: flex; gap: 20px; align-items: flex-start; margin-top: 8px; }
+    .item-sidebar { width: 320px; flex: 0 0 320px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; max-height: 74vh; display: flex; flex-direction: column; position: sticky; top: 16px; }
+    .item-sidebar-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .item-sidebar-head .sh-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .item-sidebar-head .sh-note { font-size: 12px; color: var(--text-3); line-height: 1.45; }
+    .item-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+    .item-node { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: var(--surface); transition: all .15s; }
+    .item-node:hover { border-color: #bbc5d0; }
+    .item-node.selected { border-color: var(--primary); background: var(--primary-soft); }
+    .item-node .seq-badge { width: 22px; height: 22px; border-radius: 50%; background: var(--muted); color: var(--text-2); display: grid; place-items: center; font-size: 12px; font-weight: 600; flex: 0 0 auto; }
+    .item-node.selected .seq-badge { background: var(--primary); color: #fff; }
+    .item-node .node-main { flex: 1; min-width: 0; }
+    .item-node .node-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-node .node-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .mini-badge { font-size: 11px; padding: 1px 7px; border-radius: 9px; font-weight: 500; white-space: nowrap; }
+    .mini-badge.ok { background: var(--success-soft); color: #277645; }
+    .mini-badge.ng { background: var(--danger-soft); color: #b73238; }
+    .mini-badge.none { background: var(--muted); color: var(--text-3); }
+
+    .item-form-panel { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); min-height: 520px; display: flex; flex-direction: column; height: calc(100dvh - 110px); position: sticky; top: 16px; overflow: hidden; }
+    .empty-form { display: flex; align-items: center; justify-content: center; height: 380px; color: var(--text-3); flex-direction: column; gap: 12px; }
+    .empty-form svg { width: 48px; height: 48px; stroke: var(--border-strong); }
+
+    .form-item-head { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 10px; }
+    .form-item-head .fih-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .form-item-head .fih-seq { font-size: 12px; color: var(--text-3); }
+
+    .standards-section { background: var(--primary-soft); border: 1px solid #cce5e6; border-radius: var(--radius-sm); padding: 14px 16px 16px; margin-bottom: 12px; }
+    .standards-section .ss-title { font-size: 14px; font-weight: 600; color: var(--primary-dark); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .standards-section .ss-title::before { content: ""; width: 4px; height: 12px; border-radius: 2px; background: var(--primary); }
+    .info-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 14px; }
+    .info-item { display: flex; flex-direction: column; gap: 4px; }
+    .info-item.wide { grid-column: span 2; }
+    .info-label { font-size: 11px; color: var(--text-2); font-weight: 500; }
+    .info-value { min-height: 32px; display: flex; align-items: center; padding: 6px 10px; background: #fff; border: 1px solid #d5e4e5; border-radius: 5px; font-size: 13px; color: var(--text); font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,.8); }
+    .info-value.empty { color: var(--text-3); font-weight: 400; }
+
+    .measured-section { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; background: var(--surface); flex: 1; display: flex; flex-direction: column; }
+    .measure-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+    .measure-header .mh-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .measure-header .mh-meta { display: flex; align-items: center; gap: 12px; }
+    .measure-table { width: 100%; border-collapse: collapse; }
+    .measure-table th, .measure-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center; font-size: 13px; }
+    .measure-table th { background: #fbfcfd; color: var(--text-2); font-weight: 600; }
+    .measure-table td input { width: 100%; min-height: 34px; border: 1px solid var(--border-strong); border-radius: 5px; padding: 6px 8px; text-align: center; font-size: 13px; }
+    .measure-table td input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); outline: none; }
+    .measure-table td input.fail { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
+    .measure-table td .row-result { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; display: inline-block; }
+    .measure-table td .row-result.ok { background: var(--success-soft); color: #277645; }
+    .measure-table td .row-result.ng { background: var(--danger-soft); color: #b73238; }
+    .result-display { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; background: var(--muted); color: var(--text-3); }
+    .result-display.ok { background: var(--success-soft); color: #277645; }
+    .result-display.ng { background: var(--danger-soft); color: #b73238; }
+
+    /* 醒目检验结果横幅 */
+    .form-scroll { flex: 1; overflow-y: auto; padding: 0 20px; }
+    .result-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 6px 0 14px; padding: 14px 18px; border-radius: 10px; border: 1px solid #f3d28b; background: #fff7e6; transition: background .2s, border-color .2s; }
+    .result-banner[data-state="ok"] { background: var(--success-soft); border-color: #9bd3ae; }
+    .result-banner[data-state="ng"] { background: var(--danger-soft); border-color: #f0a9ad; }
+    .result-banner .rb-left { display: flex; flex-direction: column; gap: 3px; }
+    .result-banner .rb-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .result-banner .rb-sub { font-size: 12px; color: var(--text-2); }
+    .result-banner .rb-right { display: flex; align-items: center; gap: 14px; }
+    .result-banner .rb-pill { font-size: 18px; font-weight: 800; padding: 9px 24px; border-radius: 8px; background: #e08e0b; color: #fff; letter-spacing: 2px; white-space: nowrap; }
+    .result-banner[data-state="ok"] .rb-pill { background: #277645; }
+    .result-banner[data-state="ng"] .rb-pill { background: #b73238; }
+    .result-select { min-height: 40px; border: 1px solid var(--border-strong); border-radius: 8px; padding: 8px 14px; font-size: 14px; font-weight: 600; background: var(--surface); color: var(--text); cursor: pointer; }
+    .result-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); outline: none; }
+
+    .form-foot { flex-shrink: 0; display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--surface); }
+
+    /* 弹窗 */
+    .modal-layer { position: fixed; inset: 0; z-index: 1000; background: rgba(22,28,34,.54); display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-layer.show { display: flex; }
+    .modal { background: var(--surface); border-radius: 12px; box-shadow: 0 24px 70px rgba(0,0,0,.22); width: 100%; max-width: 920px; max-height: calc(100dvh - 40px); display: flex; flex-direction: column; animation: modalIn .2s ease-out; }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .modal-head h3 { font-size: 17px; font-weight: 600; }
+    .close-btn { width: 36px; height: 36px; border: 0; border-radius: 6px; background: transparent; color: var(--text-3); display: grid; place-items: center; font-size: 20px; line-height: 1; }
+    .close-btn:hover { background: var(--muted); color: var(--text); }
+    .modal-body { padding: 20px 24px; overflow-y: auto; }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+    .plan-modal { max-width: 1080px; }
+    .plan-filter-bar { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .plan-filter-bar .form-field { min-width: 160px; margin-bottom: 0; }
+    .plan-list-wrap { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; max-height: 50vh; overflow-y: auto; }
+    .plan-list-wrap table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    .plan-list-wrap th, .plan-list-wrap td { padding: 10px 14px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--border); }
+    .plan-list-wrap th { background: #fbfcfd; color: var(--text-2); font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
+    .plan-list-wrap td.num, .plan-list-wrap th.num { text-align: right; }
+    .plan-row-select { cursor: pointer; }
+    .plan-row-select:hover td { background: var(--primary-soft); }
+    .plan-row-select.selected td { background: var(--primary-soft); }
+    .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .status-badge.draft { background: var(--warning-soft); color: #8a5e16; }
+    .status-badge.submitted { background: var(--success-soft); color: #277645; }
+    .toast-region { position: fixed; top: 20px; left: 50%; z-index: 1200; transform: translateX(-50%); display: grid; gap: 8px; pointer-events: none; }
+    .toast { min-width: 260px; max-width: calc(100vw - 32px); padding: 11px 15px; border: 1px solid #b8e0ca; border-radius: 7px; background: #f2fbf5; color: #277645; box-shadow: var(--shadow); animation: toastIn .2s ease-out; text-align: center; font-size: 13px; }
+    .toast.error { border-color: #f1bfc1; background: #fff3f3; color: #b63a40; }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 1100px) {
+      .linked-plan-card { grid-template-columns: repeat(2, 1fr); }
+      .form-grid-3, .form-grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 860px) {
+      .create-layout { flex-direction: column; }
+      .item-sidebar { width: 100%; flex: none; max-height: none; position: static; }
+      .item-list { max-height: 280px; }
+    }
+    @media (max-width: 720px) {
+      .page-body { padding: 16px; }
+      .top-bar { padding: 0 16px; }
+      .top-bar .company { display: none; }
+      .linked-plan-card { grid-template-columns: 1fr; }
+      .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+      .measure-table td input { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-bar">
+      <div class="logo"><div class="logo-icon">B</div><span>博格华纳 供应商协同平台</span></div>
+      <div class="user-info">
+        <span class="company">苏州瑞玛精密工业集团股份有限公司</span>
+        <div class="divider"></div>
+        <span>配件供应商工作人员</span>
+        <div class="user-avatar">供</div>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="welcome-section">
+        <div>
+          <h1>新增出货检验</h1>
+          <div class="supplier-info">
+            <span>供应商编码: <strong>90000064</strong></span>
+            <span class="dot"></span>
+            <span>供应商名称: <strong>苏州瑞玛精密工业集团股份有限公司</strong></span>
+          </div>
+        </div>
+        <a class="btn btn-outline" href="supplier-inspection.html">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          返回报告列表
+        </a>
+      </div>
+
+      <div class="section-title-bar">出货报告头信息</div>
+      <div class="link-plan-row">
+        <div class="form-field" style="flex:2; min-width:260px;">
+          <label>关联物料计划 <span class="req">*</span></label>
+          <input type="text" id="linkedPlanDisplay" readonly placeholder="尚未关联物料计划，请点击右侧按钮选择" class="disabled">
+        </div>
+        <button class="btn btn-primary" id="btnOpenPlanModal" type="button">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          选择物料计划
+        </button>
+        <button class="btn btn-outline" id="btnClearPlan" type="button" disabled>清除</button>
+      </div>
+      <div id="linkedPlanCard" class="linked-plan-card" style="display:none;">
+        <div class="lp-item"><span class="lp-label">零件号</span><span class="lp-value" id="lpMaterialCode">—</span></div>
+        <div class="lp-item"><span class="lp-label">零件名称</span><span class="lp-value" id="lpMaterialName">—</span></div>
+        <div class="lp-item"><span class="lp-label">供应商名称</span><span class="lp-value" id="lpSupplierName">—</span></div>
+        <div class="lp-item"><span class="lp-label">ASN号</span><span class="lp-value" id="lpAsnNo">—</span></div>
+        <div class="lp-item"><span class="lp-label">到料日期</span><span class="lp-value" id="lpArrivalDate">—</span></div>
+        <div class="lp-item"><span class="lp-label">客户零件号</span><span class="lp-value" id="lpCustomerPartNo">—</span></div>
+        <div class="lp-item"><span class="lp-label">采购凭证</span><span class="lp-value" id="lpVoucher">—</span></div>
+        <div class="lp-item"><span class="lp-label">计划发货数量</span><span class="lp-value" id="lpPlanQty">—</span></div>
+      </div>
+
+      <div class="section-title-bar">检验项目录入</div>
+      <div class="create-layout">
+        <!-- 左侧：检验项目列表（系统预设，供应商不可增删） -->
+        <aside class="item-sidebar">
+          <div class="item-sidebar-head">
+            <div class="sh-title">检验项目</div>
+            <div class="sh-note">由系统/质量部预设，供应商不可新增或删除检验项目，仅可在右侧录入实测值。</div>
+          </div>
+          <div class="item-list" id="itemList"></div>
+        </aside>
+
+        <!-- 右侧：选中项目的标准（只读）+ 实测值（可录入） -->
+        <section class="item-form-panel" id="formPanel">
+          <div class="empty-form">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            <div>请在左侧选择一个检验项目以录入实测值</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- 关联物料计划弹窗 -->
+  <div class="modal-layer" id="planModal">
+    <div class="modal plan-modal">
+      <div class="modal-head">
+        <h3>选择物料计划</h3>
+        <button class="close-btn" type="button" data-close="planModal" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="plan-filter-bar">
+          <div class="form-field"><label>物料编号</label><input type="text" id="pmMaterialCode" placeholder="请输入物料编号"></div>
+          <div class="form-field"><label>采购凭证</label><input type="text" id="pmVoucher" placeholder="请输入采购凭证"></div>
+          <div class="form-field"><label>发货日期 起</label><input type="date" id="pmDateStart"></div>
+          <div class="form-field"><label>发货日期 止</label><input type="date" id="pmDateEnd"></div>
+          <button class="btn btn-primary" id="pmSearch" type="button">查询</button>
+          <button class="btn btn-outline" id="pmReset" type="button">重置</button>
+        </div>
+        <div class="plan-list-wrap">
+          <table>
+            <thead><tr>
+              <th>物料编号</th><th>采购凭证</th><th>计划发货日期</th><th>计划到货日期</th><th class="num">计划数量</th>
+              <th class="num">承诺数量</th><th>配送方式</th><th>指定物流商</th><th>状态</th>
+            </tr></thead>
+            <tbody id="pmBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" type="button" data-close="planModal">取消</button>
+        <button class="btn btn-primary" id="pmConfirm" type="button" disabled>确认选择</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-region" id="toastRegion"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const PLAN_KEY = 'material-plan-v5';
+      const INSP_KEY = 'bw_supplier_inspections';
+      const MAX_MEASUREMENTS = 32;
+      const DEFAULT_ROWS = 10;
+
+      const DEFAULT_TEMPLATE = [
+        { name: '包装', method: '目测', type: 'text', requirement: '防潮、防尘、无破损、无脏污', checkCount: 1, standardValue: '', upperTolerance: '', lowerTolerance: '' },
+        { name: '孔径', method: '卡尺', type: 'number', requirement: '5.3+/-0.12 mm', checkCount: 5, standardValue: 5.3, upperTolerance: 0.12, lowerTolerance: -0.12 },
+        { name: '轮廓度', method: 'CMM', type: 'number', requirement: '0.16 Max', checkCount: 3, standardValue: 0.16, upperTolerance: 0, lowerTolerance: 0 },
+        { name: '清洁度', method: '清洁度设备', type: 'number', requirement: '1000um Max', checkCount: 5, standardValue: 1000, upperTolerance: 0, lowerTolerance: 0 },
+        { name: '清洁度', method: '清洁度设备', type: 'number', requirement: '5mg/pcs', checkCount: 2, standardValue: 5, upperTolerance: 0, lowerTolerance: 0 }
+      ];
+
+      function uuid() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c==='x'?r:(r&0x3|0x8)).toString(16); });
+      }
+      function pad(n) { return String(n).padStart(2, '0'); }
+      function formatNow() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+      function escapeHtml(v) { return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+      function toNum(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+      function empty(v) { return v === null || v === undefined || String(v).trim() === ''; }
+
+      function loadPlans() { try { const p = JSON.parse(localStorage.getItem(PLAN_KEY)); return Array.isArray(p) ? p : []; } catch { return []; } }
+      function loadInspections() { try { const p = JSON.parse(localStorage.getItem(INSP_KEY)); return Array.isArray(p) ? p : []; } catch { return []; } }
+      function saveInspections(list) { localStorage.setItem(INSP_KEY, JSON.stringify(list)); }
+
+      const state = { plans: loadPlans(), inspections: loadInspections(), selectedPlan: null, items: [], selectedItemId: null, editingId: null, planModalSelected: null };
+
+      function toast(msg, error) {
+        const region = document.getElementById('toastRegion');
+        const el = document.createElement('div');
+        el.className = 'toast' + (error ? ' error' : '');
+        el.textContent = msg; region.appendChild(el);
+        setTimeout(() => el.remove(), 2500);
+      }
+
+      function openModal(id) { document.getElementById(id).classList.add('show'); }
+      function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+      document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
+      document.querySelectorAll('.modal-layer').forEach(layer => layer.addEventListener('click', e => { if (e.target === layer) closeModal(layer.id); }));
+
+      /* ---------- 关联物料计划 ---------- */
+      function getSelectablePlans() {
+        let plans = state.plans.filter(r => ['pending_shipment', 'in_transit', 'received'].includes(r.status));
+        if (!plans.length) {
+          plans = [
+            { id:'demo-1', materialCode:'108143-101', materialName:'阀体组件 A', supplierName:'苏州瑞玛精密工业集团股份有限公司', voucher:'2026-08-03-108143', shipDate:'2026-08-03', arrivalDate:'2026-08-15', planQty:800, promisedQty:800, deliveryMode:'直送', logistics:'顺丰速运', status:'pending_shipment', asnNo:'ASN20260803001', customerPartNo:'CP-108143-101' },
+            { id:'demo-2', materialCode:'108143-102', materialName:'阀体组件 B', supplierName:'苏州瑞玛精密工业集团股份有限公司', voucher:'2026-08-04-108143', shipDate:'2026-08-04', arrivalDate:'2026-08-15', planQty:1200, promisedQty:1200, deliveryMode:'直送', logistics:'德邦物流', status:'pending_shipment', asnNo:'ASN20260804002', customerPartNo:'CP-108143-102' },
+            { id:'demo-3', materialCode:'110233-301', materialName:'传感器支架', supplierName:'苏州瑞玛精密工业集团股份有限公司', voucher:'2026-08-06-110233', shipDate:'2026-08-06', arrivalDate:'2026-08-18', planQty:1500, promisedQty:1500, deliveryMode:'直送', logistics:'中通快递', status:'pending_shipment', asnNo:'ASN20260806003', customerPartNo:'CP-110233-301' }
+          ];
+        }
+        return plans;
+      }
+
+      function renderLinkedPlan() {
+        const p = state.selectedPlan;
+        const card = document.getElementById('linkedPlanCard');
+        const input = document.getElementById('linkedPlanDisplay');
+        const clearBtn = document.getElementById('btnClearPlan');
+        if (!p) { card.style.display = 'none'; input.value = ''; clearBtn.disabled = true; return; }
+        card.style.display = 'grid';
+        input.value = `${p.materialCode} / ${p.voucher} / 到料 ${p.arrivalDate || '-'}`;
+        clearBtn.disabled = false;
+        document.getElementById('lpMaterialCode').textContent = p.materialCode || '—';
+        document.getElementById('lpMaterialName').textContent = p.materialName || '—';
+        document.getElementById('lpSupplierName').textContent = p.supplierName || '—';
+        document.getElementById('lpAsnNo').textContent = p.asnNo || p.asnNumber || '—';
+        document.getElementById('lpArrivalDate').textContent = p.arrivalDate || '—';
+        document.getElementById('lpCustomerPartNo').textContent = p.customerPartNo || p.customerPartNumber || '—';
+        document.getElementById('lpVoucher').textContent = p.voucher || '—';
+        document.getElementById('lpPlanQty').textContent = empty(p.planQty) ? '—' : Number(p.planQty).toLocaleString('zh-CN');
+      }
+
+      function openPlanModal() { state.planModalSelected = null; document.getElementById('pmConfirm').disabled = true; renderPlanModalList(); openModal('planModal'); }
+      document.getElementById('btnOpenPlanModal').addEventListener('click', openPlanModal);
+      document.getElementById('btnClearPlan').addEventListener('click', () => { state.selectedPlan = null; renderLinkedPlan(); });
+
+      function renderPlanModalList() {
+        const fCode = document.getElementById('pmMaterialCode').value.trim().toLowerCase();
+        const fVoucher = document.getElementById('pmVoucher').value.trim().toLowerCase();
+        const fStart = document.getElementById('pmDateStart').value;
+        const fEnd = document.getElementById('pmDateEnd').value;
+        const plans = getSelectablePlans().filter(p => {
+          if (fCode && !String(p.materialCode).toLowerCase().includes(fCode)) return false;
+          if (fVoucher && !String(p.voucher).toLowerCase().includes(fVoucher)) return false;
+          if (fStart && p.shipDate && p.shipDate < fStart) return false;
+          if (fEnd && p.shipDate && p.shipDate > fEnd) return false;
+          return true;
+        });
+        const tbody = document.getElementById('pmBody');
+        if (!plans.length) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-3);padding:24px;">未找到可关联的物料计划</td></tr>`; return; }
+        tbody.innerHTML = plans.map(p => `
+          <tr class="plan-row-select ${state.planModalSelected && state.planModalSelected.voucher === p.voucher ? 'selected' : ''}" data-voucher="${escapeHtml(p.voucher)}">
+            <td>${escapeHtml(p.materialCode)}</td><td>${escapeHtml(p.voucher)}</td><td>${escapeHtml(p.shipDate)}</td><td>${escapeHtml(p.arrivalDate)}</td>
+            <td class="num">${Number(p.planQty).toLocaleString('zh-CN')}</td>
+            <td class="num">${empty(p.promisedQty) ? '—' : Number(p.promisedQty).toLocaleString('zh-CN')}</td>
+            <td>${escapeHtml(p.deliveryMode)}</td><td>${escapeHtml(p.logistics)}</td>
+            <td><span class="status-badge ${p.status === 'received' ? 'submitted' : 'draft'}">${p.status === 'received' ? '已收货' : '待发货'}</span></td>
+          </tr>`).join('');
+        tbody.querySelectorAll('.plan-row-select').forEach(tr => tr.addEventListener('click', () => {
+          const v = tr.dataset.voucher;
+          state.planModalSelected = getSelectablePlans().find(p => p.voucher === v) || null;
+          tbody.querySelectorAll('.plan-row-select').forEach(r => r.classList.remove('selected'));
+          tr.classList.add('selected');
+          document.getElementById('pmConfirm').disabled = !state.planModalSelected;
+        }));
+      }
+      document.getElementById('pmSearch').addEventListener('click', renderPlanModalList);
+      document.getElementById('pmReset').addEventListener('click', () => {
+        document.getElementById('pmMaterialCode').value = ''; document.getElementById('pmVoucher').value = '';
+        document.getElementById('pmDateStart').value = ''; document.getElementById('pmDateEnd').value = ''; renderPlanModalList();
+      });
+      document.getElementById('pmConfirm').addEventListener('click', () => {
+        if (!state.planModalSelected) return;
+        state.selectedPlan = state.planModalSelected; renderLinkedPlan(); closeModal('planModal');
+      });
+
+      /* ---------- 检验项目 ---------- */
+      function createItem(data) {
+        return {
+          id: uuid(), seq: state.items.length + 1,
+          name: data?.name || '', method: data?.method || '', type: data?.type || 'number',
+          requirement: data?.requirement || '', checkCount: toNum(data?.checkCount) ?? 1,
+          standardValue: toNum(data?.standardValue) ?? '', upperTolerance: toNum(data?.upperTolerance) ?? '', lowerTolerance: toNum(data?.lowerTolerance) ?? '',
+          result: data?.result || '', measurements: Array.isArray(data?.measurements) ? data.measurements.slice(0, MAX_MEASUREMENTS) : [],
+          inspectedQty: toNum(data?.inspectedQty) ?? '', bwLabQty: toNum(data?.bwLabQty) ?? ''
+        };
+      }
+      function reindexItems() { state.items.forEach((it, idx) => it.seq = idx + 1); }
+
+      function evaluateMeasurement(item, value) {
+        if (item.type !== 'number') return '';
+        const n = toNum(value); if (n === null) return '';
+        const std = toNum(item.standardValue); if (std === null) return '';
+        const upper = toNum(item.upperTolerance), lower = toNum(item.lowerTolerance);
+        let fail = false;
+        if (upper !== null && lower !== null) fail = n < std + lower || n > std + upper;
+        else if (upper !== null) fail = n > std + upper;
+        else if (lower !== null) fail = n < std + lower;
+        else fail = n !== std;
+        return fail ? '不合格' : '合格';
+      }
+
+      function evaluateItem(item) {
+        if (item.type !== 'number') return item.result || '';
+        const vals = (item.measurements || []).map(v => toNum(v)).filter(v => v !== null);
+        if (!vals.length) return '';
+        for (const v of vals) {
+          const r = evaluateMeasurement(item, v);
+          if (r === '不合格') return '不合格';
+        }
+        return '合格';
+      }
+
+      function renderSidebar() {
+        const list = document.getElementById('itemList');
+        if (!state.items.length) { list.innerHTML = `<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px 0;">暂无检验项目</div>`; return; }
+        list.innerHTML = state.items.map(it => {
+          const cnt = (it.measurements || []).filter(v => !empty(v)).length;
+          const result = it.result || evaluateItem(it);
+          const badge = result === '合格' ? '<span class="mini-badge ok">合格</span>' : result === '不合格' ? '<span class="mini-badge ng">不合格</span>' : '<span class="mini-badge none">未判定</span>';
+          return `
+            <div class="item-node ${state.selectedItemId === it.id ? 'selected' : ''}" data-id="${it.id}">
+              <div class="seq-badge">${it.seq}</div>
+              <div class="node-main">
+                <div class="node-name">${escapeHtml(it.name || '未命名项目')}</div>
+                <div class="node-sub">${it.type === 'text' ? '文字' : '数字'} · 实测 ${cnt}/${MAX_MEASUREMENTS} · ${badge}</div>
+              </div>
+            </div>`;
+        }).join('');
+        list.querySelectorAll('.item-node').forEach(node => node.addEventListener('click', () => selectItem(node.dataset.id)));
+      }
+
+      function selectItem(id) {
+        state.selectedItemId = id;
+        renderSidebar();
+        renderFormPanel();
+      }
+
+      function getCurrentItem() { return state.items.find(it => it.id === state.selectedItemId) || null; }
+
+      function renderOverallResult(it) {
+        // 数字类：供应商未手动判定时，按「标准值 ± 公差」自动给出建议结果
+        if (it.type === 'number' && !it.manualResult) {
+          it.result = evaluateItem(it);
+        }
+        const sel = (val) => `<option value="${val}" ${it.result === val ? 'selected' : ''}>${val}</option>`;
+        return `<select id="overallResultSelect" class="result-select">
+          <option value="" ${empty(it.result) ? 'selected' : ''}>未判定</option>
+          ${sel('合格')}${sel('不合格')}
+        </select>`;
+      }
+
+      function ensureMeasureRows(item) {
+        if (!Array.isArray(item.measurements)) item.measurements = [];
+        while (item.measurements.length < DEFAULT_ROWS) item.measurements.push('');
+      }
+
+      function updateMeasureCount(item) {
+        const cnt = (item.measurements || []).filter(v => !empty(v)).length;
+        const el = document.getElementById('measureCountText');
+        if (el) el.textContent = cnt;
+      }
+
+      function renderMeasurements(item) {
+        ensureMeasureRows(item);
+        const tbody = document.getElementById('measureTbody');
+        tbody.innerHTML = item.measurements.map((v, i) => {
+          const rowResult = evaluateMeasurement(item, v);
+          const fail = rowResult === '不合格';
+          const inputType = item.type === 'number' ? 'number' : 'text';
+          return `<tr data-index="${i}">
+            <td>${i + 1}</td>
+            <td><input type="${inputType}" step="any" class="measure-input ${fail ? 'fail' : ''}" value="${escapeHtml(v)}" placeholder="请输入"></td>
+            <td>${rowResult ? `<span class="row-result ${fail ? 'ng' : 'ok'}">${rowResult}</span>` : '—'}</td>
+            <td><button class="btn btn-danger btn-sm" type="button" data-del-row="${i}">删除</button></td>
+          </tr>`;
+        }).join('');
+        updateMeasureCount(item);
+
+        tbody.querySelectorAll('.measure-input').forEach(input => {
+          input.addEventListener('input', () => {
+            const idx = Number(input.closest('tr').dataset.index);
+            item.measurements[idx] = input.value;
+            const rr = evaluateMeasurement(item, input.value);
+            const fail = rr === '不合格';
+            input.classList.toggle('fail', fail);
+            const badgeCell = input.closest('tr').cells[2];
+            badgeCell.innerHTML = rr ? `<span class="row-result ${fail ? 'ng' : 'ok'}">${rr}</span>` : '—';
+            if (item.type === 'number' && !item.manualResult) {
+              item.result = evaluateItem(item);
+              setResultBanner(item);
+            }
+            updateMeasureCount(item);
+            renderSidebar();
+          });
+        });
+        tbody.querySelectorAll('[data-del-row]').forEach(btn => btn.addEventListener('click', () => {
+          const idx = Number(btn.closest('tr').dataset.index);
+          item.measurements.splice(idx, 1);
+          renderMeasurements(item);
+          renderSidebar();
+        }));
+      }
+
+      function addMeasureRow(item) {
+        if (item.measurements.length >= MAX_MEASUREMENTS) { toast('每个检验项目最多 32 条实测记录', true); return; }
+        item.measurements.push('');
+        renderMeasurements(item);
+      }
+
+      function renderFormPanel() {
+        const panel = document.getElementById('formPanel');
+        const it = getCurrentItem();
+        if (!it) {
+          panel.innerHTML = `<div class="empty-form">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            <div>请在左侧选择一个检验项目以录入实测值</div>
+          </div>`;
+          return;
+        }
+
+        panel.innerHTML = `
+          <div class="form-item-head">
+            <div class="fih-title">${escapeHtml(it.name || '未命名项目')}</div>
+            <div class="fih-seq">第 ${it.seq} 项</div>
+          </div>
+          <div class="result-banner" id="resultBanner" data-state="none">
+            <div class="rb-left">
+              <div class="rb-title">检验判定结果</div>
+              <div class="rb-sub">数字类已按「标准值 ± 公差」预判定，可手动覆盖；请确认本项目是否合格</div>
+            </div>
+            <div class="rb-right">
+              <span class="rb-pill" id="rbPill">未判定</span>
+              ${renderOverallResult(it)}
+            </div>
+          </div>
+          <div class="form-scroll">
+            <div class="standards-section">
+              <div class="ss-title">检验标准</div>
+              <div class="info-grid-3">
+                <div class="info-item"><span class="info-label">检验项目</span><span class="info-value ${empty(it.name)?'empty':''}">${empty(it.name)?'—':escapeHtml(it.name)}</span></div>
+                <div class="info-item"><span class="info-label">检验方法</span><span class="info-value ${empty(it.method)?'empty':''}">${empty(it.method)?'—':escapeHtml(it.method)}</span></div>
+                <div class="info-item"><span class="info-label">类别</span><span class="info-value">${it.type === 'text' ? '文字' : '数字'}</span></div>
+                <div class="info-item"><span class="info-label">检验数</span><span class="info-value ${empty(it.checkCount)?'empty':''}">${empty(it.checkCount)?'—':escapeHtml(it.checkCount)}</span></div>
+                <div class="info-item wide"><span class="info-label">技术要求</span><span class="info-value ${empty(it.requirement)?'empty':''}">${empty(it.requirement)?'—':escapeHtml(it.requirement)}</span></div>
+                <div class="info-item"><span class="info-label">标准值</span><span class="info-value ${empty(it.standardValue)?'empty':''}">${empty(it.standardValue)?'—':escapeHtml(it.standardValue)}</span></div>
+                <div class="info-item"><span class="info-label">上公差</span><span class="info-value ${empty(it.upperTolerance)?'empty':''}">${empty(it.upperTolerance)?'—':escapeHtml(it.upperTolerance)}</span></div>
+                <div class="info-item"><span class="info-label">下公差</span><span class="info-value ${empty(it.lowerTolerance)?'empty':''}">${empty(it.lowerTolerance)?'—':escapeHtml(it.lowerTolerance)}</span></div>
+              </div>
+            </div>
+            <div class="measured-section">
+              <div class="measure-header">
+                <div class="mh-title">实测数值</div>
+                <div class="mh-meta">
+                  <span class="field-note">已录 <b id="measureCountText">0</b> / ${MAX_MEASUREMENTS} 条</span>
+                </div>
+              </div>
+              <div style="overflow-x:auto;">
+                <table class="measure-table">
+                  <thead><tr><th style="width:50px;">序号</th><th>实测值</th><th style="width:80px;">判定</th><th style="width:60px;">操作</th></tr></thead>
+                  <tbody id="measureTbody"></tbody>
+                </table>
+              </div>
+              <div style="margin-top:12px;">
+                <button class="btn btn-outline btn-sm" id="btnAddMeasureRow" type="button" ${it.measurements.length >= MAX_MEASUREMENTS ? 'disabled' : ''}>+ 新增实测值</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-foot">
+            <button class="btn btn-outline" id="btnSaveDraft" type="button">保存草稿</button>
+            <button class="btn btn-success" id="btnSubmit" type="button">提交出货检查</button>
+          </div>`;
+
+        setResultBanner(it);
+        renderMeasurements(it);
+        document.getElementById('btnAddMeasureRow').addEventListener('click', () => addMeasureRow(it));
+        document.getElementById('btnSaveDraft').addEventListener('click', () => saveForm('draft'));
+        document.getElementById('btnSubmit').addEventListener('click', () => saveForm('submitted'));
+        bindResultSelect(it);
+      }
+
+      function setResultBanner(it) {
+        const banner = document.getElementById('resultBanner');
+        const pill = document.getElementById('rbPill');
+        if (!banner || !pill) return;
+        const r = it.result || '';
+        banner.setAttribute('data-state', r === '合格' ? 'ok' : r === '不合格' ? 'ng' : 'none');
+        pill.textContent = r || '未判定';
+      }
+
+      function bindResultSelect(it) {
+        const sel = document.getElementById('overallResultSelect');
+        if (!sel) return;
+        sel.addEventListener('change', () => {
+          it.result = sel.value;
+          it.manualResult = true; // 供应商手动判定，后续实测值变化不再自动覆盖
+          setResultBanner(it);
+          renderSidebar();
+        });
+      }
+
+      /* ---------- 保存 / 提交 ---------- */
+      function collectForm(status) {
+        if (!state.selectedPlan) { toast('请先关联物料计划', true); return null; }
+        if (!state.items.length) { toast('请至少存在一条检验项目', true); return null; }
+        const items = state.items.map(it => {
+          const m = (it.measurements || []).filter(v => !empty(v));
+          const result = it.type === 'text' ? (it.result || '') : (it.result || evaluateItem(it));
+          return { ...it, measurements: m.slice(0, MAX_MEASUREMENTS), result, inspectedQty: toNum(it.inspectedQty) ?? '', bwLabQty: toNum(it.bwLabQty) ?? '' };
+        });
+        for (const it of items) { if (!String(it.name).trim()) { toast('存在未填写「检验项目」的记录，请检查', true); return null; } }
+        const p = state.selectedPlan;
+        return {
+          id: state.editingId || uuid(),
+          materialCode: p.materialCode || '', materialName: p.materialName || '', supplierName: p.supplierName || '',
+          arrivalDate: p.arrivalDate || '', asnNo: p.asnNo || p.asnNumber || '', customerPartNo: p.customerPartNo || p.customerPartNumber || '',
+          voucher: p.voucher || '', planQty: toNum(p.planQty) ?? '', shipDate: p.shipDate || '',
+          status, items, createdAt: formatNow(), updatedAt: formatNow()
+        };
+      }
+      function saveForm(status) {
+        const rec = collectForm(status);
+        if (!rec) return;
+        if (state.editingId) {
+          const idx = state.inspections.findIndex(r => r.id === state.editingId);
+          if (idx >= 0) state.inspections[idx] = rec; else state.inspections.unshift(rec);
+        } else {
+          state.inspections.unshift(rec);
+        }
+        saveInspections(state.inspections);
+        toast(status === 'submitted' ? '出货检查已提交' : '草稿已保存');
+        setTimeout(() => { window.location.href = 'supplier-inspection.html'; }, 600);
+      }
+
+      /* ---------- 编辑已有记录（?id=） ---------- */
+      function loadEditing(id) {
+        const rec = state.inspections.find(r => r.id === id);
+        if (!rec) return;
+        state.editingId = id;
+        state.selectedPlan = {
+          materialCode: rec.materialCode, materialName: rec.materialName, supplierName: rec.supplierName,
+          arrivalDate: rec.arrivalDate, asnNo: rec.asnNo, customerPartNo: rec.customerPartNo,
+          voucher: rec.voucher, planQty: rec.planQty, shipDate: rec.shipDate
+        };
+        state.items = (rec.items || []).map(it => createItem(it));
+        reindexItems();
+        state.selectedItemId = state.items.length ? state.items[0].id : null;
+        document.querySelector('.welcome-section h1').textContent = '编辑出货检验';
+        renderLinkedPlan(); renderSidebar(); renderFormPanel();
+      }
+
+      // 初始化
+      const params = new URLSearchParams(location.search);
+      const editId = params.get('id');
+      if (editId) loadEditing(editId);
+      else {
+        state.items = DEFAULT_TEMPLATE.map(t => createItem(t));
+        state.selectedItemId = state.items.length ? state.items[0].id : null;
+        renderLinkedPlan(); renderSidebar(); renderFormPanel();
+      }
+    })();
+  </script>
+</body>
+</html>

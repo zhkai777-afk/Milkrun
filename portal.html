@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>博格华纳 · 物流协同平台</title>
+  <style>
+    :root {
+      --brand: #008b8f;
+      --brand-dark: #00777b;
+      --brand-soft: #e7f6f6;
+      --ink: #202b35;
+      --ink-2: #52606d;
+      --ink-3: #7e8a96;
+      --line: #e5e9ee;
+      --canvas: #f4f6f8;
+      --surface: #ffffff;
+      --sidebar-width: 232px;
+      --topbar-height: 56px;
+      --tabs-height: 42px;
+      --shadow: 0 10px 30px rgba(27, 44, 57, .08);
+      --ease: 180ms ease;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      min-width: 320px;
+      overflow: hidden;
+      background: var(--canvas);
+      color: var(--ink);
+      font: 14px/1.5 Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    }
+    button { font: inherit; }
+    button, [role="button"] { touch-action: manipulation; }
+    button:focus-visible, a:focus-visible, [role="tab"]:focus-visible {
+      outline: 3px solid rgba(0, 139, 143, .24);
+      outline-offset: 2px;
+    }
+    .icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .skip-link {
+      position: fixed;
+      top: -60px;
+      left: 16px;
+      z-index: 300;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--brand-dark);
+      box-shadow: var(--shadow);
+    }
+    .skip-link:focus { top: 10px; }
+
+    .app { min-height: 100dvh; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 60;
+      width: var(--sidebar-width);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-right: 1px solid var(--line);
+      background: var(--surface);
+      transition: width var(--ease), transform var(--ease);
+    }
+    .brand {
+      height: var(--topbar-height);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+    .brand-word {
+      color: #25313c;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .brand-line { width: 2px; height: 22px; margin: 0 11px; background: var(--brand); }
+    .brand-sub { color: var(--ink-3); font-size: 10px; letter-spacing: .9px; }
+
+    .role-panel { padding: 16px 14px 12px; border-bottom: 1px solid var(--line); }
+    .role-caption { margin: 0 0 9px 3px; color: var(--ink-3); font-size: 12px; }
+    .role-switch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 8px; background: #f0f3f5; }
+    .role-button {
+      min-height: 38px;
+      padding: 0 4px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--ink-2);
+      font-size: 12px;
+      cursor: pointer;
+      transition: color var(--ease), background var(--ease), box-shadow var(--ease);
+    }
+    .role-button:hover { color: var(--brand-dark); background: rgba(255,255,255,.65); }
+    .role-button.active { background: #fff; color: var(--brand-dark); font-weight: 600; box-shadow: 0 1px 5px rgba(25, 45, 57, .1); }
+
+    .nav-area { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 12px 10px; }
+    .nav-label { margin: 5px 10px 8px; color: #98a2ad; font-size: 11px; letter-spacing: .6px; }
+    .nav-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+    .nav-item {
+      width: 100%;
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 13px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--ink-2);
+      text-align: left;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color var(--ease), background var(--ease);
+    }
+    .nav-item:hover { color: var(--brand-dark); background: #f5f8f8; }
+    .nav-item.active { color: var(--brand-dark); background: var(--brand-soft); font-weight: 600; }
+    .nav-item.active::after { content: ""; width: 3px; height: 20px; margin-left: auto; border-radius: 2px; background: var(--brand); }
+    .nav-text { overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-foot { padding: 10px; border-top: 1px solid var(--line); }
+    .sidebar-foot .nav-item { color: var(--ink-3); }
+
+    .shell {
+      min-height: 100dvh;
+      margin-left: var(--sidebar-width);
+      transition: margin-left var(--ease);
+    }
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto var(--sidebar-width);
+      z-index: 50;
+      height: var(--topbar-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 18px;
+      background: var(--brand);
+      color: #fff;
+      transition: left var(--ease);
+    }
+    .top-left, .top-actions, .account { display: flex; align-items: center; }
+    .top-left { min-width: 0; gap: 10px; }
+    .top-actions { gap: 2px; }
+    .square-button {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      transition: background var(--ease);
+    }
+    .square-button:hover { background: rgba(255,255,255,.13); }
+    .breadcrumb { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+    .breadcrumb-muted { opacity: .72; }
+    .breadcrumb-separator { margin: 0 7px; opacity: .46; }
+    .account { gap: 9px; margin-left: 6px; padding-left: 10px; border-left: 1px solid rgba(255,255,255,.2); }
+    .avatar { width: 30px; height: 30px; display: grid; place-items: center; border: 2px solid rgba(255,255,255,.65); border-radius: 50%; background: rgba(255,255,255,.15); font-size: 12px; font-weight: 700; }
+    .account-name { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+
+    .tabbar {
+      position: fixed;
+      inset: var(--topbar-height) 0 auto var(--sidebar-width);
+      z-index: 45;
+      height: var(--tabs-height);
+      display: flex;
+      align-items: stretch;
+      overflow-x: auto;
+      overflow-y: hidden;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      scrollbar-width: thin;
+      transition: left var(--ease);
+    }
+    .home-tab, .page-tab {
+      min-width: 112px;
+      max-width: 210px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 12px;
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink-3);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .page-tab { justify-content: flex-start; min-width: 148px; cursor: pointer; }
+    .page-tab.active { position: relative; color: var(--brand-dark); background: #f1fafa; }
+    .page-tab.active::after { content: ""; position: absolute; inset: auto 0 0; height: 2px; background: var(--brand); }
+    .tab-name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+    .tab-close { width: 24px; height: 24px; display: grid; place-items: center; margin-right: -5px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--ink-3); cursor: pointer; }
+    .tab-close:hover { background: #dceeee; color: var(--brand-dark); }
+
+    .content {
+      position: relative;
+      height: 100dvh;
+      padding-top: calc(var(--topbar-height) + var(--tabs-height));
+      overflow: hidden;
+    }
+    .view { width: 100%; height: 100%; }
+    .empty-view {
+      height: 100%;
+      overflow: auto;
+      padding: clamp(18px, 2.4vw, 32px);
+    }
+    .welcome-card {
+      min-height: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
+      align-items: center;
+      gap: clamp(32px, 6vw, 96px);
+      padding: clamp(32px, 6vw, 92px);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 1px 1px rgba(30, 45, 55, .02);
+    }
+    .eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 16px; color: var(--brand-dark); font-size: 13px; font-weight: 600; }
+    .eyebrow::before { content: ""; width: 24px; height: 2px; background: var(--brand); }
+    h1 { margin: 0; color: #1d2934; font-size: clamp(28px, 3vw, 46px); line-height: 1.22; letter-spacing: -.5px; }
+    .lead { max-width: 650px; margin: 20px 0 0; color: var(--ink-2); font-size: clamp(15px, 1.4vw, 17px); line-height: 1.8; }
+    .module-hint { margin-top: 28px; padding: 16px 18px; border-left: 3px solid var(--brand); background: #f5fafa; color: var(--ink-2); }
+    .module-hint strong { display: block; margin-bottom: 3px; color: var(--ink); }
+    .module-hint code { color: var(--brand-dark); font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .role-visual { position: relative; min-height: 360px; display: grid; place-items: center; }
+    .visual-ring { position: absolute; width: min(360px, 90%); aspect-ratio: 1; border: 1px solid #dce9e9; border-radius: 50%; }
+    .visual-ring::before, .visual-ring::after { content: ""; position: absolute; inset: 14%; border: 1px dashed #c8dede; border-radius: 50%; }
+    .visual-ring::after { inset: 31%; border-style: solid; background: var(--brand-soft); }
+    .visual-center { z-index: 1; width: 106px; height: 106px; display: grid; place-items: center; border-radius: 50%; background: var(--brand); color: #fff; box-shadow: 0 14px 32px rgba(0, 139, 143, .22); }
+    .visual-center .icon { width: 42px; height: 42px; stroke-width: 1.4; }
+    .orbit-item { position: absolute; z-index: 2; min-width: 108px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink-2); text-align: center; box-shadow: var(--shadow); font-size: 12px; }
+    .orbit-item:nth-of-type(2) { top: 15%; left: 3%; }
+    .orbit-item:nth-of-type(3) { top: 12%; right: 1%; }
+    .orbit-item:nth-of-type(4) { bottom: 12%; left: 1%; }
+    .orbit-item:nth-of-type(5) { right: 3%; bottom: 15%; }
+    .iframe-view { display: none; border: 0; background: #fff; }
+    .frame-loader {
+      position: absolute;
+      inset: calc(var(--topbar-height) + var(--tabs-height)) 0 0;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      background: #fff;
+      color: var(--ink-2);
+    }
+    .frame-loader[hidden] { display: none; }
+    .loading-box { display: grid; justify-items: center; gap: 12px; }
+    .spinner { width: 30px; height: 30px; border: 3px solid #d9eded; border-top-color: var(--brand); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .mobile-shade { display: none; position: fixed; inset: 0; z-index: 55; background: rgba(20, 30, 38, .42); }
+    .mobile-only { display: none; }
+    .toast {
+      position: fixed;
+      z-index: 200;
+      top: 70px;
+      left: 50%;
+      max-width: calc(100vw - 32px);
+      padding: 11px 16px;
+      border: 1px solid #b9dede;
+      border-radius: 7px;
+      background: #f3fbfb;
+      color: var(--brand-dark);
+      box-shadow: var(--shadow);
+      transform: translate(-50%, -16px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--ease), transform var(--ease);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    body.sidebar-collapsed { --sidebar-width: 76px; }
+    .sidebar-collapsed .brand { justify-content: center; padding: 0; }
+    .sidebar-collapsed .brand-word { font-size: 15px; letter-spacing: 0; }
+    .sidebar-collapsed .brand-line, .sidebar-collapsed .brand-sub, .sidebar-collapsed .role-panel, .sidebar-collapsed .nav-label, .sidebar-collapsed .nav-text { display: none; }
+    .sidebar-collapsed .nav-item { justify-content: center; padding: 0; }
+    .sidebar-collapsed .nav-item.active::after { position: absolute; right: 5px; }
+
+    @media (max-width: 900px) {
+      :root { --sidebar-width: 0px; }
+      body { font-size: 14px; }
+      .sidebar { width: min(300px, 86vw); transform: translateX(-101%); box-shadow: 16px 0 36px rgba(22, 35, 43, .14); }
+      body.mobile-nav-open .sidebar { transform: translateX(0); }
+      body.mobile-nav-open .mobile-shade { display: block; }
+      .mobile-only { display: grid; }
+      .desktop-collapse { display: none; }
+      .topbar { padding: 0 10px; }
+      .top-actions .hide-mobile { display: none; }
+      .account { padding-left: 6px; }
+      .account-name { display: none; }
+      .welcome-card { grid-template-columns: 1fr; align-content: start; padding: clamp(28px, 7vw, 56px); }
+      .role-visual { min-height: 320px; }
+    }
+    @media (max-width: 560px) {
+      :root { --topbar-height: 54px; --tabs-height: 44px; }
+      .topbar { gap: 4px; }
+      .breadcrumb-muted, .breadcrumb-separator { display: none; }
+      .square-button { width: 42px; height: 42px; }
+      .home-tab { min-width: 86px; }
+      .page-tab { min-width: 136px; }
+      .empty-view { padding: 10px; }
+      .welcome-card { min-height: calc(100dvh - 118px); gap: 20px; padding: 26px 20px; border-radius: 8px; }
+      .lead { line-height: 1.7; }
+      .module-hint { margin-top: 22px; }
+      .role-visual { min-height: 270px; transform: scale(.9); }
+      .orbit-item { min-width: 95px; padding: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">跳到主内容</a>
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></symbol>
+    <symbol id="i-warehouse" viewBox="0 0 24 24"><path d="M3 10 12 4l9 6v10H3V10Z"/><path d="M7 20v-6h10v6M7 10h.01M12 10h.01M17 10h.01"/></symbol>
+    <symbol id="i-plan" viewBox="0 0 24 24"><path d="M6 3v3M18 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="m8 13 2 2 5-5"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M6 3v3M18 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="M8 12h3M8 16h7"/></symbol>
+    <symbol id="i-report" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7V3Z"/><path d="M14 3v5h5M10 13h5M10 17h5"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 6h11v11H3V6ZM14 10h4l3 4v3h-7v-7Z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 8h18c0-1-3-1-3-8ZM10 21h4"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21h-4v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1v4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  </svg>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="主导航">
+      <div class="brand" aria-label="BorgWarner">
+        <span class="brand-word">BORGWARNER</span><span class="brand-line"></span><span class="brand-sub">LOGISTICS</span>
+      </div>
+      <div class="role-panel">
+        <p class="role-caption">当前访问端</p>
+        <div class="role-switch" id="roleSwitch" aria-label="切换访问端"></div>
+      </div>
+      <nav class="nav-area">
+        <div class="nav-label">业务模块</div>
+        <ul class="nav-list" id="navList"></ul>
+      </nav>
+      <div class="sidebar-foot">
+        <button class="nav-item" type="button" id="settingsButton" title="页面接入说明">
+          <svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg><span class="nav-text">页面接入说明</span>
+        </button>
+      </div>
+    </aside>
+
+    <button class="mobile-shade" id="mobileShade" type="button" aria-label="关闭导航"></button>
+
+    <div class="shell">
+      <header class="topbar">
+        <div class="top-left">
+          <button class="square-button desktop-collapse" id="collapseButton" type="button" aria-label="收起侧边栏" aria-expanded="true"><svg class="icon"><use href="#i-menu"/></svg></button>
+          <button class="square-button mobile-only" id="mobileMenuButton" type="button" aria-label="打开侧边栏" aria-expanded="false"><svg class="icon"><use href="#i-menu"/></svg></button>
+          <div class="breadcrumb"><span class="breadcrumb-muted" id="roleBreadcrumb">工厂端</span><span class="breadcrumb-separator">/</span><span id="pageBreadcrumb">物料管理</span></div>
+        </div>
+        <div class="top-actions">
+          <button class="square-button hide-mobile" type="button" aria-label="搜索" title="搜索"><svg class="icon"><use href="#i-search"/></svg></button>
+          <button class="square-button" type="button" aria-label="通知" title="通知"><svg class="icon"><use href="#i-bell"/></svg></button>
+          <button class="square-button hide-mobile" id="fullscreenButton" type="button" aria-label="全屏" title="全屏"><svg class="icon"><use href="#i-expand"/></svg></button>
+          <div class="account"><span class="avatar">BW</span><span class="account-name">admin</span></div>
+        </div>
+      </header>
+
+      <div class="tabbar" id="tabbar" role="tablist" aria-label="已打开页面">
+        <button class="home-tab" id="homeTab" type="button" role="tab"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg>工作台</button>
+      </div>
+
+      <main class="content" id="mainContent" tabindex="-1">
+        <section class="view empty-view" id="placeholderView" aria-live="polite">
+          <div class="welcome-card">
+            <div>
+              <div class="eyebrow" id="roleEyebrow">工厂端 · 业务模块</div>
+              <h1 id="viewTitle">物料管理</h1>
+              <p class="lead" id="viewDescription">统一维护物料基础信息、分类和业务属性，为后续计划与物流协同提供数据基础。</p>
+              <div class="module-hint">
+                <strong>页面框架已就绪</strong>
+                当前显示开发占位内容。业务页面完成后，在 <code>PAGE_CONFIG</code> 中填写对应的 <code>url</code>，页面会自动以内嵌方式加载。
+              </div>
+            </div>
+            <div class="role-visual" aria-hidden="true">
+              <span class="visual-ring"></span>
+              <span class="visual-center"><svg class="icon"><use id="centerIcon" href="#i-box"/></svg></span>
+              <span class="orbit-item">计划协同</span><span class="orbit-item">预约管理</span><span class="orbit-item">质量追溯</span><span class="orbit-item">物流执行</span>
+            </div>
+          </div>
+        </section>
+        <iframe class="view iframe-view" id="pageFrame" title="业务页面" loading="eager"></iframe>
+        <div class="frame-loader" id="frameLoader" role="status" aria-live="polite" hidden>
+          <div class="loading-box"><span class="spinner" aria-hidden="true"></span><span>正在加载业务页面…</span></div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // 业务页面映射：同一功能页面可由不同访问端复用。
+    const PAGE_CONFIG = {
+      factory: {
+        label: '工厂端',
+        defaultPage: 'material',
+        pages: [
+          { id: 'material', label: '物料管理', icon: 'i-box', url: './warehouse-material.html', description: '统一维护物料基础信息、分类和业务属性，为后续计划与物流协同提供数据基础。' },
+          { id: 'warehouse', label: '库区管理', icon: 'i-warehouse', url: './index.html', description: '维护工厂库区、库位及容量信息，清晰掌握仓储资源与物料分布。' },
+          { id: 'plan', label: '物料计划', icon: 'i-plan', url: './material-plan.html', description: '集中管理物料需求计划、供应进度与到货状态，支持计划闭环跟踪。' },
+          { id: 'calendar', label: '送货预约日历', icon: 'i-calendar', url: './appointment-calendar.html', description: '按日历查看和调整送货预约，统筹月度、周度及每日到货安排。' },
+          { id: 'inspection', label: '出货检验报告', icon: 'i-report', url: './factory-supplier-inspection.html', description: '查看全部供应商出货检查，并在收货后录入工厂实验室检测数据。' }
+        ]
+      },
+      supplier: {
+        label: '供应商端',
+        defaultPage: 'workspace',
+        pages: [
+          { id: 'workspace', label: '外部工作台', icon: 'i-grid', url: './supplier-plan.html', description: '汇总待办任务、计划确认和交付提醒，快速进入供应商日常业务。' },
+          { id: 'calendar', label: '送货预约日历', icon: 'i-calendar', url: './appointment-calendar.html', description: '创建、查看和调整送货预约，及时掌握可预约时段与审核状态。' },
+          { id: 'inspection', label: '出货检验报告', icon: 'i-report', url: './supplier-inspection.html', description: '填报并跟踪出货检验结果，保证随货质量资料完整可查。' }
+        ]
+      },
+      logistics: {
+        label: '物流商端',
+        defaultPage: 'workspace',
+        pages: [
+          { id: 'workspace', label: '外部工作台', icon: 'i-truck', url: './logistics-supplier.html', description: '汇总提货、运输和交付任务，集中查看物流执行状态与异常提醒。' },
+          { id: 'calendar', label: '送货预约日历', icon: 'i-calendar', url: './appointment-calendar.html', description: '查看承运范围内的送货预约，协调车辆、司机与到厂时间。' }
+        ]
+      }
+    };
+
+    const state = { role: 'factory', page: 'material', tabs: [] };
+    const roleSwitch = document.getElementById('roleSwitch');
+    const navList = document.getElementById('navList');
+    const tabbar = document.getElementById('tabbar');
+    const placeholderView = document.getElementById('placeholderView');
+    const pageFrame = document.getElementById('pageFrame');
+    const frameLoader = document.getElementById('frameLoader');
+    const toast = document.getElementById('toast');
+
+    function icon(id) {
+      return `<svg class="icon" aria-hidden="true"><use href="#${id}"/></svg>`;
+    }
+
+    function currentPage() {
+      return PAGE_CONFIG[state.role].pages.find(page => page.id === state.page) || PAGE_CONFIG[state.role].pages[0];
+    }
+
+    function routeKey(role = state.role, page = state.page) { return `${role}/${page}`; }
+
+    function parseRoute() {
+      const [role, page] = location.hash.replace(/^#\/?/, '').split('/');
+      const validRole = PAGE_CONFIG[role] ? role : 'factory';
+      const validPage = PAGE_CONFIG[validRole].pages.some(item => item.id === page) ? page : PAGE_CONFIG[validRole].defaultPage;
+      return { role: validRole, page: validPage };
+    }
+
+    function renderRoles() {
+      roleSwitch.innerHTML = Object.entries(PAGE_CONFIG).map(([id, role]) => `
+        <button class="role-button${id === state.role ? ' active' : ''}" type="button" data-role="${id}" aria-pressed="${id === state.role}">${role.label}</button>
+      `).join('');
+    }
+
+    function renderNav() {
+      navList.innerHTML = PAGE_CONFIG[state.role].pages.map(page => `
+        <li><button class="nav-item${page.id === state.page ? ' active' : ''}" type="button" data-page="${page.id}" title="${page.label}"${page.id === state.page ? ' aria-current="page"' : ''}>
+          ${icon(page.icon)}<span class="nav-text">${page.label}</span>
+        </button></li>
+      `).join('');
+    }
+
+    function ensureTab() {
+      const key = routeKey();
+      if (!state.tabs.some(tab => tab.key === key)) {
+        const page = currentPage();
+        state.tabs.push({ key, role: state.role, page: state.page, label: page.label, icon: page.icon });
+      }
+    }
+
+    function renderTabs() {
+      tabbar.querySelectorAll('.page-tab').forEach(tab => tab.remove());
+      state.tabs.forEach(tab => {
+        const tabElement = document.createElement('div');
+        tabElement.className = `page-tab${tab.key === routeKey() ? ' active' : ''}`;
+        tabElement.dataset.key = tab.key;
+        tabElement.setAttribute('role', 'tab');
+        tabElement.setAttribute('tabindex', '0');
+        tabElement.setAttribute('aria-selected', tab.key === routeKey());
+        tabElement.innerHTML = `${icon(tab.icon)}<span class="tab-name">${tab.label}</span><button class="tab-close" data-close="${tab.key}" type="button" aria-label="关闭 ${tab.label}">${icon('i-close')}</button>`;
+        tabbar.appendChild(tabElement);
+      });
+      requestAnimationFrame(() => tabbar.querySelector('.page-tab.active')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }));
+    }
+
+    function renderContent() {
+      const role = PAGE_CONFIG[state.role];
+      const page = currentPage();
+      document.getElementById('roleBreadcrumb').textContent = role.label;
+      document.getElementById('pageBreadcrumb').textContent = page.label;
+      document.getElementById('roleEyebrow').textContent = `${role.label} · 业务模块`;
+      document.getElementById('viewTitle').textContent = page.label;
+      document.getElementById('viewDescription').textContent = page.description;
+      document.getElementById('centerIcon').setAttribute('href', `#${page.icon}`);
+      document.title = `博格华纳 · ${page.label}`;
+      if (page.url) {
+        placeholderView.style.display = 'none';
+        pageFrame.style.display = 'block';
+        if (pageFrame.getAttribute('src') !== page.url) {
+          frameLoader.hidden = false;
+          pageFrame.src = page.url;
+        } else {
+          frameLoader.hidden = true;
+        }
+        pageFrame.title = page.label;
+      } else {
+        frameLoader.hidden = true;
+        pageFrame.style.display = 'none';
+        pageFrame.removeAttribute('src');
+        placeholderView.style.display = 'block';
+      }
+    }
+
+    function render() {
+      ensureTab();
+      renderRoles();
+      renderNav();
+      renderTabs();
+      renderContent();
+    }
+
+    function navigate(role, page, updateHash = true) {
+      state.role = role;
+      state.page = page;
+      if (updateHash) {
+        const nextHash = `#${routeKey()}`;
+        if (location.hash !== nextHash) history.pushState(null, '', nextHash);
+      }
+      render();
+      closeMobileNav();
+      document.getElementById('mainContent').focus({ preventScroll: true });
+    }
+
+    function switchRole(role) {
+      navigate(role, PAGE_CONFIG[role].defaultPage);
+    }
+
+    function closeTab(key) {
+      const index = state.tabs.findIndex(tab => tab.key === key);
+      if (index < 0) return;
+      const wasActive = key === routeKey();
+      state.tabs.splice(index, 1);
+      if (wasActive) {
+        const fallback = state.tabs[Math.max(0, index - 1)];
+        if (fallback) navigate(fallback.role, fallback.page);
+        else switchRole(state.role);
+      } else renderTabs();
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+
+    function closeMobileNav() {
+      document.body.classList.remove('mobile-nav-open');
+      document.getElementById('mobileMenuButton').setAttribute('aria-expanded', 'false');
+    }
+
+    roleSwitch.addEventListener('click', event => {
+      const button = event.target.closest('[data-role]');
+      if (button) switchRole(button.dataset.role);
+    });
+    navList.addEventListener('click', event => {
+      const button = event.target.closest('[data-page]');
+      if (button) navigate(state.role, button.dataset.page);
+    });
+    tabbar.addEventListener('click', event => {
+      const close = event.target.closest('[data-close]');
+      if (close) { event.stopPropagation(); closeTab(close.dataset.close); return; }
+      const tab = event.target.closest('[data-key]');
+      if (tab) {
+        const item = state.tabs.find(value => value.key === tab.dataset.key);
+        if (item) navigate(item.role, item.page);
+      }
+    });
+    tabbar.addEventListener('keydown', event => {
+      if (event.target.closest('[data-close]')) return;
+      const tab = event.target.closest('[data-key]');
+      if (tab && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        const item = state.tabs.find(value => value.key === tab.dataset.key);
+        if (item) navigate(item.role, item.page);
+      }
+    });
+    document.getElementById('collapseButton').addEventListener('click', event => {
+      document.body.classList.toggle('sidebar-collapsed');
+      const expanded = !document.body.classList.contains('sidebar-collapsed');
+      event.currentTarget.setAttribute('aria-expanded', String(expanded));
+      event.currentTarget.setAttribute('aria-label', expanded ? '收起侧边栏' : '展开侧边栏');
+    });
+    document.getElementById('mobileMenuButton').addEventListener('click', event => {
+      document.body.classList.add('mobile-nav-open');
+      event.currentTarget.setAttribute('aria-expanded', 'true');
+    });
+    document.getElementById('mobileShade').addEventListener('click', closeMobileNav);
+    document.getElementById('settingsButton').addEventListener('click', () => showToast('在 portal.html 的 PAGE_CONFIG 中填写 url，即可接入业务页面。'));
+    pageFrame.addEventListener('load', () => { frameLoader.hidden = true; });
+    document.getElementById('fullscreenButton').addEventListener('click', async () => {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+        else await document.exitFullscreen();
+      } catch (_) { showToast('当前浏览器不支持全屏切换'); }
+    });
+    document.getElementById('homeTab').addEventListener('click', () => switchRole(state.role));
+    window.addEventListener('hashchange', () => {
+      const route = parseRoute();
+      navigate(route.role, route.page, false);
+    });
+    window.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeMobileNav();
+    });
+
+    const initialRoute = parseRoute();
+    state.role = initialRoute.role;
+    state.page = initialRoute.page;
+    if (!location.hash) history.replaceState(null, '', `#${routeKey()}`);
+    render();
+  </script>
+</body>
+</html>

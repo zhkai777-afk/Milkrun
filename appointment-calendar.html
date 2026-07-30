@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>预约收货日历</title>
+<style>
+  :root {
+    --primary: #07868d;
+    --primary-dark: #046b71;
+    --primary-soft: #e9f7f7;
+    --text: #27313a;
+    --text-2: #5e6975;
+    --text-3: #8b95a1;
+    --surface: #ffffff;
+    --canvas: #f4f6f8;
+    --muted: #f6f8fa;
+    --border: #e5e9ef;
+    --border-strong: #d8dee7;
+    --success: #48a66b;
+    --success-soft: #eef9f1;
+    --warning: #d99026;
+    --warning-soft: #fff7e8;
+    --info: #3b82f6;
+    --info-soft: #eff6ff;
+    --danger: #e95d62;
+    --shadow-sm: 0 1px 3px rgba(27,39,51,.05);
+    --shadow: 0 12px 30px rgba(27,39,51,.08);
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { min-height: 100%; }
+  body {
+    background: var(--canvas);
+    color: var(--text);
+    font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select { font: inherit; }
+  button { cursor: pointer; touch-action: manipulation; }
+  button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 3px solid rgba(7,134,141,.22);
+    outline-offset: 1px;
+  }
+
+  .icon { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ===== App Shell ===== */
+  .app-shell { min-height: 100dvh; display: flex; flex-direction: column; }
+
+  /* ===== Top Bar ===== */
+  .top-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: var(--primary); color: #fff;
+    display: grid; place-items: center;
+  }
+  .logo-icon svg { width: 18px; height: 18px; }
+  .nav-tabs { display: flex; align-items: center; gap: 4px; height: 100%; }
+  .nav-tab {
+    height: 100%; display: flex; align-items: center; padding: 0 16px;
+    font-size: 14px; color: var(--text-2); font-weight: 500;
+    border-bottom: 2px solid transparent; cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .nav-tab:hover { color: var(--primary); }
+  .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .user-info { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-2); }
+  .user-info .company { color: var(--text-3); font-size: 12px; }
+  .divider { width: 1px; height: 18px; background: var(--border-strong); }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--primary-soft); color: var(--primary);
+    display: grid; place-items: center; font-size: 13px; font-weight: 600;
+  }
+
+  /* ===== Page Body ===== */
+  .page-body { flex: 1; padding: 24px; }
+  .app-layout { display: flex; gap: 20px; align-items: flex-start; width: 100%; }
+
+  /* ===== Calendar Sidebar ===== */
+  .calendar-sidebar {
+    width: 460px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 20px;
+    position: sticky;
+    top: 80px;
+  }
+  .sidebar-title { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .sidebar-avatar {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--primary-soft); color: var(--primary);
+    display: grid; place-items: center;
+  }
+  .sidebar-avatar svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .sidebar-title h2 { font-size: 17px; font-weight: 600; color: var(--text); }
+
+  .legend-row { display: flex; gap: 18px; padding: 10px 12px; background: var(--muted); border-radius: 8px; margin-bottom: 4px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-dot.delivery { background: var(--primary); }
+  .legend-dot.pickup { background: #64748b; }
+
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px 10px; }
+  .cal-nav-btn {
+    width: 34px; height: 34px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; display: grid; place-items: center;
+    color: var(--text-2); font-size: 18px; transition: all .15s;
+  }
+  .cal-nav-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+  .cal-month-label { font-size: 15px; font-weight: 600; color: var(--text); }
+
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 8px; }
+  .cal-weekday { font-size: 13px; color: var(--text-3); padding: 8px 0; font-weight: 500; }
+  .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 10px; cursor: pointer; position: relative;
+    font-size: 15px; color: var(--text);
+    transition: background .15s, color .15s, box-shadow .15s;
+  }
+  .cal-day:hover { background: var(--muted); }
+  .cal-day.other-month { color: var(--text-3); }
+  .cal-day.other-month:hover { background: transparent; }
+  .cal-day.today { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+  .cal-day.selected { background: var(--primary); color: #fff; font-weight: 600; box-shadow: 0 4px 10px rgba(7,134,141,.28); }
+  .cal-day.has-apt::after { content: ''; position: absolute; bottom: 9px; width: 6px; height: 6px; border-radius: 50%; }
+  .cal-day.delivery::after { background: var(--primary); }
+  .cal-day.pickup::after { background: #64748b; }
+  .cal-day.selected.has-apt::after { background: #fff; }
+
+  /* ===== Main Content ===== */
+  .main-content {
+    flex: 1; min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .content-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 18px 24px; border-bottom: 1px solid var(--border);
+  }
+  .content-date { font-size: 17px; font-weight: 600; color: var(--text); }
+  .content-sub { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+
+  /* Buttons */
+  .btn {
+    min-height: 36px; padding: 0 16px; border: 1px solid var(--border-strong);
+    border-radius: 6px; background: var(--surface); color: var(--text-2);
+    font-size: 13px; font-weight: 500;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background .18s, border-color .18s, color .18s, transform .12s;
+  }
+  .btn:hover { border-color: #bbc5d0; background: #fafbfc; color: var(--text); }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { border-color: var(--primary); background: var(--primary); color: #fff; }
+  .btn-primary:hover { border-color: var(--primary-dark); background: var(--primary-dark); color: #fff; }
+  .btn-ghost { border-color: transparent; background: transparent; color: var(--text-2); }
+
+  /* Content Body */
+  .content-body { flex: 1; display: flex; min-height: 380px; }
+  .time-slots {
+    width: 72px; padding: 20px 0; display: flex; flex-direction: column; align-items: center;
+    gap: 40px; flex-shrink: 0; border-right: 1px solid var(--border); background: var(--muted);
+  }
+  .time-slot { font-size: 12px; color: var(--text-2); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .appointments-area { flex: 1; padding: 20px 24px; overflow-y: auto; }
+
+  /* Appointment Card */
+  .appointment-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card-top { display: flex; align-items: flex-start; gap: 14px; }
+  .card-avatar {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: var(--primary-soft); color: var(--primary);
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .card-avatar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .card-info { flex: 1; min-width: 0; }
+  .supplier-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+  .supplier-name { font-size: 15px; font-weight: 600; color: var(--text); }
+  .tag-vip {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 8px; border-radius: 10px;
+    background: var(--warning-soft); color: var(--warning);
+    font-size: 11px; font-weight: 600;
+  }
+  .tag-vip svg { width: 11px; height: 11px; fill: currentColor; stroke: none; }
+  .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px 24px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .info-field { display: flex; flex-direction: column; gap: 4px; }
+  .info-label { font-size: 12px; color: var(--text-3); }
+  .info-value { font-size: 14px; color: var(--text); font-weight: 500; }
+  .logistics-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--info); cursor: pointer; font-size: 14px; font-weight: 500;
+    transition: opacity .15s;
+  }
+  .logistics-link:hover { opacity: .75; text-decoration: underline; }
+  .logistics-link svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .card-footer { display: flex; justify-content: flex-end; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+  /* Shipment status badge */
+  .ship-status {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 9px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; line-height: 1.7; white-space: nowrap;
+  }
+  .ship-status .icon { width: 13px; height: 13px; }
+  .ship-status.pending { background: var(--warning-soft); color: var(--warning); }
+  .ship-status.shipped { background: var(--info-soft); color: var(--info); }
+  .ship-status.received { background: var(--success-soft); color: var(--success); }
+  .empty-state { padding: 64px 20px; text-align: center; color: var(--text-3); font-size: 14px; }
+  .detail-link { color: var(--text-3); font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; transition: color .15s; }
+  .detail-link:hover { color: var(--primary); }
+
+  /* ===== Logistics Modal ===== */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(27,39,51,.45); z-index: 1000;
+    align-items: center; justify-content: center; animation: fadeIn .2s ease;
+  }
+  .modal-overlay.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .modal-dialog {
+    background: var(--surface); border-radius: 14px;
+    width: 720px; max-width: 92vw; max-height: 85vh;
+    box-shadow: var(--shadow); display: flex; flex-direction: column;
+    animation: slideUp .25s ease; overflow: hidden;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px; border-bottom: 1px solid var(--border);
+  }
+  .modal-title { font-size: 16px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .modal-title svg { width: 20px; height: 20px; fill: none; stroke: var(--primary); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .modal-close {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer; display: grid; place-items: center;
+    color: var(--text-2); font-size: 16px; transition: all .15s;
+  }
+  .modal-close:hover { background: var(--muted); color: var(--text); border-color: var(--border-strong); }
+  .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+
+  /* Route Summary */
+  .route-summary {
+    display: flex; align-items: center; gap: 16px;
+    background: linear-gradient(135deg, var(--info-soft), #f3f9ff);
+    border: 1px solid #dbeafe; border-radius: 12px;
+    padding: 16px 20px; margin-bottom: 24px;
+  }
+  .route-from, .route-to { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 64px; }
+  .route-city { font-size: 15px; font-weight: 600; color: var(--text); }
+  .route-detail { font-size: 11px; color: var(--text-3); }
+  .route-arrow-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; padding: 0 10px; }
+  .route-line { height: 2px; flex: 1; background: repeating-linear-gradient(90deg, var(--info) 0, var(--info) 6px, transparent 6px, transparent 10px); position: relative; }
+  .route-truck-icon {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 30px; height: 30px; background: var(--info); border-radius: 50%;
+    display: grid; place-items: center; color: #fff; z-index: 1;
+    box-shadow: 0 4px 10px rgba(59,130,246,.3);
+  }
+  .route-truck-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .route-stats { display: flex; gap: 22px; margin-left: auto; }
+  .stat-item { text-align: center; }
+  .stat-val { font-size: 15px; font-weight: 700; color: var(--info); }
+  .stat-lbl { font-size: 10px; color: var(--text-3); margin-top: 2px; }
+
+  /* Timeline */
+  .timeline-section { margin-bottom: 20px; }
+  .section-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-label::before { content: ''; width: 3px; height: 14px; background: var(--primary); border-radius: 2px; }
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before { content: ''; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 2px; background: var(--border-strong); }
+  .timeline-item { position: relative; padding-bottom: 22px; }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .tl-dot { position: absolute; left: -25px; top: 2px; width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid var(--border-strong); background: var(--surface); z-index: 1; }
+  .tl-dot.completed { border-color: var(--success); background: var(--success); }
+  .tl-dot.current { border-color: var(--info); background: var(--info); box-shadow: 0 0 0 4px rgba(59,130,246,.18); }
+  .tl-dot.pending { border-color: var(--border-strong); background: var(--surface); }
+  .tl-content { background: var(--muted); border-radius: 10px; padding: 12px 16px; border: 1px solid var(--border); }
+  .tl-item.completed .tl-content { background: var(--success-soft); border-color: #cdeed8; }
+  .tl-item.current .tl-content { background: var(--info-soft); border-color: #cfe3fd; }
+  .tl-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  .tl-status-text { font-size: 12px; font-weight: 600; color: var(--text); }
+  .tl-time { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .tl-desc { font-size: 12px; color: var(--text-2); line-height: 1.6; }
+  .tl-location { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-3); margin-top: 6px; }
+  .tl-location svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Progress */
+  .progress-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .progress-bar-wrap { display: flex; align-items: center; gap: 12px; }
+  .progress-track { flex: 1; height: 8px; background: var(--muted); border-radius: 4px; overflow: hidden; position: relative; border: 1px solid var(--border); }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--info), var(--primary)); border-radius: 4px; transition: width .5s ease; position: relative; }
+  .progress-fill::after { content: ''; position: absolute; right: 0; top: 0; width: 16px; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.45)); animation: shimmer 1.5s infinite; }
+  @keyframes shimmer { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+  .progress-pct { font-size: 14px; font-weight: 700; color: var(--primary); min-width: 42px; text-align: right; }
+  .progress-stages { display: flex; justify-content: space-between; margin-top: 10px; padding: 0 2px; }
+  .ps-stage { font-size: 11px; color: var(--text-3); text-align: center; }
+  .ps-stage.active { color: var(--primary); font-weight: 600; }
+
+  .modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* Responsive */
+  @media (max-width: 860px) {
+    .app-layout { flex-direction: column; }
+    .calendar-sidebar { width: 100%; position: static; }
+    .nav-tabs { display: none; }
+    .route-summary { flex-wrap: wrap; }
+    .route-stats { margin-left: 0; margin-top: 10px; width: 100%; justify-content: center; }
+    .info-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ===== Top Bar ===== -->
+  <header class="top-bar">
+    <div class="logo">
+      <span class="logo-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+      <span>博格华纳 · 物流管理系统</span>
+    </div>
+    <nav class="nav-tabs">
+      <a class="nav-tab">物流管理</a>
+      <a class="nav-tab active">预约收货日历</a>
+      <a class="nav-tab">物料预约交货</a>
+    </nav>
+    <div class="user-info">
+      <span class="company">宁波仓库</span>
+      <span class="divider"></span>
+      <span class="user-avatar">计</span>
+    </div>
+  </header>
+
+  <!-- ===== Page Body ===== -->
+  <div class="page-body">
+    <div class="app-layout">
+
+      <!-- ===== Left: Calendar ===== -->
+      <aside class="calendar-sidebar">
+        <div class="sidebar-title">
+          <div class="sidebar-avatar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <h2>预约日历</h2>
+        </div>
+        <div class="legend-row">
+          <div class="legend-item"><span class="legend-dot delivery"></span>直送</div>
+          <div class="legend-item"><span class="legend-dot pickup"></span>自提</div>
+        </div>
+
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+          <span class="cal-month-label" id="monthLabel">2026年07月</span>
+          <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+        </div>
+
+        <div class="cal-grid">
+          <div class="cal-weekdays">
+            <div class="cal-weekday">周一</div>
+            <div class="cal-weekday">周二</div>
+            <div class="cal-weekday">周三</div>
+            <div class="cal-weekday">周四</div>
+            <div class="cal-weekday">周五</div>
+            <div class="cal-weekday">周六</div>
+            <div class="cal-weekday">周日</div>
+          </div>
+          <div class="cal-days" id="calDays"></div>
+        </div>
+      </aside>
+
+      <!-- ===== Right: Content ===== -->
+      <main class="main-content">
+        <div class="content-header">
+          <div>
+            <div class="content-date" id="selectedDateTitle">2026-07-14 预约信息</div>
+            <div class="content-sub" id="selectedDateSub">暂无预约安排</div>
+          </div>
+        </div>
+
+        <div class="content-body">
+          <div class="time-slots">
+            <div class="time-slot">12:00</div>
+            <div class="time-slot">15:00</div>
+          </div>
+
+          <div class="appointments-area" id="appointmentsArea">
+            <div class="appointment-card" id="aptCard">
+              <div class="card-top">
+                <div class="card-avatar"><svg viewBox="0 0 24 24"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></svg></div>
+                <div class="card-info">
+                  <div class="supplier-name-row">
+                    <span class="supplier-name">苏州瑞得精工工业集团有限公司</span>
+                    <span class="tag-vip"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> VIP</span>
+                  </div>
+                  <div class="info-grid">
+                    <div class="info-field">
+                      <span class="info-label">采购凭证号</span>
+                      <span class="info-value">2026070902909R1D1300</span>
+                    </div>
+                    <div class="info-field">
+                      <span class="info-label">物流路线</span>
+                      <span class="info-value">--- <span class="logistics-link" onclick="openLogisticsModal()">
+                        <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>查看物流进度</span></span>
+                    </div>
+                    <div class="info-field">
+                      <span class="info-label">预计到货</span>
+                      <span class="info-value">07-14 12:30</span>
+                    </div>
+                    <div class="info-field">
+                      <span class="info-label">配送方式</span>
+                      <span class="info-value">供应商直送</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer">
+                <span class="detail-link">详细内容 ›</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== Logistics Modal ===== -->
+<div class="modal-overlay" id="logisticsModal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        物流路线与运输进度
+      </div>
+      <button class="modal-close" onclick="closeLogisticsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Route Summary -->
+      <div class="route-summary">
+        <div class="route-from">
+          <div class="route-city">苏州</div>
+          <div class="route-detail">工业园区</div>
+        </div>
+        <div class="route-arrow-area">
+          <div class="route-line"></div>
+          <div class="route-truck-icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+        </div>
+        <div class="route-to">
+          <div class="route-city">宁波</div>
+          <div class="route-detail">博格华纳仓库</div>
+        </div>
+        <div class="route-stats">
+          <div class="stat-item">
+            <div class="stat-val">268km</div>
+            <div class="stat-lbl">总里程</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val">~3.5h</div>
+            <div class="stat-lbl">预计时长</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val">沪昆高速</div>
+            <div class="stat-lbl">主要路线</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="timeline-section">
+        <div class="section-label">运输轨迹</div>
+        <div class="timeline">
+          <div class="timeline-item tl-item completed">
+            <div class="tl-dot completed"></div>
+            <div class="tl-content">
+              <div class="tl-header">
+                <span class="tl-status-text">已发货 · 供应商出库</span>
+                <span class="tl-time">07-14 08:23</span>
+              </div>
+              <div class="tl-desc">货物已从苏州工业园区仓库发出，承运方：顺丰快运</div>
+              <div class="tl-location">
+                <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                苏州市吴中区星华街 108 号
+              </div>
+            </div>
+          </div>
+
+          <div class="timeline-item tl-item completed">
+            <div class="tl-dot completed"></div>
+            <div class="tl-content">
+              <div class="tl-header">
+                <span class="tl-status-text">运输中 · 已到达中转站</span>
+                <span class="tl-time">07-14 10:05</span>
+              </div>
+              <div class="tl-desc">车辆已到达嘉兴中转场，正在进行分拣作业</div>
+              <div class="tl-location">
+                <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                嘉兴市南湖区中环南路
+              </div>
+            </div>
+          </div>
+
+          <div class="timeline-item tl-item current">
+            <div class="tl-dot current"></div>
+            <div class="tl-content">
+              <div class="tl-header">
+                <span class="tl-status-text">运输中 · 正在配送</span>
+                <span class="tl-time">07-14 11:42</span>
+              </div>
+              <div class="tl-desc">车辆正在前往目的地，预计 40 分钟后到达</div>
+              <div class="tl-location">
+                <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                杭州湾跨海大桥（距目的地约 65km）
+              </div>
+            </div>
+          </div>
+
+          <div class="timeline-item tl-item pending">
+            <div class="tl-dot pending"></div>
+            <div class="tl-content">
+              <div class="tl-header">
+                <span class="tl-status-text" style="color:#bbb;">待到达 · 目的地签收</span>
+                <span class="tl-time">预计 12:30</span>
+              </div>
+              <div class="tl-desc" style="color:#bbb;">等待到达宁波博格华纳仓库并完成签收确认</div>
+              <div class="tl-location">
+                <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                宁波市鄞州区五乡西路
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-section">
+        <div class="section-label">整体进度</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill" style="width: 72%"></div>
+          </div>
+          <div class="progress-pct" id="progressPct">72%</div>
+        </div>
+        <div class="progress-stages">
+          <span class="ps-stage active">发货</span>
+          <span class="ps-stage active">中转</span>
+          <span class="ps-stage active">在途</span>
+          <span class="ps-stage">到达</span>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeLogisticsModal()">关闭</button>
+      <button class="btn btn-primary" onclick="closeLogisticsModal()">知道了</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Calendar Logic =====
+let currentYear = 2026;
+let currentMonth = 6; // 0-based, July = 6
+let selectedDate = new Date(2026, 6, 14);
+
+// Mock data: which dates have appointments
+const appointments = {
+  '2026-7-14': { type: 'delivery', status: 'shipped',  count: 1, supplier: '苏州瑞得精工工业集团有限公司', vip: true,  po: '2026070902909R1D1300', eta: '07-14 12:30', delivery: '供应商直送' },
+  '2026-7-28': { type: 'pickup',   status: 'pending',  count: 1, supplier: '常州恒益精密制造有限公司',   vip: false, po: '2026072201145R2D0812', eta: '07-28 09:00', delivery: '物流商自提' },
+  '2026-7-30': { type: 'delivery', status: 'received', count: 1, supplier: '无锡华翔汽车零部件有限公司',   vip: true,  po: '2026071803377R1D2205', eta: '07-30 15:00', delivery: '供应商直送' },
+};
+
+const STATUS_MAP = {
+  pending:  { label: '待发货', cls: 'pending',  icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' },
+  shipped:  { label: '已发货', cls: 'shipped',  icon: '<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>' },
+  received: { label: '已收货', cls: 'received', icon: '<path d="M20 6 9 17l-5-5"/>' },
+};
+
+function updateSub(dateKey) {
+  const sub = document.getElementById('selectedDateSub');
+  const apt = appointments[dateKey];
+  if (apt) {
+    const label = (STATUS_MAP[apt.status] || {}).label || '';
+    sub.textContent = `共 ${apt.count || 1} 条预约 · 发货状态：${label}`;
+  } else {
+    sub.textContent = '暂无预约安排';
+  }
+}
+
+function renderCalendar() {
+  const container = document.getElementById('calDays');
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+
+  let startWeekDay = firstDay.getDay(); // 0=Sun
+  startWeekDay = startWeekDay === 0 ? 6 : startWeekDay - 1; // Convert to Mon=0
+
+  const daysInMonth = lastDay.getDate();
+  const prevMonthLast = new Date(currentYear, currentMonth, 0).getDate();
+
+  document.getElementById('monthLabel').textContent =
+    `${currentYear}年${String(currentMonth + 1).padStart(2, '0')}月`;
+
+  let html = '';
+
+  // Previous month days
+  for (let i = startWeekDay - 1; i >= 0; i--) {
+    const day = prevMonthLast - i;
+    html += `<div class="cal-day other-month">${day}</div>`;
+  }
+
+  // Current month days
+  const today = new Date();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateKey = `${currentYear}-${currentMonth + 1}-${d}`;
+    const apt = appointments[dateKey];
+    const isToday = today.getFullYear() === currentYear &&
+                    today.getMonth() === currentMonth &&
+                    today.getDate() === d;
+    const isSelected = selectedDate.getFullYear() === currentYear &&
+                       selectedDate.getMonth() === currentMonth &&
+                       selectedDate.getDate() === d;
+
+    let cls = 'cal-day';
+    if (isToday) cls += ' today';
+    if (isSelected) cls += ' selected';
+    if (apt) cls += ' has-apt ' + (apt.type === 'delivery' ? 'delivery' : 'pickup');
+
+    html += `<div class="${cls}" onclick="selectDate(${currentYear}, ${currentMonth}, ${d})">${d}</div>`;
+  }
+
+  // Next month days
+  const totalCells = startWeekDay + daysInMonth;
+  const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let i = 1; i <= remaining; i++) {
+    html += `<div class="cal-day other-month">${i}</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar();
+}
+
+function selectDate(y, m, d) {
+  selectedDate = new Date(y, m, d);
+  document.getElementById('selectedDateTitle').textContent =
+    `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')} 预约信息`;
+  updateSub(`${y}-${m+1}-${d}`);
+  renderAppointment(`${y}-${m+1}-${d}`);
+  renderCalendar();
+}
+
+// ===== Render selected appointment card =====
+function renderAppointment(dateKey) {
+  const area = document.getElementById('appointmentsArea');
+  const apt = appointments[dateKey];
+  if (!apt) {
+    area.innerHTML = '<div class="empty-state">该日期暂无预约安排</div>';
+    return;
+  }
+  const s = STATUS_MAP[apt.status];
+  const vip = apt.vip
+    ? '<span class="tag-vip"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> VIP</span>'
+    : '';
+  const truckIcon = '<svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+  area.innerHTML = `
+    <div class="appointment-card">
+      <div class="card-top">
+        <div class="card-avatar"><svg viewBox="0 0 24 24"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></svg></div>
+        <div class="card-info">
+          <div class="supplier-name-row">
+            <span class="supplier-name">${apt.supplier}</span>
+            ${vip}
+            <span class="ship-status ${s.cls}"><svg class="icon" viewBox="0 0 24 24">${s.icon}</svg>${s.label}</span>
+          </div>
+          <div class="info-grid">
+            <div class="info-field"><span class="info-label">采购凭证号</span><span class="info-value">${apt.po}</span></div>
+            <div class="info-field"><span class="info-label">物流路线</span><span class="info-value">--- <span class="logistics-link" onclick="openLogisticsModal()">${truckIcon}查看物流进度</span></span></div>
+            <div class="info-field"><span class="info-label">预计到货</span><span class="info-value">${apt.eta}</span></div>
+            <div class="info-field"><span class="info-label">配送方式</span><span class="info-value">${apt.delivery}</span></div>
+            <div class="info-field"><span class="info-label">发货状态</span><span class="info-value"><span class="ship-status ${s.cls}"><svg class="icon" viewBox="0 0 24 24">${s.icon}</svg>${s.label}</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer"><span class="detail-link">详细内容 ›</span></div>
+    </div>`;
+}
+
+// ===== Modal Logic =====
+function openLogisticsModal() {
+  document.getElementById('logisticsModal').classList.add('active');
+  animateProgress();
+}
+
+function closeLogisticsModal() {
+  document.getElementById('logisticsModal').classList.remove('active');
+}
+
+// Close on overlay click
+document.getElementById('logisticsModal').addEventListener('click', function(e) {
+  if (e.target === this) closeLogisticsModal();
+});
+
+// Animate progress bar on open
+function animateProgress() {
+  const fill = document.getElementById('progressFill');
+  const pct = document.getElementById('progressPct');
+  fill.style.width = '0%';
+  pct.textContent = '0%';
+  setTimeout(() => {
+    fill.style.width = '72%';
+    let v = 0;
+    const interval = setInterval(() => {
+      v += 2;
+      if (v >= 72) { v = 72; clearInterval(interval); }
+      pct.textContent = v + '%';
+    }, 20);
+  }, 100);
+}
+
+// ESC key closes modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLogisticsModal();
+});
+
+// Init
+renderCalendar();
+updateSub('2026-7-14');
+renderAppointment('2026-7-14');
+</script>
+
+</body>
+</html>

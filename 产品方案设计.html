@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" light>
+<title>博格华纳工厂物料计划与物流协同 · 整体产品方案设计</title>
+<style>
+  :root{
+    --primary:#07868d; --primary-dark:#046b71; --primary-soft:#e9f7f7; --primary-light:#eef9f9;
+    --text:#27313a; --text-2:#5e6975; --text-3:#8b95a1;
+    --surface:#fff; --canvas:#f4f6f8; --muted:#f6f8fa; --border:#e5e9ef; --border-strong:#d8dee7;
+    --danger:#e95d62; --danger-soft:#fff0f0; --success:#48a66b; --success-soft:#eef9f1; --warning:#d99026; --warning-soft:#fff7e8;
+    --r-planner:#07868d; --r-supplier:#3b82f6; --r-carrier:#d99026; --r-warehouse:#48a66b; --r-ops:#8b6ed8; --r-system:#8b95a1;
+    --radius:12px; --shadow:0 12px 30px rgba(27,39,51,.08); --shadow-sm:0 1px 3px rgba(27,39,51,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--canvas);color:var(--text);font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:var(--primary);text-decoration:none}
+  .layout{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  /* Sidebar */
+  .nav{position:sticky;top:0;align-self:flex-start;width:248px;height:100vh;overflow-y:auto;background:var(--surface);border-right:1px solid var(--border);padding:22px 16px;flex-shrink:0}
+  .nav-brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .nav-logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;display:grid;place-items:center;font-weight:700}
+  .nav-brand b{font-size:14px;line-height:1.2}
+  .nav-brand span{display:block;font-size:11px;color:var(--text-3)}
+  .nav-group{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin:16px 8px 6px}
+  .nav a{display:block;padding:7px 10px;border-radius:7px;color:var(--text-2);font-size:13px;margin-bottom:2px;transition:.15s}
+  .nav a:hover{background:var(--muted);color:var(--text)}
+  .nav a.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
+  /* Content */
+  .content{flex:1;min-width:0;padding:36px 44px 80px}
+  .doc-head{margin-bottom:30px;padding-bottom:22px;border-bottom:1px solid var(--border)}
+  .doc-kicker{display:inline-block;font-size:12px;font-weight:600;color:var(--primary);background:var(--primary-soft);padding:3px 10px;border-radius:20px;margin-bottom:12px}
+  .doc-head h1{font-size:27px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px}
+  .doc-head .sub{color:var(--text-2);font-size:14px}
+  .doc-meta{margin-top:12px;font-size:12px;color:var(--text-3);display:flex;gap:14px;flex-wrap:wrap}
+  section{margin-bottom:42px;scroll-margin-top:20px}
+  h2{font-size:21px;font-weight:700;margin-bottom:14px;padding-left:12px;border-left:4px solid var(--primary);line-height:1.3}
+  h3{font-size:16px;font-weight:600;margin:22px 0 10px;color:var(--text)}
+  h4{font-size:14px;font-weight:600;margin:16px 0 8px;color:var(--text-2)}
+  p{margin-bottom:10px;color:var(--text)}
+  ul,ol{margin:0 0 12px 22px}
+  li{margin-bottom:6px}
+  .lead{font-size:15px;color:var(--text-2);background:var(--primary-light);border:1px solid #d4ece9;border-radius:10px;padding:16px 18px;margin-bottom:18px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm);margin-bottom:16px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:1100px){.content{padding:28px 22px}.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+  @media(max-width:900px){.nav{display:none}}
+  /* Role tags */
+  .tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap}
+  .tag::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .t-planner{color:var(--r-planner);background:rgba(7,134,141,.1)}
+  .t-supplier{color:var(--r-supplier);background:rgba(59,130,246,.12)}
+  .t-carrier{color:var(--r-carrier);background:rgba(217,144,38,.13)}
+  .t-warehouse{color:var(--r-warehouse);background:rgba(72,166,107,.13)}
+  .t-ops{color:var(--r-ops);background:rgba(139,110,216,.13)}
+  .t-system{color:var(--r-system);background:rgba(139,149,161,.16)}
+  /* Tables */
+  table{width:100%;border-collapse:collapse;margin:8px 0 16px;font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  th,td{padding:11px 13px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{background:#fbfcfd;color:var(--text-2);font-weight:600;font-size:12.5px}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#f8fafc}
+  .ok{color:var(--success);font-weight:600}
+  .gap{color:var(--danger);font-weight:600}
+  .partial{color:var(--warning);font-weight:600}
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px}
+  .pill.ok{background:var(--success-soft);color:#277645}
+  .pill.gap{background:var(--danger-soft);color:#b73238}
+  .pill.partial{background:var(--warning-soft);color:#8a5e16}
+  .pill.plan{background:var(--primary-soft);color:var(--primary-dark)}
+  /* Flow / diagram primitives */
+  .flow{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:14px 0}
+  .step{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;flex:1;min-width:150px;position:relative}
+  .step .n{font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px}
+  .step .t{font-weight:600;font-size:13px}
+  .step .d{font-size:12px;color:var(--text-3);margin-top:3px}
+  .arrow{display:flex;align-items:center;color:var(--text-3);font-size:18px;flex-shrink:0}
+  .swim{display:grid;grid-template-columns:110px 1fr;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
+  .swim .role{background:var(--muted);padding:12px;font-weight:600;font-size:13px;border-right:1px solid var(--border);display:flex;align-items:center}
+  .swim .lane{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+  .swim .lane:last-child{border-bottom:none}
+  .lane-item{background:var(--primary-light);border:1px solid #d4ece9;border-radius:7px;padding:7px 10px;font-size:12.5px;display:flex;align-items:center;gap:8px}
+  .lane-item .why{color:var(--text-3);font-size:11px}
+  .lane-item.alt{background:var(--warning-soft);border-color:#f0c781}
+  .lane-item.exc{background:var(--danger-soft);border-color:#f4c9cb}
+  /* State machine */
+  .sm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+  .sm .node{background:var(--surface);border:1.5px solid var(--primary);border-radius:20px;padding:6px 14px;font-size:12.5px;font-weight:600;color:var(--primary-dark)}
+  .sm .node.alt{border-color:var(--warning);color:#8a5e16}
+  .sm .node.exc{border-color:var(--danger);color:#b73238}
+  .sm .node.done{border-color:var(--success);color:#277645}
+  .sm .conn{color:var(--text-3);font-size:16px}
+  /* Route compare */
+  .route{border:1px solid var(--border);border-radius:10px;padding:14px 16px;background:var(--surface)}
+  .route h4{margin-top:0}
+  .route .path{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:13px;flex-wrap:wrap}
+  .route .node-b{background:var(--muted);border-radius:8px;padding:6px 10px;font-weight:600}
+  .route .seg{color:var(--text-3);font-size:12px}
+  .route .seg.carrier{color:var(--r-carrier);font-weight:600}
+  .note{font-size:12.5px;color:var(--text-3);background:var(--muted);border-radius:8px;padding:10px 12px;margin:10px 0}
+  .callout{border-left:3px solid var(--warning);background:var(--warning-soft);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:13px}
+  .callout b{color:#8a5e16}
+  .ico{display:inline-block;width:16px;height:16px;border-radius:5px;color:#fff;font-size:10px;font-weight:700;display:inline-grid;place-items:center;margin-right:4px;vertical-align:middle}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+  .kpi .v{font-size:24px;font-weight:700;color:var(--primary)}
+  .kpi .l{font-size:12px;color:var(--text-3);margin-top:2px}
+  code{background:var(--muted);padding:1px 6px;border-radius:5px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .footer-note{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);font-size:12px;color:var(--text-3)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 4px;font-size:12px;color:var(--text-2)}
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="nav-logo">BW</div>
+      <div><b>物流协同方案</b><span>博格华纳 · 宁波工厂</span></div>
+    </div>
+    <div class="nav-group">概览</div>
+    <a href="#s0">0 · 一句话心智模型</a>
+    <a href="#s1">1 · 设计目标与现状</a>
+    <div class="nav-group">架构</div>
+    <a href="#s2">2 · 角色与职责 (RACI)</a>
+    <a href="#s3">3 · 信息架构与页面地图</a>
+    <a href="#s4">4 · 核心概念与数据模型</a>
+    <div class="nav-group">流程</div>
+    <a href="#s5">5 · 端到端业务流程</a>
+    <a href="#s6">6 · 各角色功能设计</a>
+    <a href="#s7">7 · 异常与缺口补齐闭环</a>
+    <a href="#s8">8 · 预约与物流路线</a>
+    <a href="#s9">9 · 检验设计（新模块）</a>
+    <div class="nav-group">落地</div>
+    <a href="#s10">10 · 已建 / 待建对照</a>
+    <a href="#s11">11 · 集成与数据</a>
+    <a href="#s12">12 · 实施里程碑</a>
+  </nav>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div class="doc-head">
+      <span class="doc-kicker">整体产品方案设计 v1.0</span>
+      <h1>博格华纳工厂物料计划与物流协同平台</h1>
+      <div class="sub">面向计划员 / 供应商 / 物流商 / 仓库的四方协同方案——把"计划 → 承诺 → 预约 → 发货 → 收货 → 检验 → 异常补齐"串成一条可追踪的链路</div>
+      <div class="doc-meta">
+        <span>编制：WorkBuddy</span><span>日期：2026-07-30</span><span>适用范围：博格华纳宁波工厂 物流部</span>
+        <span>当前状态：原型已覆盖 8 个页面，本方案用于统一架构与补齐缺口</span>
+      </div>
+    </div>
+
+    <!-- 0 -->
+    <section id="s0">
+      <h2>0 · 一句话心智模型（先理清思路）</h2>
+      <div class="lead">
+        把整件事想成一条<strong>带"承诺"和"缺口"两根标尺的传送带</strong>：<br>
+        <strong>计划员</strong>把工厂需求（物料计划）和供应商回复（SAP ASN = 承诺）铺到同一张表上；
+        <strong>供应商</strong>确认能发多少、何时发、直送还是让物流商自提；
+        无论哪种方式，都要先向<strong>仓库</strong>预约"哪天 + 上午/下午"的收货位；
+        <strong>物流商</strong>只负责自提类物料的取货与配送，并把<strong>路线轨迹</strong>可视化；
+        货到<strong>仓库</strong>后录入实收数量、做检验；
+        一旦"计划 ≠ 承诺 ≠ 实收"，就产生<strong>缺口</strong>，系统记录缺口并让供应商在后续发货里<strong>补齐</strong>。
+      </div>
+      <div class="grid-4">
+        <div class="kpi"><div class="v">4</div><div class="l">核心角色</div></div>
+        <div class="kpi"><div class="v">7</div><div class="l">主流程环节</div></div>
+        <div class="kpi"><div class="v">2</div><div class="l">缺口标尺（承诺 / 到货）</div></div>
+        <div class="kpi"><div class="v">8</div><div class="l">已建原型页</div></div>
+      </div>
+      <p class="note">下方各章节会把这个模型展开：先定角色与架构，再讲数据模型和流程，重点攻坚"异常与缺口补齐"，最后给出已建 / 待建的对照与实施顺序。</p>
+    </section>
+
+    <!-- 1 -->
+    <section id="s1">
+      <h2>1 · 设计目标与现状盘点</h2>
+      <h3>1.1 要解决的核心问题</h3>
+      <ul>
+        <li><b>数据不通：</b>计划、承诺、预约、发货、收货、检验分散在不同环节，靠人工对账，缺口只能在 Excel 里算。</li>
+        <li><b>预约无标准：</b>供应商 / 物流商到货时间不固定，仓库收货能力（上午 / 下午托数）无法被前置利用，造成排队或空等。</li>
+        <li><b>异常不可追踪：</b>承诺量 < 计划量、实收量 < 承诺量时，没有闭环去"记缺口 → 催补齐 → 验补齐"。</li>
+        <li><b>检验两张皮：</b>供应商自检与工厂到厂检用不同模板、互不可见，质量问题追溯困难。</li>
+        <li><b>思路分散：</b>已有 8 个原型页面，但缺少统一架构，新需求一来容易重复造页面。</li>
+      </ul>
+      <h3>1.2 设计目标</h3>
+      <div class="grid-2">
+        <div class="card"><h4 style="margin-top:0">业务目标</h4>
+          <ul style="margin-bottom:0">
+            <li>计划与承诺同源可视，缺口实时计算</li>
+            <li>所有到货（直送 / 自提）必须"先预约后到厂"，且预约时段受仓库上午 / 下午能力约束</li>
+            <li>异常 100% 留痕，缺口可追踪到"谁、差多少、何时补齐"</li>
+            <li>检验模板统一，自检与到厂检在同一上下文</li>
+          </ul>
+        </div>
+        <div class="card"><h4 style="margin-top:0">体验目标</h4>
+          <ul style="margin-bottom:0">
+            <li>四个角色各有一个"工作台"，只看到自己该看/该做的</li>
+            <li>物流路线可视化，直送 vs 自提一目了然</li>
+            <li>移动端（仓库 / 物流部现场）与桌面端（计划员 / 供应商办公）双形态</li>
+            <li>原型阶段用 localStorage，可平滑切到后端 + SAP 集成</li>
+          </ul>
+        </div>
+      </div>
+      <h3>1.3 现状盘点（现有 8 个页面已覆盖什么）</h3>
+      <table>
+        <thead><tr><th>页面文件</th><th>角色 / 域</th><th>已实现要点</th></tr></thead>
+        <tbody>
+          <tr><td><code>material-plan.html</code></td><td><span class="tag t-planner">计划员</span></td><td>导入物料计划 + SAP ASN（回填承诺）、承诺可编辑 + 调整原因历史、承诺缺口 / 实际到货缺口、物料月历、导出</td></tr>
+          <tr><td><code>supplier-plan.html</code></td><td><span class="tag t-supplier">供应商</span></td><td>计划确认（选自提/直送 + 承诺数量 + 箱托自动算）、直送预约（选日期）、自提取货</td></tr>
+          <tr><td><code>appointment-calendar.html</code></td><td><span class="tag t-ops">运营</span><span class="tag t-carrier">物流商</span></td><td>预约日历（送货/自提标记）、物流路线与运输轨迹弹窗（发货→中转→在途→到达 + 进度条）</td></tr>
+          <tr><td><code>logistics-home.html</code></td><td><span class="tag t-ops">物流部</span></td><td>首页待办（待登记发货/待取货）、供应商直送发货登记、物流商取货登记入口</td></tr>
+          <tr><td><code>pickup-receipt.html</code></td><td><span class="tag t-carrier">物流商</span></td><td>待取货计划、自提取货、新增自提预约（含时间段）</td></tr>
+          <tr><td><code>index.html</code>（库区维护）</td><td><span class="tag t-warehouse">仓库</span></td><td>库区 + 每日"上午/下午"托数能力日历（默认各150、周末节假日留空）——<b>即预约能力底座</b></td></tr>
+          <tr><td><code>warehouse-material.html</code></td><td><span class="tag t-warehouse">仓库</span></td><td>物料↔库区映射基础数据维护</td></tr>
+          <tr><td><code>supplier-plan.html</code> 等缺</td><td><span class="tag t-warehouse">仓库</span><span class="tag t-system">系统</span></td><td><b>缺：</b>仓库收货登记页、检验报告（模板/自检/到厂检）、缺口补齐闭环、异常统一看板</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 2 -->
+    <section id="s2">
+      <h2>2 · 角色与职责（RACI）</h2>
+      <p>四个业务角色 + 一个工厂运营协调岗（物流部"王工"）+ SAP 系统。R=负责执行，A=最终负责，C=被咨询，I=被通知。</p>
+      <table>
+        <thead><tr><th>活动</th><th><span class="tag t-planner">计划员</span></th><th><span class="tag t-supplier">供应商</span></th><th><span class="tag t-carrier">物流商</span></th><th><span class="tag t-warehouse">仓库</span></th><th><span class="tag t-ops">物流部</span></th><th><span class="tag t-system">SAP</span></th></tr></thead>
+        <tbody>
+          <tr><td>导入物料计划</td><td class="ok">R/A</td><td class="partial">I</td><td>—</td><td>—</td><td>C</td><td class="ok">C</td></tr>
+          <tr><td>导入 / 回填 ASN（承诺）</td><td class="ok">R/A</td><td class="ok">R</td><td>—</td><td>—</td><td>I</td><td class="ok">C</td></tr>
+          <tr><td>调整承诺发货数量</td><td class="ok">R/A（留原因）</td><td class="partial">C</td><td>—</td><td>—</td><td>I</td><td>I</td></tr>
+          <tr><td>选择直送 / 自提</td><td>C</td><td class="ok">R/A</td><td class="partial">R（仅自提）</td><td>—</td><td>I</td><td>—</td></tr>
+          <tr><td>预约送货（日期+上午/下午）</td><td class="partial">C</td><td class="ok">R（直送）</td><td class="ok">R（自提）</td><td class="ok">A（给能力）</td><td class="partial">R</td><td>—</td></tr>
+          <tr><td>取货 / 干线配送 / 路线追踪</td><td>—</td><td>—</td><td class="ok">R/A</td><td>I</td><td class="partial">C</td><td>—</td></tr>
+          <tr><td>发货登记</td><td>I</td><td class="ok">R（直送）</td><td class="ok">R（自提）</td><td>I</td><td class="partial">C</td><td>I</td></tr>
+          <tr><td>收货登记（实收数量）</td><td>I</td><td>—</td><td>I</td><td class="ok">R/A</td><td class="partial">C</td><td>I</td></tr>
+          <tr><td>供应商自检（按模板）</td><td>I</td><td class="ok">R/A</td><td>—</td><td>C</td><td>I</td><td>—</td></tr>
+          <tr><td>工厂到厂检（按模板）</td><td>I</td><td>C</td><td>—</td><td class="ok">R/A</td><td class="partial">C</td><td>I</td></tr>
+          <tr><td>缺口记录与补齐追踪</td><td class="ok">A（管控）</td><td class="ok">R（补齐）</td><td>I</td><td class="partial">R（录入实收）</td><td class="partial">C</td><td>C</td></tr>
+        </tbody>
+      </table>
+      <div class="callout"><b>关键澄清：</b>你描述的"仓库负责收货、供应商负责发货、物流商负责自提配送"——在系统里"预约"动作由<b>谁发货谁预约</b>：直送由供应商预约，自提由物流商预约；仓库只负责<b>提供上午/下午收货能力</b>并确认/放行。这样避免"三方都来约、仓库对不上"的混乱。</div>
+    </section>
+
+    <!-- 3 -->
+    <section id="s3">
+      <h2>3 · 信息架构与页面地图</h2>
+      <p>把现有 8 个页面收进 <b>4 大域</b>，并标出缺口。后续新页面都挂到对应域下，不再零散生长。</p>
+      <div class="grid-2">
+        <div class="card">
+          <h4 style="margin-top:0"><span class="tag t-planner">域A</span> 计划与承诺</h4>
+          <ul style="margin-bottom:0">
+            <li><code>material-plan.html</code> — 计划员工作台（计划/ASN导入、承诺调整、缺口、月历）</li>
+            <li><code>supplier-plan.html</code> — 供应商协同（确认、预约、自提）</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0"><span class="tag t-ops">域B</span> 预约与物流</h4>
+          <ul style="margin-bottom:0">
+            <li><code>appointment-calendar.html</code> — 预约日历 + 物流路线/轨迹</li>
+            <li><code>logistics-home.html</code> — 物流部首页（发货/取货登记入口）</li>
+            <li><code>pickup-receipt.html</code> — 物流商自提</li>
+            <li><code>index.html</code> — 库区 + 每日上午/下午托数能力（预约能力底座）</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0"><span class="tag t-warehouse">域C</span> 仓库收货与检验 <span class="pill gap">待补</span></h4>
+          <ul style="margin-bottom:0">
+            <li><code>warehouse-material.html</code> — 物料↔库区映射（已建）</li>
+            <li><b>[待建]</b> 仓库收货登记（录入实收 → 触发到货缺口）</li>
+            <li><b>[待建]</b> 检验报告（模板管理 / 供应商自检 / 工厂到厂检）</li>
+            <li><b>[待建]</b> 异常与缺口补齐看板</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0"><span class="tag t-system">域D</span> 基础数据与集成</h4>
+          <ul style="margin-bottom:0">
+            <li>库区 / 物料主数据（已建）</li>
+            <li>SAP 主数据 & ASN 接口（规划）</li>
+            <li>用户 / 角色 / 权限（规划）</li>
+          </ul>
+        </div>
+      </div>
+      <div class="legend">
+        <span><span class="pill ok">已建</span> 原型可用</span>
+        <span><span class="pill partial">部分</span> 已建但需补强</span>
+        <span><span class="pill gap">待补</span> 本方案新增</span>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section id="s4">
+      <h2>4 · 核心概念与数据模型</h2>
+      <p>所有页面共享同一套实体。最关键的是把"<b>承诺</b>"和"<b>缺口</b>"定义清楚，这是你异常场景的底座。</p>
+
+      <h3>4.1 实体与关键字段</h3>
+      <table>
+        <thead><tr><th>实体</th><th>关键字段</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><b>物料计划行</b><br><span class="tag t-planner">计划员</span></td><td>物料编号、SAP供应商编号、供应商名称、计划员、采购凭证、计划发货日期、计划到货日期、<b>计划发货数量</b>、配送方式(直送/自提)、指定物流商、标准装箱/装托数量、箱数、托数、库区</td><td>工厂需求侧。每行 = 一个"物料+采购凭证"</td></tr>
+          <tr><td><b>承诺 / ASN</b><br><span class="tag t-supplier">供应商</span></td><td><b>承诺发货数量</b>(=ASN导入,可调整)、承诺发货日期、承诺到货日期、发货方式(直送/自提)、确认状态、<b>调整原因历史(promiseHistory)</b></td><td>供应商回复侧。缺口① = 计划 − 承诺</td></tr>
+          <tr><td><b>预约</b><br><span class="tag t-ops">运营</span></td><td>关联计划行/采购凭证、预约日期、<b>时段(上午/下午)</b>、状态(待确认/已确认/已取消)、关联物流路线</td><td>必须"先预约后到厂"；时段受库区上午/下午托数能力约束</td></tr>
+          <tr><td><b>物流路线</b><br><span class="tag t-carrier">物流商</span></td><td>类型(直送/自提)、起点(供应商仓/物流商仓)、终点(工厂库区)、节点(取货→干线→中转→到厂)、里程、预计时长、承运方、实时轨迹</td><td>直送=供应商车；自提=物流商取货后配送</td></tr>
+          <tr><td><b>发货</b><br><span class="tag t-supplier">供应商</span></td><td>实际发货数量、发货日期、发货单号</td><td>供应商/物流商登记</td></tr>
+          <tr><td><b>收货</b><br><span class="tag t-warehouse">仓库</span></td><td><b>实际到货数量</b>、收货日期、收货人、<b>到货缺口=计划−实际到货</b></td><td>仓库录入，缺口②来源</td></tr>
+          <tr><td><b>检验报告</b><br><span class="tag t-warehouse">仓库</span></td><td>模板(工厂定义)、检验项目(外观/尺寸/性能)、标准值/允差、实测值、判定；<b>供应商自检</b>(发货前) + <b>工厂到厂检</b>(到货后)</td><td>本方案新增模块</td></tr>
+          <tr><td><b>缺口补齐</b><br><span class="tag t-planner">计划员</span></td><td>计划行ID、缺口类型(承诺/到货)、原始缺口、已补数量、<b>余额</b>、关联后续发货、状态(补齐中/已补齐)</td><td>异常闭环核心</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2 两根标尺（务必区分）</h3>
+      <div class="grid-2">
+        <div class="card">
+          <h4 style="margin-top:0">① 承诺缺口 = 计划 − 承诺</h4>
+          <p style="margin-bottom:8px">供应商回复的承诺 < 工厂计划时产生。由<u>计划员管控</u>：可调整承诺（留原因历史），或保留缺口等供应商后续 ASN 追加。</p>
+          <p class="note" style="margin:0">示例：计划 500,000，ASN 承诺 480,000 → 承诺缺口 20,000。</p>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0">② 到货缺口 = 计划 − 实际到货</h4>
+          <p style="margin-bottom:8px">实际收到 < 计划（或 < 承诺）时产生。由<u>仓库收货触发</u>，进入补齐队列，供应商后续发货时递减余额。</p>
+          <p class="note" style="margin:0">示例：计划 500,000，实收 470,000 → 到货缺口 30,000（其中 20,000 是承诺缺口延续 + 10,000 是发货不足）。</p>
+        </div>
+      </div>
+      <div class="callout"><b>补齐逻辑：</b>每行维护 <code>累计承诺</code> 与 <code>累计到货</code>。未补齐余额 = 计划 − 累计到货（或按期初口径 − 累计承诺）。供应商针对同一"物料+采购凭证"在后续 ASN/发货中追加，系统按 key 自动关联并递减余额，直到归零转"已补齐"。</div>
+    </section>
+
+    <!-- 5 -->
+    <section id="s5">
+      <h2>5 · 端到端业务流程（泳道图）</h2>
+      <div class="swim">
+        <div class="role"><span class="tag t-planner">计划员</span></div>
+        <div class="lane">
+          <div class="lane-item"><span class="ico" style="background:var(--r-planner)">1</span> 导入物料计划 <span class="why">（工厂需求）</span></div>
+          <div class="lane-item"><span class="ico" style="background:var(--r-planner)">2</span> 导入 SAP ASN → 自动回填"承诺发货数量"</div>
+          <div class="lane-item alt"><span class="ico" style="background:var(--r-planner)">↺</span> 必要时手动调整承诺（必填原因→写入历史）</div>
+          <div class="lane-item"><span class="ico" style="background:var(--r-planner)">◆</span> 监控缺口看板（承诺缺口 + 到货缺口）</div>
+        </div>
+        <div class="role"><span class="tag t-supplier">供应商</span></div>
+        <div class="lane">
+          <div class="lane-item"><span class="ico" style="background:var(--r-supplier)">3</span> 查看计划、确认（选直送/自提 + 承诺数量）</div>
+          <div class="lane-item"><span class="ico" style="background:var(--r-supplier)">4</span> 按工厂模板填<b>自检</b>（发货前）</div>
+          <div class="lane-item"><span class="ico" style="background:var(--r-supplier)">5</span> 直送：预约"日期+上午/下午"；自提：由物流商预约</div>
+          <div class="lane-item"><span class="ico" style="background:var(--r-supplier)">6</span> 发货登记（实际发货数量）</div>
+        </div>
+        <div class="role"><span class="tag t-carrier">物流商</span></div>
+        <div class="lane">
+          <div class="lane-item"><span class="ico" style="background:var(--r-carrier)">5'</span> 自提：预约"日期+上午/下午"、取货</div>
+          <div class="lane-item"><span class="ico" style="background:var(--r-carrier)">7</span> 干线配送，路线/轨迹可视化</div>
+        </div>
+        <div class="role"><span class="tag t-warehouse">仓库</span></div>
+        <div class="lane">
+          <div class="lane-item"><span class="ico" style="background:var(--r-warehouse)">8</span> 按预约时段收货，录入<b>实际到货数量</b></div>
+          <div class="lane-item"><span class="ico" style="background:var(--r-warehouse)">9</span> 填<b>到厂检</b>（按同一模板）</div>
+          <div class="lane-item exc"><span class="ico" style="background:var(--r-warehouse)">!</span> 不合格→退换/特采；产生到货缺口</div>
+        </div>
+        <div class="role"><span class="tag t-planner">计划员</span></div>
+        <div class="lane">
+          <div class="lane-item"><span class="ico" style="background:var(--r-planner)">10</span> 缺口自动入账，催供应商后续补齐 → 回到 ③</div>
+        </div>
+      </div>
+      <p class="note">流程是闭环的：第 ⑩ 步把缺口推回供应商，供应商在后续发货里补齐，余额归零即闭环。未预约到货、超发、检验不合格都会在第 ⑧⑨ 步分叉到异常分支（见第 7 章）。</p>
+    </section>
+
+    <!-- 6 -->
+    <section id="s6">
+      <h2>6 · 各角色功能设计</h2>
+
+      <h3>6.1 <span class="tag t-planner">计划员</span> 工作台（material-plan.html · 已建 + 补强）</h3>
+      <div class="grid-2">
+        <div class="card"><h4 style="margin-top:0">已建能力</h4>
+          <ul style="margin-bottom:0"><li>导入物料计划 / SAP ASN，ASN 自动回填承诺</li><li>承诺可编辑，调整必填原因并写 promiseHistory</li><li>承诺缺口 / 实际到货缺口列、月历视图</li><li>导出物料</li></ul>
+        </div>
+        <div class="card"><h4 style="margin-top:0">补强点</h4>
+          <ul style="margin-bottom:0"><li>增加"缺口补齐看板"Tab（关联承诺缺口 + 到货缺口 + 补齐进度）</li><li>承诺调整时联动"补齐队列"</li><li>异常统一提醒（逾期未到、超发、检验不合格）</li></ul>
+        </div>
+      </div>
+
+      <h3>6.2 <span class="tag t-supplier">供应商</span> 协同平台（supplier-plan.html · 已建）</h3>
+      <div class="grid-2">
+        <div class="card"><h4 style="margin-top:0">已建能力</h4>
+          <ul style="margin-bottom:0"><li>计划确认：选自提/直送、承诺数量、箱托自动算</li><li>直送预约（选日期）</li><li>自提取货视图</li></ul>
+        </div>
+        <div class="card"><h4 style="margin-top:0">补强点</h4>
+          <ul style="margin-bottom:0"><li>直送预约<b>增加上午/下午时段</b>选择（受库区能力约束）</li><li>新增"<b>自检填报</b>"入口（按工厂模板）</li><li>展示自己名下的"待补齐缺口"，便于安排后续发货</li></ul>
+        </div>
+      </div>
+
+      <h3>6.3 <span class="tag t-carrier">物流商</span> 自提与配送（pickup-receipt.html + appointment-calendar.html · 已建）</h3>
+      <div class="grid-2">
+        <div class="card"><h4 style="margin-top:0">已建能力</h4>
+          <ul style="margin-bottom:0"><li>待取货计划、自提取货、新增自提预约（含时间段）</li><li>物流路线与运输轨迹弹窗（发货→中转→在途→到达 + 进度条）</li></ul>
+        </div>
+        <div class="card"><h4 style="margin-top:0">补强点</h4>
+          <ul style="margin-bottom:0"><li>自提预约同样接入<b>上午/下午能力</b>校验</li><li>路线节点标准化（取货→干线→中转→到厂），直送/自提区分图标</li><li>超期/异常高亮</li></ul>
+        </div>
+      </div>
+
+      <h3>6.4 <span class="tag t-warehouse">仓库</span> 收货与检验（<span class="pill gap">待建</span>）</h3>
+      <div class="card">
+        <p style="margin-bottom:8px"><b>本方案重点新增。</b>目前仓库只有"库区维护 + 物料库区映射 + 每日上午/下午托数能力"，但<b>没有收货登记页、没有检验页</b>。需要补齐：</p>
+        <ul style="margin-bottom:0">
+          <li><b>收货登记页</b>：按预约时段到货 → 录入实际到货数量 → 自动算出货缺口 → 触发补齐队列；支持"未预约到货"拦截提示。</li>
+          <li><b>到厂检页</b>：加载工厂检验模板，录入实测值 → 自动判定合格/特采/不合格；不合格触发退换货或特采流程。</li>
+          <li><b>收货能力联动</b>：预约时段（上午/下午）直接读 <code>index.html</code> 的库区托数，超容量时预警。</li>
+        </ul>
+      </div>
+
+      <h3>6.5 <span class="tag t-ops">物流部</span> 运营协调（logistics-home.html · 已建）</h3>
+      <p>王工首页作为"现场总台"：待登记发货、待取货、异常提醒。建议把"缺口补齐看板""逾期未到""检验不合格"也聚合到这里，成为运营视角的统一异常台。</p>
+    </section>
+
+    <!-- 7 -->
+    <section id="s7">
+      <h2>7 · 异常场景与缺口补齐闭环（重点）</h2>
+      <p>这是你描述里最关键的"计划与现实不一致"的处理。目标是：<b>任何不一致都留痕、可追踪、能补齐</b>。</p>
+
+      <h3>7.1 状态机（物料计划行）</h3>
+      <div class="sm">
+        <span class="node">计划中</span><span class="conn">→</span>
+        <span class="node">待供应商确认</span><span class="conn">→</span>
+        <span class="node">已承诺</span><span class="conn">→</span>
+        <span class="node">已预约</span><span class="conn">→</span>
+        <span class="node">已发货</span><span class="conn">→</span>
+        <span class="node">已到货</span><span class="conn">→</span>
+        <span class="node">检验中</span><span class="conn">→</span>
+        <span class="node done">检验合格</span>
+      </div>
+      <div class="sm">
+        <span class="node alt">承诺缺口</span><span class="conn">↺</span>
+        <span class="node alt">补齐中</span><span class="conn">→</span>
+        <span class="node done">已补齐</span>
+        <span class="conn">|</span>
+        <span class="node exc">到货缺口</span><span class="conn">→</span>
+        <span class="node exc">检验不合格</span><span class="conn">→</span>
+        <span class="node exc">退换/特采</span>
+      </div>
+
+      <h3>7.2 异常场景处理矩阵</h3>
+      <table>
+        <thead><tr><th>异常</th><th>触发点</th><th>系统动作</th><th>责任方</th></tr></thead>
+        <tbody>
+          <tr><td><b>承诺量 &lt; 计划量</b><br>（产能/缺料）</td><td>ASN 导入 / 供应商确认</td><td>记录<b>承诺缺口</b>；计划员可调整承诺（留原因）或保留缺口进补齐队列</td><td><span class="tag t-planner">计划员</span><span class="tag t-supplier">供应商</span></td></tr>
+          <tr><td><b>实收量 &lt; 承诺量</b><br>（发货不足）</td><td>仓库收货</td><td>记录<b>到货缺口</b>；余额进补齐队列；提示计划员催补</td><td><span class="tag t-warehouse">仓库</span><span class="tag t-planner">计划员</span></td></tr>
+          <tr><td><b>实收量 &gt; 承诺量</b><br>（超发）</td><td>仓库收货</td><td>提示超发；可收货或拒收；超收部分计入下一期或退供应商</td><td><span class="tag t-warehouse">仓库</span></td></tr>
+          <tr><td><b>未预约到货</b></td><td>到厂无预约</td><td>拦截提示"无预约"；引导先补预约或走异常放行（需运营审批）</td><td><span class="tag t-ops">运营</span></td></tr>
+          <tr><td><b>检验不合格</b></td><td>到厂检</td><td>标记不合格→退换货/特采；影响补齐与供应商绩效</td><td><span class="tag t-warehouse">仓库</span></td></tr>
+          <tr><td><b>逾期未到</b></td><td>超过预约日期</td><td>预警；转异常看板；催发货</td><td><span class="tag t-planner">计划员</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>7.3 缺口补齐闭环（核心算法）</h3>
+      <div class="flow">
+        <div class="step"><div class="n">① 入账</div><div class="t">缺口产生</div><div class="d">承诺/到货缺口写入补齐队列，状态=补齐中</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">② 关联</div><div class="t">同源归集</div><div class="d">按"物料+采购凭证"key 聚合多条缺口</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">③ 催补</div><div class="t">通知供应商</div><div class="d">供应商工作台显示"待补齐缺口"</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">④ 补齐</div><div class="t">后续 ASN/发货</div><div class="d">同 key 追加承诺/到货，余额递减</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">⑤ 闭环</div><div class="t">余额=0</div><div class="d">状态转"已补齐"，看板消除</div></div>
+      </div>
+      <div class="callout"><b>设计要点：</b>补齐<b>不删改原记录</b>，而是追加。这样既保留"当初承诺了多少"的审计链，又能追踪"后来补了多少"。余额公式：<code>未补齐余额 = 计划量 − Σ(各次实际到货量)</code>（或按期初口径用承诺量）。</div>
+    </section>
+
+    <!-- 8 -->
+    <section id="s8">
+      <h2>8 · 预约与物流路线设计</h2>
+
+      <h3>8.1 预约规则（上午 / 下午）</h3>
+      <ul>
+        <li><b>谁发货谁预约：</b>直送由供应商预约；自提由物流商预约。</li>
+        <li><b>必须预约后到厂：</b>仓库收货以预约时段为准，无预约拦截或走异常放行。</li>
+        <li><b>时段受能力约束：</b>预约的"上午/下午"直接校验 <code>index.html</code> 的库区每日托数——该时段已满则不可约，提示换时段。</li>
+        <li><b>预约信息：</b>日期 + 上午/下午 + 关联计划行/采购凭证 + 物流路线。</li>
+      </ul>
+      <div class="grid-2">
+        <div class="route">
+          <h4 style="margin-top:0"><span class="tag t-supplier">直送</span> 路线</h4>
+          <div class="path">
+            <span class="node-b">供应商仓</span><span class="seg">→ 干线直达 →</span><span class="node-b">工厂库区</span>
+          </div>
+          <p class="note" style="margin:0">承运方=供应商自营/其签约车；供应商本人预约上午/下午。</p>
+        </div>
+        <div class="route">
+          <h4 style="margin-top:0"><span class="tag t-carrier">自提</span> 路线</h4>
+          <div class="path">
+            <span class="node-b">供应商仓</span><span class="seg carrier">→ 物流商取货 →</span><span class="node-b">干线</span><span class="seg carrier">→ 到厂</span><span class="node-b">工厂库区</span>
+          </div>
+          <p class="note" style="margin:0">多一个"取货"节点；物流商预约上午/下午，并负责轨迹可视化。</p>
+        </div>
+      </div>
+
+      <h3>8.2 物流路线可视化</h3>
+      <p>沿用 <code>appointment-calendar.html</code> 的路线弹窗思路，标准化为：起点 →（取货）→ 干线 → 中转 → 到厂，配里程/时长/进度条。直送与自提用不同颜色与图标区分（已在原型中用橙色=送货、绿色=自提）。建议补：路线节点由"物料配送方式 + 指定物流商"自动生成，而非手工填。</p>
+    </section>
+
+    <!-- 9 -->
+    <section id="s9">
+      <h2>9 · 检验设计（新模块）</h2>
+      <p>你明确要求：<b>供应商按工厂模板填自检，工厂到货后填检验</b>。这是当前最明显的缺口，独立成模块。</p>
+
+      <h3>9.1 三层结构</h3>
+      <div class="flow">
+        <div class="step" style="border-color:var(--r-system)"><div class="n">① 模板</div><div class="t">工厂检验模板</div><div class="d">检验项目(外观/尺寸/性能)、标准值、允差、判定规则</div></div>
+        <div class="arrow">→</div>
+        <div class="step" style="border-color:var(--r-supplier)"><div class="n">② 自检</div><div class="t">供应商自检</div><div class="d">发货前按模板填实测值 → 合格/不合格</div></div>
+        <div class="arrow">→</div>
+        <div class="step" style="border-color:var(--r-warehouse)"><div class="n">③ 到厂检</div><div class="t">工厂到厂检</div><div class="d">到货后同模板填实测值 → 合格/特采/不合格</div></div>
+      </div>
+
+      <h3>9.2 检验模板字段（示例）</h3>
+      <table>
+        <thead><tr><th>检验项目</th><th>标准值</th><th>允差</th><th>实测（供应商/工厂各填）</th><th>判定</th></tr></thead>
+        <tbody>
+          <tr><td>外观</td><td>无划痕/无毛刺</td><td>—</td><td>—</td><td>合格/不合格</td></tr>
+          <tr><td>关键尺寸 A</td><td>50.00 mm</td><td>±0.05</td><td>—</td><td>合格/特采/不合格</td></tr>
+          <tr><td>性能（扭矩）</td><td>≥ 25 N·m</td><td>—</td><td>—</td><td>合格/不合格</td></tr>
+        </tbody>
+      </table>
+      <div class="grid-2">
+        <div class="card"><h4 style="margin-top:0"><span class="tag t-supplier">供应商自检</span></h4>
+          <ul style="margin-bottom:0"><li>入口：供应商工作台"自检填报"</li><li>必须<b>发货前</b>完成，否则限制发货登记</li><li>自检不合格需备注原因</li></ul>
+        </div>
+        <div class="card"><h4 style="margin-top:0"><span class="tag t-warehouse">工厂到厂检</span></h4>
+          <ul style="margin-bottom:0"><li>入口：仓库收货页关联检验</li><li>到货后填写，与自检同模板同上下文</li><li>不合格→退换/特采，并计入缺口与供应商绩效</li></ul>
+        </div>
+      </div>
+      <p class="note">两套检验用<b>同一模板版本</b>，便于对比"供应商自检 vs 工厂到厂检"差异，质量问题可追溯到具体项目与批次。</p>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10">
+      <h2>10 · 已建 / 待建对照（gap matrix）</h2>
+      <p>一张表看清"现在有什么、还差什么、优先级"。这是把混乱思路落到执行的关键。</p>
+      <table>
+        <thead><tr><th>能力</th><th>对应页面</th><th>状态</th><th>缺口 / 待办</th><th>优先级</th></tr></thead>
+        <tbody>
+          <tr><td>导入物料计划 / ASN、承诺调整、缺口、月历</td><td>material-plan.html</td><td><span class="pill ok">已建</span></td><td>缺口补齐看板 Tab、异常统一提醒</td><td>P1</td></tr>
+          <tr><td>供应商计划确认（直送/自提+承诺）</td><td>supplier-plan.html</td><td><span class="pill ok">已建</span></td><td>预约增加上午/下午时段</td><td>P1</td></tr>
+          <tr><td>供应商自检填报</td><td>—</td><td><span class="pill gap">待建</span></td><td>自检入口 + 模板绑定 + 发货前置校验</td><td><b>P0</b></td></tr>
+          <tr><td>预约日历 + 物流路线/轨迹</td><td>appointment-calendar.html</td><td><span class="pill ok">已建</span></td><td>路线节点按配送方式自动生成</td><td>P2</td></tr>
+          <tr><td>物流部首页 / 发货·取货登记</td><td>logistics-home.html</td><td><span class="pill ok">已建</span></td><td>聚合异常看板（缺口/逾期/不合格）</td><td>P1</td></tr>
+          <tr><td>物流商自提预约</td><td>pickup-receipt.html</td><td><span class="pill ok">已建</span></td><td>接入上午/下午能力校验</td><td>P1</td></tr>
+          <tr><td>库区 + 每日上午/下午托数能力</td><td>index.html</td><td><span class="pill ok">已建</span></td><td>作为预约能力底座已被引用，需与预约流打通</td><td>P1</td></tr>
+          <tr><td>物料↔库区映射</td><td>warehouse-material.html</td><td><span class="pill ok">已建</span></td><td>—</td><td>—</td></tr>
+          <tr><td><b>仓库收货登记（实收数量→到货缺口）</b></td><td>—</td><td><span class="pill gap">待建</span></td><td>按预约时段收货、录实收、算缺口、未预约拦截</td><td><b>P0</b></td></tr>
+          <tr><td><b>工厂到厂检</b></td><td>—</td><td><span class="pill gap">待建</span></td><td>模板加载、实测录入、合格/特采/不合格判定</td><td><b>P0</b></td></tr>
+          <tr><td><b>缺口补齐闭环</b></td><td>—</td><td><span class="pill gap">待建</span></td><td>入账→归集→催补→递减→闭环</td><td><b>P0</b></td></tr>
+          <tr><td>异常统一看板</td><td>—</td><td><span class="pill gap">待建</span></td><td>承诺缺口/到货缺口/超发/逾期/不合格聚合</td><td>P1</td></tr>
+          <tr><td>SAP 实时集成 / 后端持久化 / 权限</td><td>—</td><td><span class="pill gap">待建</span></td><td>localStorage → 后端 API，SAP 主数据/ASN 接口</td><td>P2</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11">
+      <h2>11 · 集成与数据</h2>
+      <ul>
+        <li><b>原型期：</b>沿用各页 localStorage（plans / asn / zones / materials 等 key），保证演示可跑、可迭代。</li>
+        <li><b>集成期：</b>物料计划、SAP ASN、承诺、预约、收货、检验统一收敛到后端 API；SAP 作为主数据（供应商、物料、采购凭证）与 ASN 来源。</li>
+        <li><b>唯一 key：</b>所有聚合（承诺缺口、到货缺口、补齐）都以 <code>物料编号 + 采购凭证</code> 为关联键，与现有 <code>makeKey</code> 逻辑一致。</li>
+        <li><b>权限：</b>四角色按 RACI 收敛工作台；供应商/物流商仅看自己数据（按 supplierCode / carrier 过滤）。</li>
+      </ul>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12">
+      <h2>12 · 实施里程碑建议</h2>
+      <div class="flow">
+        <div class="step" style="border-color:var(--danger)"><div class="n">M1 · P0</div><div class="t">补齐闭环</div><div class="d">仓库收货登记 + 到厂检 + 缺口补齐闭环（打通"实收→缺口→催补→补齐"）</div></div>
+        <div class="arrow">→</div>
+        <div class="step" style="border-color:var(--warning)"><div class="n">M2 · P0/P1</div><div class="t">自检 + 预约强化</div><div class="d">供应商自检填报；预约全面接入上午/下午能力约束</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">M3 · P1</div><div class="t">异常看板</div><div class="d">计划员/物流部异常统一台：缺口、逾期、超发、不合格聚合</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">M4 · P2</div><div class="t">集成固化</div><div class="d">后端 API + SAP 集成 + 权限 + 路线自动生成</div></div>
+      </div>
+      <div class="callout"><b>建议顺序理由：</b>你描述里"异常场景"和"检验"是业务最痛、当前完全空白的两块，优先 M1 把"收货→缺口→补齐"闭环跑通，再补自检与预约能力联动，最后才做集成。这样每一期都能独立演示、独立交付价值。</div>
+    </section>
+
+    <div class="footer-note">
+      本方案基于 2026-07-30 时点的 8 个原型页面现状整理，用于统一博格华纳宁波工厂物料计划与物流协同的产品架构。下一步可将本方案拆为 PRD，按 M1→M4 推进；也可据此补充"仓库收货登记""检验报告""缺口补齐"三个新页面原型。
+    </div>
+  </main>
+</div>
+</body>
+</html>

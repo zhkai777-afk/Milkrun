@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物流管理 - 待量与自提</title>
+<style>
+  :root {
+    --primary: #2a9d8f;
+    --primary-light: #e8f5f4;
+    --primary-dark: #21817a;
+    --text-primary: #333;
+    --text-secondary: #888;
+    --text-light: #aaa;
+    --border-color: #e8e8e8;
+    --bg-page: #f5f6f8;
+    --bg-card: #fff;
+    --status-waiting: #e67e22;
+    --status-done: #27ae60;
+    --danger: #e74c3c;
+    --radius: 6px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  .container {
+    padding: 24px 20px;
+  }
+
+  /* ===== Header ===== */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-card);
+    padding: 20px 28px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+  }
+
+  .header-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .header-avatar svg {
+    width: 28px;
+    height: 28px;
+    fill: #fff;
+  }
+
+  .header-info h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .header-info p {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
+
+  /* ===== Stats Cards ===== */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .stat-left { flex: 1; }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stat-sub .info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--text-light);
+    font-size: 9px;
+    color: var(--text-light);
+    cursor: help;
+  }
+
+  .stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 16px;
+  }
+
+  .stat-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .stat-icon.blue { background: #eef6fc; }
+  .stat-icon.blue svg { fill: #4a90d9; }
+  .stat-icon.cyan { background: #eefbfb; }
+  .stat-icon.cyan svg { fill: #42b8c2; }
+  .stat-icon.purple { background: #f3eeff; }
+  .stat-icon.purple svg { fill: #8b6ed8; }
+  .stat-icon.teal { background: #e8f7f5; }
+  .stat-icon.teal svg { fill: #3dbda9; }
+
+  /* ===== Action Buttons Row ===== */
+  .action-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 18px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .btn-primary:hover { background: var(--primary-dark); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+
+  .btn-outline:hover { background: var(--primary-light); }
+
+  .btn-info-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  /* ===== Filter Bar ===== */
+  .filter-bar {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 18px 24px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+  }
+
+  .filter-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .filter-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .filter-item label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .filter-input {
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 160px;
+  }
+
+  .filter-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(42,157,143,0.1);
+  }
+
+  .filter-date {
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text-primary);
+    outline: none;
+    min-width: 130px;
+  }
+
+  .filter-date:focus {
+    border-color: var(--primary);
+  }
+
+  .filter-sep {
+    color: var(--text-light);
+    font-size: 12px;
+  }
+
+  .btn-query {
+    height: 32px;
+    padding: 0 20px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-query:hover { background: var(--primary-dark); }
+
+  .btn-reset {
+    height: 32px;
+    padding: 0 18px;
+    background: #fff;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-reset:hover {
+    border-color: var(--text-light);
+    color: var(--text-primary);
+  }
+
+  /* ===== Data Table ===== */
+  .table-section {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .table-title {
+    padding: 14px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-dark);
+    background: var(--primary-light);
+    border-bottom: 1px solid #d4ece9;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .data-table th {
+    background: #fafbfc;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: 14px 16px;
+    font-size: 12px;
+    color: var(--text-primary);
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+  }
+
+  .data-table tr:hover td {
+    background: #fafbfd;
+  }
+
+  .data-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Status badges */
+  .status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  .status-dot::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-dot.waiting::before { background: var(--status-waiting); }
+  .status-dot.done::before { background: var(--status-done); }
+
+  .link-action {
+    color: var(--primary);
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 12px;
+  }
+
+  .link-action:hover { text-decoration: underline; }
+
+  .link-danger {
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .link-danger:hover { text-decoration: underline; }
+
+  .action-links {
+    display: flex;
+    gap: 12px;
+  }
+
+  /* ===== Pagination ===== */
+  .pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border-color);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .pagination-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .page-size-select {
+    height: 26px;
+    padding: 0 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text-primary);
+    outline: none;
+    width: 64px;
+  }
+
+  .pagination-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .page-btn {
+    min-width: 30px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0 8px;
+    transition: all 0.15s;
+  }
+
+  .page-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .page-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+
+  .page-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .page-jump {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+  }
+
+  .page-jump input {
+    width: 40px;
+    height: 26px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 12px;
+    outline: none;
+  }
+
+  .page-jump button {
+    height: 26px;
+    padding: 0 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-secondary);
+  }
+
+  .page-jump button:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  /* ===== Tabs ===== */
+  .tab-nav {
+    display: flex;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 0 8px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+  }
+
+  .tab-item {
+    position: relative;
+    padding: 14px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: color 0.2s;
+  }
+
+  .tab-item:hover { color: var(--text-primary); }
+
+  .tab-item.active { color: var(--primary); }
+
+  .tab-item.active::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: -1px;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--primary);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ===== Panel Action Row (新增自提预约) ===== */
+  .panel-action-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+  }
+
+  .btn-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-add:hover { background: var(--primary-dark); }
+
+  .btn-add svg { width: 14px; height: 14px; fill: #fff; }
+
+  /* ===== Empty State ===== */
+  .empty-state {
+    padding: 50px 0;
+    text-align: center;
+    color: var(--text-light);
+    font-size: 13px;
+  }
+
+  /* ===== Modal ===== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: 8px;
+    width: 480px;
+    max-width: 92vw;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
+
+  .modal-header {
+    padding: 16px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+  }
+
+  .modal-body {
+    padding: 20px 24px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .modal-field label {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .modal-field input,
+  .modal-field select {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .modal-field input:focus,
+  .modal-field select:focus {
+    border-color: var(--primary);
+  }
+
+  .modal-field.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .modal-field.two-col > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .modal-footer {
+    padding: 14px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .btn-cancel {
+    padding: 8px 18px;
+    background: #fff;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .btn-cancel:hover { border-color: var(--text-light); color: var(--text-primary); }
+
+  .btn-confirm {
+    padding: 8px 18px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .btn-confirm:hover { background: var(--primary-dark); }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-avatar">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    </div>
+    <div class="header-info">
+      <h1>欢迎回来，物流君一二</h1>
+      <p>271058</p>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-left">
+        <div class="stat-label">今日待量统计数量</div>
+        <div class="stat-value">0</div>
+        <div class="stat-sub">今日已统计完成量 0 <span class="info-icon">ⓘ</span></div>
+      </div>
+      <div class="stat-icon blue">
+        <svg viewBox="0 0 24 24"><path d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"/></svg>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-left">
+        <div class="stat-label">今日待量实际完成量</div>
+        <div class="stat-value">0</div>
+        <div class="stat-sub">7月内完成 0 <span class="info-icon">ⓘ</span></div>
+      </div>
+      <div class="stat-icon cyan">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-left">
+        <div class="stat-label">待在港计划数</div>
+        <div class="stat-value">0</div>
+        <div class="stat-sub">待在港实际完成量 0 <span class="info-icon">ⓘ</span></div>
+      </div>
+      <div class="stat-icon purple">
+        <svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-left">
+        <div class="stat-label">待自提收货数量</div>
+        <div class="stat-value">0</div>
+        <div class="stat-sub">已完成数量 0 <span class="info-icon">ⓘ</span></div>
+      </div>
+      <div class="stat-icon teal">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-nav">
+    <button class="tab-item active" data-tab="pickup-plan">待取货计划</button>
+    <button class="tab-item" data-tab="self-pickup">自提取货</button>
+  </div>
+
+  <!-- Panel: 待取货计划 -->
+  <div class="tab-panel active" id="pickup-plan">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-row">
+        <div class="filter-item">
+          <label>物料编号</label>
+          <input type="text" class="filter-input" placeholder="输入人或物料名称">
+        </div>
+        <div class="filter-item">
+          <label>物流选择时间</label>
+          <input type="date" class="filter-date">
+          <span class="filter-sep">—</span>
+          <input type="date" class="filter-date">
+        </div>
+        <button class="btn-query">查询</button>
+        <button class="btn-reset">重置</button>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-section">
+      <div class="table-title">数据列表</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>采购订单号</th>
+            <th>物料类型/件码</th>
+            <th>托盘</th>
+            <th>准备进港日期</th>
+            <th>预计进港时间</th>
+            <th>提交时间</th>
+            <th>部签状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>26091166050986746114</td>
+            <td>1660WMSG</td>
+            <td></td>
+            <td></td>
+            <td>2025-08-15 08:30-11:00</td>
+            <td>2025-07-29 10:23:45</td>
+            <td><span class="status-dot waiting">待提货</span></td>
+            <td><div class="action-links"><a class="link-action">查看</a><a class="link-danger">查看明细</a></div></td>
+          </tr>
+          <tr>
+            <td>2613620674711023385</td>
+            <td>1560WNMC</td>
+            <td></td>
+            <td></td>
+            <td>2025-09-05 08:30-11:00</td>
+            <td>2025-09-04 10:23:52</td>
+            <td><span class="status-dot done">已签章</span></td>
+            <td><div class="action-links"><a class="link-action">查看</a></div></td>
+          </tr>
+          <tr>
+            <td>2611675838419649857</td>
+            <td>502245B-CN-DW</td>
+            <td></td>
+            <td></td>
+            <td>2025-09-05 08:30-11:00</td>
+            <td>2025-09-04 10:23:17</td>
+            <td><span class="status-dot done">已签章</span></td>
+            <td><div class="action-links"><a class="link-action">查看</a></div></td>
+          </tr>
+          <tr>
+            <td>261914581772299917</td>
+            <td>5260R52-CN</td>
+            <td></td>
+            <td></td>
+            <td>2025-09-05 08:30-11:00</td>
+            <td>2025-05-08 14:14:36</td>
+            <td><span class="status-dot done">已签章</span></td>
+            <td><div class="action-links"><a class="link-action">查看</a></div></td>
+          </tr>
+          <tr>
+            <td>25048373131534988449</td>
+            <td>1560WNMC</td>
+            <td></td>
+            <td></td>
+            <td>2025-04-20 08:30-11:00</td>
+            <td>2025-04-28 14:14:59</td>
+            <td><span class="status-dot waiting">待提货</span></td>
+            <td><div class="action-links"><a class="link-action">查看</a></div></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-bar">
+        <div class="pagination-left">
+          <span>共 4 条</span>
+          <select class="page-size-select">
+            <option>10条/页</option>
+            <option>20条/页</option>
+            <option>50条/页</option>
+          </select>
+        </div>
+        <div class="pagination-right">
+          <button class="page-btn active">1</button>
+          <div class="page-jump">
+            <span>跳至</span>
+            <input type="number" value="1" min="1">
+            <button>页</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel: 自提取货 -->
+  <div class="tab-panel" id="self-pickup">
+    <div class="panel-action-row">
+      <button class="btn-add" id="openModalBtn">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        新增自提预约
+      </button>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-row">
+        <div class="filter-item">
+          <label>物料编号</label>
+          <input type="text" class="filter-input" placeholder="输入人或物料名称">
+        </div>
+        <div class="filter-item">
+          <label>物流选择时间</label>
+          <input type="date" class="filter-date">
+          <span class="filter-sep">—</span>
+          <input type="date" class="filter-date">
+        </div>
+        <button class="btn-query">查询</button>
+        <button class="btn-reset">重置</button>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-section">
+      <div class="table-title">数据列表</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>预约单号</th>
+            <th>供应商名称</th>
+            <th>物料编号</th>
+            <th>托盘号</th>
+            <th>预约日期</th>
+            <th>预约时间段</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="8">
+              <div class="empty-state">暂无自提预约数据</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-bar">
+        <div class="pagination-left">
+          <span>共 0 条</span>
+          <select class="page-size-select">
+            <option>10条/页</option>
+            <option>20条/页</option>
+            <option>50条/页</option>
+          </select>
+        </div>
+        <div class="pagination-right">
+          <button class="page-btn active">1</button>
+          <div class="page-jump">
+            <span>跳至</span>
+            <input type="number" value="1" min="1">
+            <button>页</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 新增自提预约 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">新增自提预约</div>
+      <div class="modal-body">
+        <div class="modal-field two-col">
+          <div>
+            <label>供应商名称</label>
+            <input type="text" placeholder="请输入供应商名称">
+          </div>
+          <div>
+            <label>物料编号</label>
+            <input type="text" placeholder="请输入物料编号">
+          </div>
+        </div>
+        <div class="modal-field two-col">
+          <div>
+            <label>托盘号</label>
+            <input type="text" placeholder="请输入托盘号">
+          </div>
+          <div>
+            <label>预约日期</label>
+            <input type="date">
+          </div>
+        </div>
+        <div class="modal-field two-col">
+          <div>
+            <label>预约开始时间</label>
+            <input type="time" value="08:30">
+          </div>
+          <div>
+            <label>预约结束时间</label>
+            <input type="time" value="11:00">
+          </div>
+        </div>
+        <div class="modal-field">
+          <label>备注</label>
+          <input type="text" placeholder="选填">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="cancelModalBtn">取消</button>
+        <button class="btn-confirm">确定</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Tab switching
+  const tabItems = document.querySelectorAll('.tab-item');
+  const panels = document.querySelectorAll('.tab-panel');
+  tabItems.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabItems.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Modal: 新增自提预约
+  const overlay = document.getElementById('modalOverlay');
+  document.getElementById('openModalBtn').addEventListener('click', () => overlay.classList.add('active'));
+  document.getElementById('cancelModalBtn').addEventListener('click', () => overlay.classList.remove('active'));
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); });
+</script>
+
+</body>
+</html>

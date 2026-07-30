@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="color-scheme" content="light">
+  <title>博格华纳 · 物流管理</title>
+  <style>
+    :root {
+      --primary: #07868d;
+      --primary-dark: #046b71;
+      --primary-soft: #e9f7f7;
+      --primary-light: #eef9f9;
+      --text: #27313a;
+      --text-2: #5e6975;
+      --text-3: #8b95a1;
+      --surface: #ffffff;
+      --canvas: #f4f6f8;
+      --muted: #f6f8fa;
+      --border: #e5e9ef;
+      --border-strong: #d8dee7;
+      --danger: #e95d62;
+      --danger-soft: #fff0f0;
+      --success: #48a66b;
+      --success-soft: #eef9f1;
+      --warning: #d99026;
+      --warning-soft: #fff7e8;
+      --shadow-sm: 0 1px 3px rgba(27,39,51,.06);
+      --shadow: 0 12px 30px rgba(27,39,51,.08);
+      --shadow-lg: 0 20px 48px rgba(27,39,51,.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; -webkit-tap-highlight-color: transparent; }
+    body {
+      min-height: 100dvh;
+      background: var(--canvas);
+      color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding-bottom: calc(var(--safe-bottom) + 20px);
+      user-select: none;
+    }
+    button { font: inherit; cursor: pointer; touch-action: manipulation; border: none; background: none; }
+    button:active { transform: scale(.97); }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── Header ── */
+    .header {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: calc(var(--safe-top) + 10px) 20px 10px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .header-logo {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      display: grid; place-items: center;
+      font-size: 16px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .header-title { font-size: 16px; font-weight: 600; color: var(--text); }
+    .header-sub { font-size: 11px; color: var(--text-3); margin-top: -1px; }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--muted);
+      display: grid; place-items: center;
+      color: var(--text-2); transition: background .15s;
+    }
+    .icon-btn:active { background: var(--border); }
+    .badge-dot {
+      position: relative;
+    }
+    .badge-dot::after {
+      content: '';
+      position: absolute; top: 4px; right: 4px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--danger);
+      border: 1.5px solid var(--surface);
+    }
+
+    /* ── Page Body ── */
+    .page-body { padding: 16px 16px 0; max-width: 640px; margin: 0 auto; }
+    @media (min-width: 768px) {
+      .page-body { padding: 24px 0 0; }
+    }
+
+    /* ── Welcome ── */
+    .welcome { margin-bottom: 20px; }
+    .welcome-greeting { font-size: 22px; font-weight: 700; color: var(--text); }
+    .welcome-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; color: var(--text-3); }
+    .welcome-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border-strong); }
+    .welcome-meta strong { color: var(--text-2); font-weight: 500; }
+
+    /* ── Stats Row ── */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+    @media (min-width: 540px) { .stats-row { gap: 14px; } }
+    .stat-item {
+      background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border);
+      padding: 14px 12px; text-align: center;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .2s;
+    }
+    .stat-item:active { box-shadow: var(--shadow); }
+    .stat-num { font-size: 24px; font-weight: 700; color: var(--primary); line-height: 1.2; }
+    @media (min-width: 540px) { .stat-num { font-size: 28px; } }
+    .stat-label { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+    .stat-label.danger { color: var(--danger); }
+
+    /* ── Entry Cards ── */
+    .entry-section { margin-bottom: 20px; }
+    .section-title {
+      font-size: 15px; font-weight: 600; color: var(--text);
+      margin-bottom: 12px; padding-left: 2px;
+    }
+    .entry-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    @media (max-width: 374px) { .entry-cards { grid-template-columns: 1fr; } }
+    @media (min-width: 540px) { .entry-cards { gap: 16px; } }
+
+    .entry-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      display: flex; flex-direction: column; align-items: flex-start;
+      gap: 14px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .25s, transform .25s, border-color .25s;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .entry-card:active {
+      transform: scale(.98);
+      box-shadow: var(--shadow);
+      border-color: var(--primary);
+    }
+    @media (hover: hover) {
+      .entry-card:hover { box-shadow: var(--shadow); border-color: var(--border-strong); transform: translateY(-2px); }
+    }
+
+    .card-icon-wrap {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: grid; place-items: center;
+      flex-shrink: 0;
+    }
+    .card-icon-wrap.supplier { background: var(--primary-soft); color: var(--primary); }
+    .card-icon-wrap.carrier  { background: var(--warning-soft); color: var(--warning); }
+
+    .card-content { flex: 1; min-width: 0; }
+    .card-title { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    @media (min-width: 540px) { .card-title { font-size: 16px; } }
+    .card-desc { font-size: 12px; color: var(--text-3); margin-top: 5px; line-height: 1.4; }
+    .card-meta {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 10px; font-size: 12px;
+    }
+    .card-tag {
+      padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;
+      line-height: 1.6;
+    }
+    .card-tag.today { background: var(--primary-soft); color: var(--primary); }
+    .card-tag.pending { background: var(--warning-soft); color: var(--warning); }
+
+    /* ── Recent Section ── */
+    .recent-section { margin-bottom: 24px; }
+    .recent-list { display: flex; flex-direction: column; gap: 1px; }
+    .recent-item {
+      background: var(--surface);
+      padding: 14px 14px;
+      display: flex; align-items: center; gap: 12px;
+      border-radius: 0; cursor: pointer;
+      transition: background .15s;
+    }
+    .recent-item:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+    .recent-item:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+    .recent-item:only-child { border-radius: var(--radius); }
+    .recent-item:active { background: var(--primary-soft); }
+    .recent-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .recent-dot.supplier { background: var(--primary); }
+    .recent-dot.carrier  { background: var(--warning); }
+    .recent-info { flex: 1; min-width: 0; }
+    .recent-type { font-size: 11px; color: var(--text-3); }
+    .recent-code { font-size: 14px; font-weight: 500; color: var(--text); }
+    .recent-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .recent-status {
+      font-size: 12px; padding: 3px 8px; border-radius: 10px;
+      flex-shrink: 0; font-weight: 500;
+    }
+    .recent-status.ok      { background: var(--success-soft); color: var(--success); }
+    .recent-status.draft   { background: var(--muted); color: var(--text-3); }
+    .recent-status.pending { background: var(--warning-soft); color: var(--warning); }
+
+    /* ── Empty State ── */
+    .empty-state {
+      padding: 40px 20px; text-align: center; color: var(--text-3);
+      background: var(--surface); border-radius: var(--radius);
+    }
+    .empty-state svg { color: #c4cdd5; margin-bottom: 8px; }
+
+    /* ── Safari safe area fix ── */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .page-body { padding-bottom: calc(var(--safe-bottom) + 24px); }
+    }
+
+    /* ── SVG Icons ── */
+    .svg-icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .svg-icon.sm { width: 18px; height: 18px; }
+    .svg-icon.lg { width: 26px; height: 26px; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-logo">BW</div>
+      <div>
+        <div class="header-title">物流管理</div>
+        <div class="header-sub">博格华纳宁波</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn badge-dot" aria-label="通知">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="菜单">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Page Body -->
+  <div class="page-body">
+
+    <!-- Welcome -->
+    <div class="welcome">
+      <div class="welcome-greeting">上午好，王工</div>
+      <div class="welcome-meta">
+        <span>宁波博格华纳</span>
+        <span class="dot"></span>
+        <span>物流部</span>
+        <span class="dot"></span>
+        <strong>今日待处理 5 笔</strong>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-num">3</div>
+        <div class="stat-label danger">待登记发货</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">12</div>
+        <div class="stat-label">今日已登记</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">8</div>
+        <div class="stat-label">待取货</div>
+      </div>
+    </div>
+
+    <!-- Entry Cards -->
+    <div class="entry-section">
+      <div class="section-title">快捷登记</div>
+      <div class="entry-cards">
+        <!-- 供应商直送发货登记 -->
+        <button class="entry-card" onclick="navigate('supplier')">
+          <div class="card-icon-wrap supplier">
+            <svg class="svg-icon lg" viewBox="0 0 24 24">
+              <rect x="1" y="3" width="15" height="13" rx="2"/>
+              <polyline points="16 8 20 8 23 11 23 21 16 21"/>
+              <polyline points="8 12 12 12"/>
+              <polyline points="8 16 12 16"/>
+              <line x1="17" y1="12" x2="20" y2="12"/>
+              <line x1="17" y1="16" x2="20" y2="16"/>
+              <path d="M16 8v3h7"/>
+            </svg>
+          </div>
+          <div class="card-content">
+            <div class="card-title">供应商直送发货登记</div>
+            <div class="card-desc">供应商直接发货至博格华纳，录入发货单号、物料明细、预计到货时间</div>
+          </div>
+          <div class="card-meta">
+            <span class="card-tag today">今日 12 笔</span>
+          </div>
+        </button>
+
+        <!-- 物流商取货登记 -->
+        <button class="entry-card" onclick="navigate('carrier')">
+          <div class="card-icon-wrap carrier">
+            <svg class="svg-icon lg" viewBox="0 0 24 24">
+              <rect x="1" y="7" width="17" height="12" rx="2"/>
+              <circle cx="5.5" cy="21" r="2"/>
+              <circle cx="17.5" cy="21" r="2"/>
+              <polyline points="7.5 21 15.5 21"/>
+              <line x1="12" y1="7" x2="12" y2="3"/>
+              <line x1="9" y1="4" x2="15" y2="4"/>
+            </svg>
+          </div>
+          <div class="card-content">
+            <div class="card-title">物流商取货登记</div>
+            <div class="card-desc">物流商上门提货，登记取货计划、提货车辆、物流单号信息</div>
+          </div>
+          <div class="card-meta">
+            <span class="card-tag pending">待取 8 笔</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Recent Records -->
+    <div class="recent-section">
+      <div class="section-title">最近记录</div>
+      <div class="recent-list">
+        <div class="recent-item" onclick="navigate('supplier')">
+          <div class="recent-dot supplier"></div>
+          <div class="recent-info">
+            <div class="recent-type">供应商直送</div>
+            <div class="recent-code">SHP-20260723003</div>
+            <div class="recent-meta">博世汽车 · 2026-07-23 10:32</div>
+          </div>
+          <span class="recent-status ok">已签收</span>
+        </div>
+        <div class="recent-item" onclick="navigate('supplier')">
+          <div class="recent-dot supplier"></div>
+          <div class="recent-info">
+            <div class="recent-type">供应商直送</div>
+            <div class="recent-code">SHP-20260723002</div>
+            <div class="recent-meta">大陆集团 · 2026-07-23 09:15</div>
+          </div>
+          <span class="recent-status draft">草稿</span>
+        </div>
+        <div class="recent-item" onclick="navigate('carrier')">
+          <div class="recent-dot carrier"></div>
+          <div class="recent-info">
+            <div class="recent-type">物流商取货</div>
+            <div class="recent-code">PUP-20260723001</div>
+            <div class="recent-meta">顺丰物流 · 2026-07-23 08:50</div>
+          </div>
+          <span class="recent-status pending">待取货</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function navigate(type) {
+      // 模拟导航到对应登记页面
+      const routes = {
+        supplier: 'supplier-delivery.html',
+        carrier: 'carrier-pickup.html'
+      };
+      if (routes[type]) {
+        // 实际项目中替换为真实跳转
+        console.log('导航至: ' + routes[type]);
+        // location.href = routes[type];
+      }
+    }
+  </script>
+
+</body>
+</html>

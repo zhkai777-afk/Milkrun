@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="color-scheme" content="light">
+  <title>博格华纳 · 物流商取货登记</title>
+  <style>
+    :root {
+      --primary: #07868d;
+      --primary-dark: #046b71;
+      --primary-soft: #e9f7f7;
+      --primary-light: #eef9f9;
+      --text: #27313a;
+      --text-2: #5e6975;
+      --text-3: #8b95a1;
+      --surface: #ffffff;
+      --canvas: #f4f6f8;
+      --muted: #f6f8fa;
+      --border: #e5e9ef;
+      --border-strong: #d8dee7;
+      --danger: #e95d62;
+      --danger-soft: #fff0f0;
+      --success: #48a66b;
+      --success-soft: #eef9f1;
+      --warning: #d99026;
+      --warning-soft: #fff7e8;
+      --shadow-sm: 0 1px 3px rgba(27,39,51,.06);
+      --shadow: 0 12px 30px rgba(27,39,51,.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; -webkit-tap-highlight-color: transparent; }
+    body {
+      min-height: 100dvh; background: var(--canvas); color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding-bottom: calc(var(--safe-bottom) + 84px); user-select: none;
+    }
+    button { font: inherit; cursor: pointer; touch-action: manipulation; border: none; background: none; }
+    button:active { transform: scale(.97); }
+
+    /* ── Header ── */
+    .header {
+      position: sticky; top: 0; z-index: 10; background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: calc(var(--safe-top) + 10px) 16px 10px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .back-btn {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--muted);
+      display: grid; place-items: center; color: var(--text-2); transition: background .15s;
+    }
+    .back-btn:active { background: var(--border); }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .header-logo {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--warning), #b8761d);
+      color: #fff; display: grid; place-items: center; font-size: 16px; font-weight: 700; flex-shrink: 0;
+    }
+    .header-title { font-size: 16px; font-weight: 600; color: var(--text); }
+    .header-sub { font-size: 11px; color: var(--text-3); margin-top: -1px; }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--muted); display: grid; place-items: center; color: var(--text-2); }
+    .icon-btn:active { background: var(--border); }
+
+    /* ── Page Body ── */
+    .page-body { padding: 16px 16px 0; max-width: 640px; margin: 0 auto; }
+    @media (min-width: 768px) { .page-body { padding: 24px 0 0; } }
+
+    /* ── Page Intro ── */
+    .page-intro { margin-bottom: 16px; }
+    .page-intro h1 { font-size: 20px; font-weight: 700; color: var(--text); }
+    .page-intro p { font-size: 13px; color: var(--text-3); margin-top: 6px; line-height: 1.5; }
+
+    /* ── Pending List ── */
+    .pend-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 2px; }
+    .section-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .pend-select-all { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); }
+    .pend-select-all input { width: 18px; height: 18px; accent-color: var(--warning); }
+    .pend-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .pend-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px; box-shadow: var(--shadow-sm); cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .pend-item:has(input:checked) { border-color: var(--warning); background: var(--warning-soft); }
+    .pend-check { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--warning); flex-shrink: 0; }
+    .pend-body { flex: 1; min-width: 0; }
+    .pend-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .pend-code { font-size: 15px; font-weight: 600; color: var(--text); }
+    .pend-qty { font-size: 13px; color: var(--warning); font-weight: 600; white-space: nowrap; }
+    .pend-sub { font-size: 13px; color: var(--text-2); margin-top: 3px; }
+    .pend-meta { font-size: 11px; color: var(--text-3); margin-top: 5px; }
+    .pend-tag { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 11px; background: var(--muted); color: var(--text-3); margin-left: 6px; }
+    .pend-tag.transfer { background: var(--warning-soft); color: var(--warning); }
+
+    /* ── Tabs ── */
+    .tab-bar {
+      display: flex; gap: 6px; margin-bottom: 16px;
+      background: var(--muted); padding: 4px; border-radius: 10px;
+    }
+    .tab {
+      flex: 1; padding: 9px 8px; text-align: center; font-size: 14px; font-weight: 500;
+      color: var(--text-2); border-radius: 8px; transition: all .15s;
+    }
+    .tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); font-weight: 600; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Picked groups ── */
+    .group-title { font-size: 13px; font-weight: 600; color: var(--text-2); margin: 18px 0 8px; padding: 0 2px; }
+    .group-title:first-child { margin-top: 0; }
+    .group-count { color: var(--text-3); font-weight: 400; margin-left: 4px; }
+
+    /* ── Today List ── */
+    .recent-list { display: flex; flex-direction: column; gap: 1px; margin-bottom: 24px; }
+    .recent-item { background: var(--surface); padding: 14px; display: flex; align-items: center; gap: 12px; border-radius: 0; }
+    .recent-item:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+    .recent-item:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+    .recent-item:only-child { border-radius: var(--radius); }
+    .recent-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--warning); }
+    .recent-info { flex: 1; min-width: 0; }
+    .recent-type { font-size: 11px; color: var(--text-3); }
+    .recent-code { font-size: 14px; font-weight: 500; color: var(--text); }
+    .recent-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .recent-status { font-size: 12px; padding: 3px 8px; border-radius: 10px; flex-shrink: 0; font-weight: 500; }
+    .recent-status.shipped { background: var(--warning-soft); color: var(--warning); }
+    .recent-status.ok      { background: var(--success-soft); color: var(--success); }
+    .recent-status.danger  { background: var(--danger-soft); color: var(--danger); }
+
+    .empty-state { padding: 36px 20px; text-align: center; color: var(--text-3); background: var(--surface); border-radius: var(--radius); }
+
+    /* ── Bottom Action Bar ── */
+    .action-bar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 12px 16px calc(12px + var(--safe-bottom));
+      display: flex; align-items: center; gap: 12px; max-width: 640px; margin: 0 auto;
+    }
+    .action-info { flex: 1; font-size: 13px; color: var(--text-2); }
+    .action-info b { color: var(--warning); font-size: 17px; margin-right: 2px; }
+    .action-btn { padding: 12px 24px; background: var(--warning); color: #fff; font-size: 15px; font-weight: 600; border-radius: var(--radius-sm); }
+    .action-btn:disabled { background: var(--border-strong); opacity: .65; }
+    .action-btn:active:not(:disabled) { background: #b8761d; }
+
+    /* ── Bottom Sheet ── */
+    .sheet-mask { position: fixed; inset: 0; background: rgba(27,39,51,.4); z-index: 30; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .sheet-mask.show { opacity: 1; pointer-events: auto; }
+    .sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 31;
+      background: var(--surface); border-radius: 16px 16px 0 0; max-width: 640px; margin: 0 auto;
+      transform: translateY(100%); transition: transform .25s ease; max-height: 88dvh;
+      display: flex; flex-direction: column; padding-bottom: var(--safe-bottom);
+    }
+    .sheet.show { transform: translateY(0); }
+    .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
+    .sheet-title { font-size: 17px; font-weight: 700; }
+    .sheet-close { width: 32px; height: 32px; border-radius: 50%; background: var(--muted); display: grid; place-items: center; color: var(--text-2); }
+    .sheet-body { padding: 16px; overflow-y: auto; }
+    .sheet-foot { padding: 12px 16px calc(12px + var(--safe-bottom)); border-top: 1px solid var(--border); }
+    .sel-summary { background: var(--muted); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; }
+    .sel-summary .ss-head { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-2); font-weight: 500; }
+    .sel-summary .ss-list { margin-top: 8px; max-height: 130px; overflow-y: auto; }
+    .sel-summary .ss-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); padding: 4px 0; border-top: 1px dashed var(--border); }
+    .sel-summary .ss-item:first-child { border-top: none; }
+
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { display: block; font-size: 13px; font-weight: 500; color: var(--text-2); margin-bottom: 6px; }
+    .field .req { color: var(--danger); margin-left: 2px; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 11px 12px; font-size: 14px; color: var(--text);
+      background: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      outline: none; transition: border-color .15s, background .15s; font-family: inherit;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--primary); background: var(--surface); }
+    .field textarea { resize: vertical; min-height: 64px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .sheet-foot .action-btn { width: 100%; }
+
+    .svg-icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .svg-icon.sm { width: 18px; height: 18px; }
+
+    .toast {
+      position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%) scale(.9);
+      background: rgba(39,49,58,.92); color: #fff; padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <button class="back-btn" onclick="location.href='factory-warehouse.html'" aria-label="返回">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="header-brand">
+        <div class="header-logo">BW</div>
+        <div>
+          <div class="header-title">取货登记</div>
+          <div class="header-sub">物流商上门提货</div>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" aria-label="通知">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Page Body -->
+  <div class="page-body">
+
+    <div class="page-intro">
+      <h1>物流商取货登记</h1>
+      <p>从下方待取货列表勾选需提货的物料（如计划 15 日到货的 A、B、C），确认后生成取货登记并同步至工厂仓库待取货队列。</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar" id="tabBar">
+      <button class="tab active" data-tab="pending">待取货</button>
+      <button class="tab" data-tab="shipped">已取货</button>
+    </div>
+
+    <!-- Pending panel -->
+    <div class="tab-panel active" id="tabPending">
+      <div class="pend-toolbar">
+        <div class="section-title">待取货 <span id="pendCount" style="color:var(--text-3);font-weight:400;"></span></div>
+        <label class="pend-select-all"><input type="checkbox" id="selectAll"> 全选</label>
+      </div>
+      <div class="pend-list" id="pendList"></div>
+    </div>
+
+    <!-- Shipped panel -->
+    <div class="tab-panel" id="tabShipped">
+      <div id="shippedGroups"></div>
+    </div>
+
+  </div>
+
+  <!-- Bottom action bar -->
+  <div class="action-bar">
+    <div class="action-info">已选 <b id="selCount">0</b> 项物料</div>
+    <button class="action-btn" id="confirmBtn" disabled onclick="openSheet()">确认取货</button>
+  </div>
+
+  <!-- Confirm sheet -->
+  <div class="sheet-mask" id="sheetMask" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div class="sheet-head">
+      <div class="sheet-title">确认取货</div>
+      <button class="sheet-close" onclick="closeSheet()" aria-label="关闭">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="sel-summary">
+        <div class="ss-head"><span>已选物料</span><span id="ssCount"></span></div>
+        <div class="ss-list" id="ssList"></div>
+      </div>
+      <div class="field">
+        <label>取货单号<span class="req">*</span></label>
+        <input type="text" id="pickNo" placeholder="留空将自动生成">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>物流商名称<span class="req">*</span></label>
+          <input type="text" id="carrier" placeholder="如 顺丰物流">
+        </div>
+        <div class="field">
+          <label>关联供应商</label>
+          <input type="text" id="relSupplier" placeholder="自动带入" readonly>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>提货车辆（车牌）</label>
+          <input type="text" id="plate" placeholder="如 浙B·12345">
+        </div>
+        <div class="field">
+          <label>司机 / 电话</label>
+          <input type="text" id="driver" placeholder="如 张师傅 138xxxx">
+        </div>
+      </div>
+      <div class="field">
+        <label>物流单号</label>
+        <input type="text" id="trackNo" placeholder="承运人物流单号">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>预计取货日期</label>
+          <input type="date" id="pickDate">
+        </div>
+        <div class="field">
+          <label>预计取货时间</label>
+          <input type="time" id="pickTime">
+        </div>
+      </div>
+      <div class="field">
+        <label>备注</label>
+        <textarea id="remark" placeholder="选填，如装载要求、月台号等"></textarea>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button class="action-btn" onclick="submitPick()">确认提交</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const CAR_KEY = 'bw_carrier_pickups';
+    const PLAN_KEY = 'material-plan-v5';
+
+    const SAMPLE_PENDING = [
+      { materialCode:'109955-201', sapSupplierCode:'42088', supplierName:'联合汽车电子有限公司', voucher:'2026-08-05-109955', shipDate:'2026-08-05', arrivalDate:'2026-08-15', planQty:500, deliveryMode:'自提', logistics:'中通快递', status:'pending_shipment' },
+      { materialCode:'41256LMN', sapSupplierCode:'30020', supplierName:'博世汽车部件（苏州）有限公司', voucher:'2026-08-07-41256', shipDate:'2026-08-07', arrivalDate:'2026-08-15', planQty:2200, deliveryMode:'自提', logistics:'德邦物流', status:'pending_shipment' }
+    ];
+
+    let selected = new Set();
+    let activeTab = 'pending';
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('#tabBar .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      document.getElementById('tabPending').classList.toggle('active', tab === 'pending');
+      document.getElementById('tabShipped').classList.toggle('active', tab === 'shipped');
+      document.querySelector('.action-bar').style.display = tab === 'pending' ? 'flex' : 'none';
+      if (tab === 'shipped') renderShipped();
+    }
+
+    function loadPlanRows() {
+      try { const r = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]'); return Array.isArray(r) ? r : []; }
+      catch (e) { return []; }
+    }
+    function getRegisteredVouchers() {
+      const arr = JSON.parse(localStorage.getItem(CAR_KEY) || '[]');
+      const s = new Set();
+      arr.forEach(rec => (rec.items || []).forEach(it => s.add(it.voucher)));
+      return s;
+    }
+    function getPending() {
+      const rows = loadPlanRows();
+      const base = rows.length ? rows : SAMPLE_PENDING;
+      const reg = getRegisteredVouchers();
+      // 仅“自提/需物流商提货”且已到待发货状态的物料进入待取货；直送由供应商自行发货
+      return base.filter(r => (r.deliveryMode || '直送') !== '直送' && r.status === 'pending_shipment' && !reg.has(r.voucher));
+    }
+    function getSelectedItems() {
+      const pending = getPending();
+      return pending.filter(r => selected.has(r.voucher));
+    }
+    // 取货登记后，将上游物料计划行的状态回溯为「运输中」
+    function markPlanShipped(vouchers) {
+      try {
+        const rows = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]');
+        if (!Array.isArray(rows) || !rows.length) return;
+        const set = new Set(vouchers);
+        let changed = false;
+        rows.forEach(r => { if (set.has(r.voucher) && r.status !== 'in_transit') { r.status = 'in_transit'; changed = true; } });
+        if (changed) localStorage.setItem(PLAN_KEY, JSON.stringify(rows));
+      } catch (e) {}
+    }
+
+    function genNo(prefix) {
+      const d = new Date();
+      const ymd = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+      return prefix + '-' + ymd + String(Math.floor(Math.random()*900)+100);
+    }
+    function nowStr() {
+      const d = new Date(); const p = n => String(n).padStart(2,'0');
+      return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+    let toastTimer;
+    function toast(msg) {
+      const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+    function formatNum(n) { return Number(n).toLocaleString('en-US'); }
+
+    function renderPending() {
+      const pending = getPending();
+      const list = document.getElementById('pendList');
+      document.getElementById('pendCount').textContent = pending.length ? '(' + pending.length + ')' : '';
+      if (!pending.length) {
+        list.innerHTML = `<div class="empty-state">暂无待取货物料，全部已登记</div>`;
+      } else {
+        list.innerHTML = pending.map(r => `
+          <label class="pend-item">
+            <input type="checkbox" class="pend-check" value="${escapeHtml(r.voucher)}" ${selected.has(r.voucher) ? 'checked' : ''}>
+            <div class="pend-body">
+              <div class="pend-top">
+                <span class="pend-code">${escapeHtml(r.materialCode)}</span>
+                <span class="pend-qty">计划 ${escapeHtml(formatNum(r.planQty))}</span>
+              </div>
+              <div class="pend-sub">${escapeHtml(r.supplierName)}</div>
+              <div class="pend-meta">计划到货 ${escapeHtml(r.arrivalDate || '-')} · 凭证 ${escapeHtml(r.voucher)}<span class="pend-tag transfer">${escapeHtml(r.deliveryMode || '中转')}</span></div>
+            </div>
+          </label>`).join('');
+      }
+      updateBar();
+      updateSelectAll();
+    }
+
+    function updateBar() {
+      const n = selected.size;
+      document.getElementById('selCount').textContent = n;
+      document.getElementById('confirmBtn').disabled = n === 0;
+    }
+    function updateSelectAll() {
+      const pending = getPending();
+      const sa = document.getElementById('selectAll');
+      sa.checked = pending.length > 0 && pending.every(r => selected.has(r.voucher));
+    }
+
+    document.getElementById('pendList').addEventListener('change', e => {
+      if (e.target.classList.contains('pend-check')) {
+        if (e.target.checked) selected.add(e.target.value); else selected.delete(e.target.value);
+        updateBar(); updateSelectAll();
+      }
+    });
+    document.getElementById('selectAll').addEventListener('change', e => {
+      const pending = getPending();
+      if (e.target.checked) pending.forEach(r => selected.add(r.voucher));
+      else pending.forEach(r => selected.delete(r.voucher));
+      renderPending();
+    });
+
+    document.getElementById('tabBar').addEventListener('click', e => {
+      const tab = e.target.closest('.tab');
+      if (tab) switchTab(tab.dataset.tab);
+    });
+
+    function openSheet() {
+      const items = getSelectedItems();
+      if (!items.length) { toast('请先勾选待取货物料'); return; }
+      const arrivalDates = [...new Set(items.map(i => i.arrivalDate).filter(Boolean))];
+      const logistics = [...new Set(items.map(i => i.logistics).filter(Boolean))];
+      document.getElementById('pickNo').value = genNo('PUP');
+      document.getElementById('carrier').value = logistics.length === 1 ? logistics[0] : '';
+      document.getElementById('relSupplier').value = items[0].supplierName || '';
+      document.getElementById('plate').value = '';
+      document.getElementById('driver').value = '';
+      document.getElementById('trackNo').value = '';
+      document.getElementById('pickDate').value = arrivalDates.length === 1 ? arrivalDates[0] : '';
+      document.getElementById('pickTime').value = '';
+      document.getElementById('remark').value = '';
+      document.getElementById('ssCount').textContent = items.length + ' 项 · 共 ' + formatNum(items.reduce((s,i)=>s+(Number(i.planQty)||0),0)) + ' 件';
+      document.getElementById('ssList').innerHTML = items.map(i => `
+        <div class="ss-item"><span>${escapeHtml(i.materialCode)} · ${escapeHtml(i.supplierName)}</span><span>计划 ${escapeHtml(formatNum(i.planQty))}</span></div>`).join('');
+      document.getElementById('sheetMask').classList.add('show');
+      document.getElementById('sheet').classList.add('show');
+    }
+    function closeSheet() {
+      document.getElementById('sheetMask').classList.remove('show');
+      document.getElementById('sheet').classList.remove('show');
+    }
+
+    function submitPick() {
+      const items = getSelectedItems();
+      const carrier = document.getElementById('carrier').value.trim();
+      if (!items.length) return;
+      if (!carrier) { toast('请填写物流商名称'); return; }
+      const pickDate = document.getElementById('pickDate').value;
+      const pickTime = document.getElementById('pickTime').value;
+      const rec = {
+        no: document.getElementById('pickNo').value.trim() || genNo('PUP'),
+        carrier,
+        relSupplier: document.getElementById('relSupplier').value.trim(),
+        items: items.map(i => ({ materialCode: i.materialCode, voucher: i.voucher, planQty: i.planQty, arrivalDate: i.arrivalDate })),
+        plate: document.getElementById('plate').value.trim(),
+        driver: document.getElementById('driver').value.trim(),
+        trackNo: document.getElementById('trackNo').value.trim(),
+        eta: (pickDate || '') + (pickTime ? (' ' + pickTime) : ''),
+        remark: document.getElementById('remark').value.trim(),
+        time: nowStr(),
+        status: 'shipped'
+      };
+      const arr = JSON.parse(localStorage.getItem(CAR_KEY) || '[]');
+      arr.unshift(rec);
+      localStorage.setItem(CAR_KEY, JSON.stringify(arr));
+      markPlanShipped(items.map(i => i.voucher));
+      closeSheet();
+      selected.clear();
+      toast('取货登记已保存，计划状态已更新为运输中');
+      renderPending();
+      renderShipped();
+      switchTab('shipped');
+    }
+
+    function isToday(isoStr) {
+      const d = new Date();
+      const today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      return String(isoStr || '').startsWith(today);
+    }
+    function statusClass(status) {
+      if (status === 'ok') return 'ok';
+      if (status === 'rejected') return 'danger';
+      return 'shipped';
+    }
+    function statusText(status) {
+      if (status === 'ok') return '已签收';
+      if (status === 'rejected') return '已打回';
+      return '已取货';
+    }
+    function recordRowHtml(r) {
+      return `
+        <div class="recent-item">
+          <div class="recent-dot"></div>
+          <div class="recent-info">
+            <div class="recent-type">物流商取货 · ${escapeHtml(r.carrier)}</div>
+            <div class="recent-code">${escapeHtml(r.no)}</div>
+            <div class="recent-meta">物料 ${r.items.length} 项 · 关联 ${escapeHtml(r.relSupplier || '-')} · 登记 ${escapeHtml(r.time)}</div>
+          </div>
+          <span class="recent-status ${statusClass(r.status)}">${statusText(r.status)}</span>
+        </div>`;
+    }
+    function renderShipped() {
+      const arr = JSON.parse(localStorage.getItem(CAR_KEY) || '[]');
+      const wrap = document.getElementById('shippedGroups');
+      if (!arr.length) {
+        wrap.innerHTML = `<div class="empty-state">暂无取货记录</div>`;
+        return;
+      }
+      const todayArr = arr.filter(r => isToday(r.time));
+      const histArr = arr.filter(r => !isToday(r.time));
+      let html = '';
+      if (todayArr.length) {
+        html += `<div class="group-title">今日取货<span class="group-count">(${todayArr.length})</span></div>
+                 <div class="recent-list">${todayArr.map(recordRowHtml).join('')}</div>`;
+      }
+      if (histArr.length) {
+        html += `<div class="group-title">历史取货<span class="group-count">(${histArr.length})</span></div>
+                 <div class="recent-list">${histArr.map(recordRowHtml).join('')}</div>`;
+      }
+      wrap.innerHTML = html;
+    }
+
+    renderPending();
+    renderShipped();
+    switchTab('pending');
+  </script>
+
+</body>
+</html>

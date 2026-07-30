@@ -1,0 +1,1548 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>供应商计划确认</title>
+  <style>
+    :root {
+      --primary: #07868d;
+      --primary-dark: #046b71;
+      --primary-soft: #e9f7f7;
+      --text: #27313a;
+      --text-2: #5e6975;
+      --text-3: #8b95a1;
+      --surface: #ffffff;
+      --canvas: #f4f6f8;
+      --muted: #f6f8fa;
+      --border: #e5e9ef;
+      --border-strong: #d8dee7;
+      --danger: #e95d62;
+      --danger-soft: #fff0f0;
+      --success: #48a66b;
+      --success-soft: #eef9f1;
+      --warning: #d99026;
+      --warning-soft: #fff7e8;
+      --info: #3b82f6;
+      --info-soft: #eff6ff;
+      --shadow: 0 12px 30px rgba(27, 39, 51, .08);
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body {
+      background: var(--canvas);
+      color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(7, 134, 141, .22);
+      outline-offset: 1px;
+    }
+    .app-shell { min-height: 100dvh; display: flex; flex-direction: column; }
+    .top-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .top-bar .logo {
+      font-size: 15px; font-weight: 600; color: var(--primary);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .top-bar .logo-icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: var(--primary); color: #fff;
+      display: grid; place-items: center;
+      font-size: 14px; font-weight: 700;
+    }
+    .user-info { display: flex; align-items: center; gap: 12px; color: var(--text-2); font-size: 13px; }
+    .user-info .company { color: var(--text-3); font-size: 12px; }
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--primary-soft); color: var(--primary);
+      display: grid; place-items: center; font-size: 13px; font-weight: 600;
+    }
+    .divider { width: 1px; height: 18px; background: var(--border-strong); }
+    .page-body { flex: 1; padding: 24px; width: 100%; }
+    .welcome-section { margin-bottom: 20px; }
+    .welcome-section h1 { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .supplier-info { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-2); }
+    .supplier-info strong { color: var(--text); font-weight: 600; }
+    .supplier-info .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border-strong); }
+    .supplier-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 10px;
+      background: var(--primary-soft); color: var(--primary);
+      font-size: 12px; font-weight: 600;
+    }
+    .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px;
+      box-shadow: 0 1px 3px rgba(27,39,51,.04); transition: box-shadow .2s, transform .2s;
+    }
+    .stat-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+    .stat-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .stat-card-label { font-size: 13px; color: var(--text-2); }
+    .stat-card-icon { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; }
+    .stat-card-icon.blue { background: var(--info-soft); color: var(--info); }
+    .stat-card-icon.teal { background: var(--primary-soft); color: var(--primary); }
+    .stat-card-icon.amber { background: var(--warning-soft); color: var(--warning); }
+    .stat-card-icon.green { background: var(--success-soft); color: var(--success); }
+    .stat-card-value { font-size: 30px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
+    .stat-card-sub { font-size: 12px; color: var(--text-3); }
+    .stat-card-sub .count {
+      display: inline-block; padding: 1px 6px; border-radius: 6px;
+      background: var(--primary-soft); color: var(--primary);
+      font-size: 11px; font-weight: 600; margin-left: 4px;
+    }
+    .tab-bar {
+      display: flex; gap: 0; background: var(--surface);
+      border: 1px solid var(--border); border-bottom: none;
+      border-radius: var(--radius) var(--radius) 0 0; padding: 0 20px; overflow: hidden;
+    }
+    .tab-item {
+      background: none; border: none; border-bottom: 3px solid transparent;
+      padding: 14px 20px 12px; font-size: 14px; font-weight: 500;
+      color: var(--text-2); cursor: pointer; transition: all .18s;
+    }
+    .tab-item:hover { color: var(--text); }
+    .tab-item.active { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); }
+    .main-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius); box-shadow: 0 1px 3px rgba(27,39,51,.04);
+    }
+    .filter-section { padding: 16px 20px 12px; border-bottom: 1px solid var(--border); }
+    .filter-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+    .filter-field { display: flex; flex-direction: column; gap: 5px; }
+    .filter-field label { font-size: 12px; color: var(--text-2); font-weight: 500; }
+    .filter-field input {
+      min-height: 36px; border: 1px solid var(--border-strong);
+      border-radius: 6px; padding: 7px 11px; font-size: 13px; color: var(--text);
+      background: var(--surface); width: 170px; transition: border-color .18s, box-shadow .18s;
+    }
+    .filter-field input:hover { border-color: #bbc5d0; }
+    .filter-field input:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); outline: none;
+    }
+    .filter-field input::placeholder { color: #b0b8c4; }
+    .date-separator { padding-bottom: 8px; color: var(--text-3); font-size: 13px; }
+    .filter-actions { display: flex; gap: 8px; align-items: flex-end; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 36px; padding: 7px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+      background: var(--surface); color: var(--text); font-size: 13px; font-weight: 500;
+      transition: all .18s; white-space: nowrap;
+    }
+    .btn:hover { background: var(--muted); border-color: #cdd3db; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+    .btn-outline { border-color: var(--border-strong); background: var(--surface); }
+    .action-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; border-bottom: 1px solid var(--border);
+    }
+    .action-bar-left { display: flex; align-items: center; gap: 10px; }
+    .checkbox-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); cursor: pointer; }
+    .toggle-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); cursor: pointer; }
+    .toggle-switch {
+      width: 36px; height: 20px; border-radius: 10px;
+      background: var(--border-strong); position: relative;
+      transition: background .2s; cursor: pointer; flex-shrink: 0;
+    }
+    .toggle-switch::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.15); transition: transform .2s;
+    }
+    .toggle-switch.on { background: var(--primary); }
+    .toggle-switch.on::after { transform: translateX(16px); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    th, td { padding: 12px 16px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { background: #fbfcfd; color: var(--text-2); font-weight: 600; position: sticky; top: 0; z-index: 2; }
+    tbody tr:hover td { background: #f8fafc; }
+    td { color: var(--text); background: var(--surface); transition: background .15s; }
+    td.amount, th.amount { text-align: right; font-variant-numeric: tabular-nums; }
+    .col-check { width: 48px; text-align: center; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap;
+    }
+    .status-badge.confirmed { background: var(--success-soft); color: #277645; }
+    .status-badge.pending { background: var(--warning-soft); color: #8a5e16; }
+    .status-badge.info { background: var(--info-soft); color: #1e40af; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .status-badge.confirmed .status-dot { background: #48a66b; }
+    .status-badge.pending .status-dot { background: #d99026; }
+    .status-badge.info .status-dot { background: var(--info); }
+    .row-action {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 12px; border-radius: 5px; border: 1px solid var(--primary);
+      background: var(--primary-soft); color: var(--primary);
+      font-size: 12px; font-weight: 500; cursor: pointer; transition: all .18s;
+    }
+    .row-action:hover { background: var(--primary); color: #fff; }
+    .pagination-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; border-top: 1px solid var(--border);
+    }
+    .pagination-info { font-size: 13px; color: var(--text-2); }
+    .pagination-controls { display: flex; gap: 4px; }
+    .page-btn {
+      min-width: 32px; height: 32px; padding: 0 8px;
+      border: 1px solid var(--border-strong); border-radius: 5px;
+      background: var(--surface); color: var(--text-2); font-size: 13px;
+      cursor: pointer; transition: all .15s;
+    }
+    .page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+    .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .page-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .page-size-wrap { display: flex; align-items: center; gap: 6px; }
+    .page-size-select {
+      min-height: 32px; padding: 4px 10px; border-radius: 5px;
+      border: 1px solid var(--border-strong); background: var(--surface);
+      color: var(--text); font-size: 13px; cursor: pointer;
+    }
+    .modal-layer {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.35); backdrop-filter: blur(2px);
+      display: none; align-items: center; justify-content: center; padding: 24px;
+    }
+    .modal-layer.show { display: flex; }
+    .modal {
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: var(--shadow); width: 100%; max-width: 920px;
+      max-height: 90vh; display: flex; flex-direction: column;
+      animation: modalIn .25s ease-out;
+    }
+    .modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .modal-head h3 { font-size: 16px; font-weight: 600; color: var(--text); }
+    .close-btn {
+      width: 32px; height: 32px; border-radius: 6px;
+      border: none; background: transparent; color: var(--text-3);
+      font-size: 22px; line-height: 1; cursor: pointer;
+      display: grid; place-items: center; transition: all .15s;
+    }
+    .close-btn:hover { background: var(--muted); color: var(--text); }
+    .modal-body-scrollable { flex: 1; overflow-y: auto; min-height: 0; padding: 0; }
+    .confirm-record-card { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+    .confirm-record-card:last-child { border-bottom: none; }
+    .confirm-info-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 16px; }
+    .confirm-info-left { display: flex; gap: 14px; align-items: flex-start; }
+    .confirm-info-icon {
+      width: 42px; height: 42px; border-radius: 8px;
+      background: var(--primary-soft); color: var(--primary);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .confirm-info-text .info-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .confirm-info-text .info-sub { font-size: 12px; color: var(--text-3); }
+    .confirm-info-right { display: grid; grid-template-columns: auto auto; gap: 5px 14px; font-size: 13px; color: var(--text-2); white-space: nowrap; }
+    .confirm-info-right .info-val { font-weight: 600; color: var(--text); }
+    .delivery-method-section {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .delivery-method-section .section-label { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; }
+    .delivery-radio-group { display: flex; gap: 20px; }
+    .delivery-radio-label { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font-size: 14px; color: var(--text-2); font-weight: 500; }
+    .delivery-radio-label input[type="radio"] { display: none; }
+    .delivery-radio-label .radio-circle {
+      width: 18px; height: 18px; border: 2px solid var(--border-strong); border-radius: 50%;
+      display: grid; place-items: center; transition: all .18s; flex-shrink: 0;
+    }
+    .delivery-radio-label .radio-circle::after {
+      content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--primary);
+      opacity: 0; transition: opacity .18s;
+    }
+    .delivery-radio-label input:checked + .radio-circle { border-color: var(--primary); }
+    .delivery-radio-label input:checked + .radio-circle::after { opacity: 1; }
+    .delivery-radio-label input:checked ~ .radio-text { color: var(--primary); font-weight: 600; }
+    .info-display-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 20px; margin-bottom: 16px; padding: 14px 16px; background: var(--muted); border-radius: 8px; border: 1px solid var(--border); }
+    .info-display-item { display: flex; flex-direction: column; gap: 4px; }
+    .info-display-item .label { font-size: 12px; color: var(--text-2); }
+    .info-display-item .value { font-size: 14px; font-weight: 600; color: var(--text); }
+    .confirm-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-bottom: 16px; }
+    .confirm-form-grid .full-row { grid-column: 1 / -1; }
+    .confirm-field { display: flex; flex-direction: column; gap: 5px; }
+    .confirm-field label { font-size: 12px; color: var(--text-2); font-weight: 500; }
+    .confirm-field label .required { color: var(--danger); margin-right: 3px; }
+    .confirm-field input {
+      min-height: 36px; border: 1px solid var(--border-strong);
+      border-radius: 5px; padding: 7px 11px; font-size: 13px; color: var(--text);
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .confirm-field input:hover { border-color: #bbc5d0; }
+    .confirm-field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); outline: none; }
+    .confirm-field input:read-only { background: var(--muted); color: var(--text-2); }
+    .delivery-date-field { display: none; }
+    .delivery-date-field.show { display: flex; flex-direction: column; gap: 5px; }
+    .auto-calc-row { display: flex; gap: 32px; padding: 14px 16px; background: var(--primary-soft); border-radius: 8px; border: 1px solid var(--border); }
+    .auto-calc-item { display: flex; flex-direction: column; gap: 4px; }
+    .auto-calc-item .label { font-size: 12px; color: var(--text-2); }
+    .auto-calc-item .value { font-size: 20px; font-weight: 700; color: var(--primary); }
+    .modal-footer-fixed {
+      padding: 14px 24px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      background: var(--surface); flex-shrink: 0;
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+    .modal-footer-fixed .btn { min-width: 100px; }
+    .toast-region {
+      position: fixed; top: 20px; left: 50%; z-index: 1200;
+      transform: translateX(-50%); display: grid; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      min-width: 260px; max-width: calc(100vw - 32px);
+      padding: 11px 15px; border: 1px solid #b8e0ca;
+      border-radius: 7px; background: #f2fbf5; color: #277645;
+      box-shadow: var(--shadow); animation: toastIn .2s ease-out;
+      text-align: center; font-size: 13px;
+    }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+    @keyframes toastIn  { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+    /* ===== 批量确认左右分栏 ===== */
+    .batch-modal { max-width: 1080px; }
+    .batch-split { display: flex; flex: 1; min-height: 0; }
+    .batch-left {
+      width: 280px; flex-shrink: 0; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .batch-left-head {
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      font-size: 13px; font-weight: 600; color: var(--text);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .batch-left-head .count { font-size: 12px; color: var(--text-3); font-weight: 400; }
+    .batch-left-list { flex: 1; overflow-y: auto; }
+    .batch-list-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: all .15s; gap: 10px;
+    }
+    .batch-list-item:hover { background: var(--muted); }
+    .batch-list-item.active { background: var(--primary-soft); border-left: 3px solid var(--primary); padding-left: 13px; }
+    .batch-list-item.confirmed-item { cursor: default; }
+    .batch-list-item .item-info { flex: 1; min-width: 0; }
+    .batch-list-item .item-material { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .batch-list-item .item-date { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+    .batch-item-status {
+      font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 10px; white-space: nowrap; flex-shrink: 0;
+    }
+    .batch-item-status.pending-item { background: var(--warning-soft); color: #8a5e16; }
+    .batch-item-status.confirmed-item { background: var(--success-soft); color: #277645; }
+    .batch-right {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .batch-right-empty {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      color: var(--text-3); font-size: 14px;
+    }
+    .batch-right-body {
+      flex: 1; overflow-y: auto; padding: 20px 24px;
+    }
+    .batch-right-footer {
+      padding: 12px 24px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); flex-shrink: 0;
+    }
+    .batch-right-footer .btn { min-width: 90px; }
+    /* ===== 新增预约弹窗 ===== */
+    .appointment-modal { max-width: 960px; }
+    .section-title-bar {
+      display: flex; align-items: center; gap: 10px;
+      margin: 20px 24px 16px; font-size: 15px; font-weight: 600; color: var(--text);
+    }
+    .section-title-bar::before {
+      content: ""; width: 4px; height: 16px; border-radius: 2px; background: var(--primary);
+    }
+    .appointment-form-row {
+      display: flex; align-items: flex-end; gap: 16px;
+      padding: 0 24px 16px;
+    }
+    .appointment-form-row .filter-field input { width: 220px; }
+    .appointment-filter-bar {
+      display: flex; align-items: flex-end; gap: 12px;
+      padding: 12px 20px; background: var(--muted); border-radius: 8px;
+      margin: 0 24px 12px;
+    }
+    .appointment-filter-bar .filter-field input { width: 160px; }
+    .appointment-table-wrap { margin: 0 24px 16px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .appointment-table-wrap table { min-width: unset; }
+    .appointment-table-wrap th { background: #fbfcfd; }
+    .appointment-table-wrap td, .appointment-table-wrap th { padding: 10px 14px; }
+    .appointment-footer {
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      padding: 14px 24px; border-top: 1px solid var(--border);
+    }
+    .appointment-footer .btn { min-width: 100px; }
+    .row-action.cancel {
+      border-color: var(--danger); background: var(--danger-soft); color: var(--danger);
+    }
+    .row-action.cancel:hover { background: var(--danger); color: #fff; }
+    .row-action.ghost { border-color: var(--border-strong); background: transparent; color: var(--text-2); }
+    .row-action.ghost:hover { background: var(--text-3); color: #fff; border-color: var(--text-3); }
+    .status-badge.done { background: #277645; color: #fff; }
+    .status-badge.done .status-dot { background: #fff; }
+    .action-hint { font-size: 12px; color: var(--text-3); display: inline-flex; align-items: center; gap: 6px; }
+    .action-hint::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--info); }
+    @media (max-width: 1100px) {
+      .stat-cards { grid-template-columns: repeat(2, 1fr); }
+      .filter-row { gap: 10px; }
+      .filter-field input { width: 140px; }
+      .confirm-form-grid { grid-template-columns: 1fr; }
+      .batch-left { width: 220px; }
+    }
+    @media (max-width: 720px) {
+      .page-body { padding: 16px; }
+      .stat-cards { grid-template-columns: 1fr; }
+      .stat-card-value { font-size: 26px; }
+      .filter-row { flex-direction: column; align-items: stretch; }
+      .filter-field input { width: 100%; }
+      .date-separator { display: none; }
+      .action-bar { flex-direction: column; gap: 10px; }
+      .top-bar { padding: 0 16px; }
+      .top-bar .company { display: none; }
+      .confirm-info-header { flex-direction: column; gap: 12px; }
+      .confirm-info-right { grid-template-columns: 1fr 1fr; }
+      .info-display-grid { grid-template-columns: 1fr 1fr; }
+      .confirm-form-grid { grid-template-columns: 1fr; }
+      .batch-split { flex-direction: column; }
+      .batch-left { width: 100%; max-height: 200px; border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-bar">
+      <div class="logo"><div class="logo-icon">B</div><span>博格华纳 供应商协同平台</span></div>
+      <div class="user-info">
+        <span class="company">苏州瑞玛精密工业集团股份有限公司</span>
+        <div class="divider"></div>
+        <span>配件供应商工作人员</span>
+        <div class="user-avatar">供</div>
+      </div>
+    </header>
+    <div class="page-body">
+      <div class="welcome-section">
+        <h1>欢迎回来，配件供应商工作人员</h1>
+        <div class="supplier-info">
+          <span>供应商编码: <strong>90000064</strong></span>
+          <span class="dot"></span>
+          <span>供应商名称: <strong>苏州瑞玛精密工业集团股份有限公司</strong></span>
+          <span class="supplier-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            2
+          </span>
+        </div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-card-top"><span class="stat-card-label">待供应商确认</span><div class="stat-card-icon blue"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div></div>
+          <div class="stat-card-value" style="color:var(--info);" id="statPending">3</div>
+          <div class="stat-card-sub">等待供应商确认</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><span class="stat-card-label">待平台确认</span><div class="stat-card-icon amber"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></div></div>
+          <div class="stat-card-value" style="color:var(--warning);" id="statPlatform">0</div>
+          <div class="stat-card-sub">供应商已确认待平台审核</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><span class="stat-card-label">待自提备货</span><div class="stat-card-icon teal"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div></div>
+          <div class="stat-card-value" style="color:var(--primary);" id="statSelf">0</div>
+          <div class="stat-card-sub">已确认待备货</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><span class="stat-card-label">自提待取货</span><div class="stat-card-icon green"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 21 13 21 21 16 21 16 8"/><line x1="5" y1="12" x2="10" y2="12"/><line x1="4" y1="7" x2="8" y2="7"/></svg></div></div>
+          <div class="stat-card-value" style="color:var(--success);" id="statLogistics">0</div>
+          <div class="stat-card-sub">已推送物流商待取货</div>
+        </div>
+      </div>
+      <div class="tab-bar" id="tabBar">
+        <button class="tab-item active" data-tab="planConfirm">计划确认</button>
+        <button class="tab-item" data-tab="directDelivery">直送预约</button>
+        <button class="tab-item" data-tab="selfPickup">自提预约</button>
+      </div>
+      <div class="main-card">
+        <div class="filter-section">
+          <div class="filter-row">
+            <div class="filter-field"><label>物料编号</label><input type="text" id="filterMaterialCode" placeholder="请输入物料编号"></div>
+            <div class="filter-field"><label>采购凭证</label><input type="text" id="filterPoNumber" placeholder="请输入采购凭证"></div>
+            <div class="filter-field date-field"><label>计划发货日期</label><input type="date" id="filterDateStart"></div>
+            <span class="date-separator">—</span>
+            <div class="filter-field date-field"><label>&nbsp;</label><input type="date" id="filterDateEnd"></div>
+            <div class="filter-actions">
+              <button class="btn btn-primary" id="btnSearch"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>查询</button>
+              <button class="btn" id="btnReset">重置</button>
+            </div>
+          </div>
+        </div>
+        <div class="action-bar" id="actionBar">
+          <div class="action-bar-left" id="actionBarLeft">
+            <label class="checkbox-label"><input type="checkbox" id="selectAll"> 批量确认</label>
+            <button class="btn btn-outline" id="btnBatchConfirm" disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>确认选中</button>
+          </div>
+          <div class="action-bar-right" id="actionBarRight">
+            <label class="toggle-label"><span>只看待供应商确认</span><div class="toggle-switch" id="toggleSwitch"></div></label>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="dataTable">
+            <thead><tr id="tableHead"></tr></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination-bar">
+          <div class="pagination-info" id="pageInfo"></div>
+          <div class="pagination-controls" id="pageControls"></div>
+          <div class="page-size-wrap">
+            <select class="page-size-select" id="pageSizeSelect">
+              <option value="10" selected>10条/页</option><option value="20">20条/页</option><option value="50">50条/页</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-layer" id="confirmModal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3>确认物料计划</h3>
+        <button class="close-btn" type="button" data-close="confirmModal" aria-label="关闭">&times;</button>
+      </div>
+      <form id="confirmForm" novalidate>
+        <div class="modal-body-scrollable" id="confirmModalBody"></div>
+        <div class="modal-footer-fixed">
+          <button class="btn" type="button" data-close="confirmModal">取消</button>
+          <button class="btn btn-primary" type="submit" id="btnConfirmSubmit">确认提交 <span id="submitCount"></span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="modal-layer" id="batchConfirmModal">
+    <div class="modal batch-modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3>批量确认物料计划</h3>
+        <button class="close-btn" type="button" data-close="batchConfirmModal" aria-label="关闭">&times;</button>
+      </div>
+      <div class="batch-split">
+        <div class="batch-left">
+          <div class="batch-left-head"><span>物料列表</span><span class="count" id="batchItemCount"></span></div>
+          <div class="batch-left-list" id="batchLeftList"></div>
+        </div>
+        <div class="batch-right" id="batchRight">
+          <div class="batch-right-empty">← 请从左侧列表选择物料进行确认</div>
+        </div>
+      </div>
+      <div class="modal-footer-fixed">
+        <span style="font-size:13px;color:var(--text-2);margin-right:auto;" id="batchConfirmProgress">已确认 0 / 0</span>
+        <button class="btn" type="button" data-close="batchConfirmModal">取消</button>
+        <button class="btn btn-primary" type="button" id="btnBatchSubmit" disabled>确认提交</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-layer" id="appointmentModal">
+    <div class="modal appointment-modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3>新增送货预约</h3>
+        <button class="close-btn" type="button" data-close="appointmentModal" aria-label="关闭">&times;</button>
+      </div>
+      <div class="modal-body-scrollable">
+        <div class="section-title-bar">预约信息</div>
+        <div class="appointment-form-row">
+          <div class="filter-field">
+            <label><span style="color:var(--danger);">*</span> 选择预约日期</label>
+            <input type="date" id="apptDateInput">
+          </div>
+        </div>
+        <div class="section-title-bar">选择取货物料</div>
+        <div class="appointment-filter-bar">
+          <div class="filter-field"><label>物料编号</label><input type="text" id="apptFilterMaterial" placeholder="请输入物料编号"></div>
+          <div class="filter-field date-field"><label>承诺发货日期</label><input type="date" id="apptFilterDateStart"></div>
+          <span class="date-separator">—</span>
+          <div class="filter-field date-field"><label>&nbsp;</label><input type="date" id="apptFilterDateEnd"></div>
+          <div class="filter-actions">
+            <button class="btn btn-primary" id="btnApptSearch">查询</button>
+            <button class="btn" id="btnApptReset">重置</button>
+          </div>
+        </div>
+        <div class="appointment-table-wrap">
+          <table>
+            <thead><tr>
+              <th class="col-check"><input type="checkbox" id="apptSelectAll"></th>
+              <th>承诺发货日期</th><th>物料编号</th><th>所属库区</th>
+              <th>采购凭证</th><th class="amount">计划发货数量</th><th class="amount">承诺直送数量</th>
+            </tr></thead>
+            <tbody id="apptTableBody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 24px 16px;font-size:13px;color:var(--text-2);">
+          <span id="apptPageInfo"></span>
+          <div class="pagination-controls" id="apptPageControls"></div>
+          <div class="page-size-wrap">
+            <select class="page-size-select" id="apptPageSizeSelect">
+              <option value="10" selected>10条/页</option><option value="20">20条/页</option><option value="50">50条/页</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="appointment-footer">
+        <button class="btn" type="button" data-close="appointmentModal">关闭</button>
+        <button class="btn btn-primary" type="button" id="btnApptSubmit" disabled>确认预约</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-layer" id="logisticsModal">
+    <div class="modal appointment-modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3>物流商取货登记（物流商端）</h3>
+        <button class="close-btn" type="button" data-close="logisticsModal" aria-label="关闭">&times;</button>
+      </div>
+      <div class="modal-body-scrollable">
+        <div class="section-title-bar">自提物料信息</div>
+        <div class="info-display-grid" id="logisticsInfoGrid" style="margin:0 24px 8px;"></div>
+        <div class="section-title-bar">自提信息与预约</div>
+        <div class="appointment-form-row" style="flex-wrap:wrap;gap:16px;">
+          <div class="filter-field"><label><span style="color:var(--danger);">*</span> 物流商名称</label><input type="text" id="logisticsProviderInput" placeholder="请输入物流商名称"></div>
+          <div class="filter-field"><label><span style="color:var(--danger);">*</span> 提货人</label><input type="text" id="pickupPersonInput" placeholder="请输入提货人姓名"></div>
+          <div class="filter-field"><label><span style="color:var(--danger);">*</span> 联系电话</label><input type="text" id="pickupPhoneInput" placeholder="请输入联系电话"></div>
+          <div class="filter-field date-field"><label><span style="color:var(--danger);">*</span> 预约送货日期</label><input type="date" id="deliveryApptInput"></div>
+        </div>
+        <div style="padding:0 24px 16px;font-size:12px;color:var(--text-3);">提示：供应商完成备货并推送后，由物流商端在此登记取货信息（预约送货日期 + 提货人 / 联系电话）。登记完成后，状态更新为「已发货」。</div>
+      </div>
+      <div class="appointment-footer">
+        <button class="btn" type="button" data-close="logisticsModal">关闭</button>
+        <button class="btn btn-primary" type="button" id="btnLogisticsSubmit">确认取货登记</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+  <script>
+    (() => {
+      'use strict';
+
+      const records = [
+        {
+          id: '1', shipDate: '2026-07-22', arriveDate: '2026-07-25',
+          materialCode: '04006106-02-01', poNumber: '5500575741',
+          supplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司',
+          planQty: '500,000.000', planQtyNum: 500000,
+          stdBoxQty: 500, stdPalletQty: 5000,
+          commitQty: '—', commitQtyNum: 0,
+          commitShipDate: '', commitArriveDate: '',
+          boxCount: 0, palletCount: 0,
+          updateTime: '2026-07-22 14:30:00', status: 'pending',
+          deliveryMethod: '',
+          warehouseArea: '1号库区',
+          appointmentStatus: 'none', appointmentDate: '',
+        },
+        {
+          id: '2', shipDate: '2026-07-22', arriveDate: '2026-07-26',
+          materialCode: '04006428-04-06', poNumber: '5500617915',
+          supplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司',
+          planQty: '12,000.000', planQtyNum: 12000,
+          stdBoxQty: 200, stdPalletQty: 2000,
+          commitQty: '—', commitQtyNum: 0,
+          commitShipDate: '', commitArriveDate: '',
+          boxCount: 0, palletCount: 0,
+          updateTime: '2026-07-22 09:15:00', status: 'pending',
+          deliveryMethod: '',
+          warehouseArea: '1号库区',
+          appointmentStatus: 'none', appointmentDate: '',
+        },
+        {
+          id: '3', shipDate: '2026-07-23', arriveDate: '2026-07-27',
+          materialCode: '04006430-01-02', poNumber: '5500639409',
+          supplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司',
+          planQty: '6,300.000', planQtyNum: 6300,
+          stdBoxQty: 150, stdPalletQty: 1500,
+          commitQty: '—', commitQtyNum: 0,
+          commitShipDate: '', commitArriveDate: '',
+          boxCount: 0, palletCount: 0,
+          updateTime: '2026-07-22 16:50:00', status: 'pending',
+          deliveryMethod: '',
+          warehouseArea: '2号库区',
+          appointmentStatus: 'none', appointmentDate: '',
+        }
+      ];
+
+      const state = {
+        records, filteredRecords: [...records],
+        selectedIds: new Set(), currentPage: 1, pageSize: 10,
+        toggleOn: false, activeTab: 'planConfirm', confirmingIds: [],
+        batchItems: [], batchConfirmedSet: new Set(), batchActiveId: null,
+        apptRecords: [], apptSelectedIds: new Set(), apptCurrentPage: 1, apptPageSize: 10,
+        logisticsActiveId: null,
+      };
+
+      const $ = id => document.getElementById(id);
+
+      function formatNumber(num) {
+        if (num === null || num === undefined || num === '') return '—';
+        return Number(num).toLocaleString('zh-CN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+      }
+      function formatInt(num) {
+        if (num === null || num === undefined || num === '') return '—';
+        return Number(num).toLocaleString('zh-CN');
+      }
+      function fmtDt(d) {
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+      }
+
+      function toast(msg) {
+        const n = document.createElement('div'); n.className = 'toast'; n.textContent = msg;
+        $('toastRegion').appendChild(n); setTimeout(() => n.remove(), 3000);
+      }
+      function openModal(id) { $(id).classList.add('show'); document.body.style.overflow = 'hidden'; }
+      function closeModal(id) {
+        $(id).classList.remove('show');
+        if (!document.querySelector('.modal-layer.show')) document.body.style.overflow = '';
+      }
+
+      function getTabFiltered() {
+        let f = [...state.records];
+        const t = state.activeTab;
+        if (t === 'planConfirm') f = f.filter(r => r.status === 'pending' || r.status === 'platformPending');
+        else if (t === 'directDelivery') f = f.filter(r => r.status === 'confirmed' && r.deliveryMethod === 'direct');
+        else if (t === 'selfPickup') f = f.filter(r => r.deliveryMethod === 'self' && (r.status === 'confirmed' || r.status === 'awaitPickup' || r.status === 'shipped' || r.status === 'received'));
+        const mc = $('filterMaterialCode').value.trim().toLowerCase();
+        const pn = $('filterPoNumber').value.trim().toLowerCase();
+        const ds = $('filterDateStart').value;
+        const de = $('filterDateEnd').value;
+        if (mc) f = f.filter(r => r.materialCode.toLowerCase().includes(mc));
+        if (pn) f = f.filter(r => r.poNumber.toLowerCase().includes(pn));
+        if (ds) f = f.filter(r => r.shipDate >= ds);
+        if (de) f = f.filter(r => r.shipDate <= de);
+        if (state.toggleOn && t === 'planConfirm') f = f.filter(r => r.status === 'pending');
+        return f;
+      }
+
+      function applyFilter() {
+        state.filteredRecords = getTabFiltered();
+        state.currentPage = 1; state.selectedIds.clear();
+        renderTable();
+      }
+
+      const COL_LABEL = {
+        shipDate: '计划发货日期', materialCode: '物料编号', poNumber: '采购凭证',
+        planQty: '计划发货数量', commitQty: '承诺发货数量', updateTime: '计划更新时间',
+        status: '状态', action: '操作', appointmentDate: '预约发货日期',
+        logisticsProvider: '物流商', pickupPerson: '提货人', deliveryAppointmentDate: '预约送货日期'
+      };
+
+      function getColumns() {
+        const t = state.activeTab;
+        if (t === 'planConfirm') return [
+          {k:'shipDate'}, {k:'materialCode'}, {k:'poNumber'},
+          {k:'planQty',amount:true}, {k:'commitQty',amount:true},
+          {k:'updateTime'}, {k:'status'}, {k:'action'}
+        ];
+        if (t === 'directDelivery') return [
+          {k:'shipDate'}, {k:'materialCode'}, {k:'poNumber'},
+          {k:'planQty',amount:true}, {k:'commitQty',amount:true},
+          {k:'appointmentDate'}, {k:'status'}, {k:'action'}
+        ];
+        return [
+          {k:'shipDate'}, {k:'materialCode'}, {k:'poNumber'},
+          {k:'planQty',amount:true}, {k:'commitQty',amount:true},
+          {k:'logisticsProvider'}, {k:'pickupPerson'}, {k:'deliveryAppointmentDate'},
+          {k:'status'}, {k:'action'}
+        ];
+      }
+
+      function badge(cls, text) {
+        return '<span class="status-badge ' + cls + '"><span class="status-dot"></span>' + text + '</span>';
+      }
+
+      function statusCell(r, isPC, isDD, isSP) {
+        if (isPC) {
+          if (r.status === 'pending') return badge('pending', '待供应商确认');
+          if (r.status === 'platformPending') return badge('info', '待平台确认');
+        }
+        if (isDD) {
+          return r.appointmentStatus === 'scheduled' ? badge('confirmed', '已预约') : badge('pending', '待预约');
+        }
+        if (isSP) {
+          if (r.status === 'confirmed') return badge('pending', '待备货');
+          if (r.status === 'awaitPickup') return badge('info', '待取货');
+          if (r.status === 'shipped') return badge('confirmed', '已发货');
+          if (r.status === 'received') return badge('done', '已收货');
+        }
+        return badge('pending', r.status);
+      }
+
+      function actionCell(r, isPC, isDD, isSP) {
+        const check = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        const plus = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+        const box = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
+        const truck = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 21 13 21 21 16 21 16 8"/><line x1="5" y1="12" x2="10" y2="12"/><line x1="4" y1="7" x2="8" y2="7"/></svg>';
+        if (isPC) {
+          if (r.status === 'pending') return '<button class="row-action" data-id="' + r.id + '">' + check + '确认</button>';
+          if (r.status === 'platformPending') return '<button class="row-action" data-platform-id="' + r.id + '">' + check + '平台确认</button>';
+        }
+        if (isDD) {
+          if (r.appointmentStatus === 'scheduled') return '<button class="row-action cancel" data-cancel-id="' + r.id + '">取消预约</button>';
+          return '<span style="color:var(--text-3);font-size:12px;">—</span>';
+        }
+        if (isSP) {
+          if (r.status === 'confirmed') return '<button class="row-action" data-stock-id="' + r.id + '">' + box + '完成备货</button>';
+          if (r.status === 'awaitPickup') return '<button class="row-action ghost" data-logistics-id="' + r.id + '">' + truck + '物流商取货登记</button>';
+          if (r.status === 'shipped') return '<button class="row-action ghost" data-receive-id="' + r.id + '">' + check + '工厂收货</button>';
+        }
+        return '<span style="color:var(--text-3);font-size:12px;">—</span>';
+      }
+
+      function renderTable() {
+        const t = state.activeTab;
+        const isPC = t === 'planConfirm';
+        const isDD = t === 'directDelivery';
+        const isSP = t === 'selfPickup';
+        const cols = getColumns();
+
+        const s = (state.currentPage - 1) * state.pageSize;
+        const e = s + state.pageSize;
+        const pg = state.filteredRecords.slice(s, e);
+
+        let head = '';
+        if (isPC) head += '<th class="col-check"><input type="checkbox" id="selectAllTable"></th>';
+        head += cols.map(c => '<th' + (c.amount ? ' class="amount"' : '') + '>' + COL_LABEL[c.k] + '</th>').join('');
+        $('tableHead').innerHTML = head;
+        if (isPC) {
+          const allPending = pg.filter(r => r.status === 'pending');
+          const allChecked = allPending.length > 0 && allPending.every(r => state.selectedIds.has(r.id));
+          const sat = $('selectAllTable'); if (sat) sat.checked = allChecked;
+        }
+
+        const b = $('tableBody');
+        if (!pg.length) {
+          const colspan = cols.length + (isPC ? 1 : 0);
+          b.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center;padding:60px 16px;color:var(--text-3);"><div style="font-size:15px;margin-bottom:6px;">暂无数据</div><div style="font-size:12px;">没有符合条件的计划记录</div></td></tr>';
+        } else {
+          b.innerHTML = pg.map(r => {
+            let cells = '';
+            if (isPC) {
+              const ck = r.status === 'pending';
+              cells += '<td class="col-check">' + (ck ? '<input type="checkbox" class="row-checkbox" data-id="' + r.id + '" ' + (state.selectedIds.has(r.id) ? 'checked' : '') + '>' : '') + '</td>';
+            }
+            for (const c of cols) {
+              if (c.k === 'status') cells += '<td>' + statusCell(r, isPC, isDD, isSP) + '</td>';
+              else if (c.k === 'action') cells += '<td>' + actionCell(r, isPC, isDD, isSP) + '</td>';
+              else if (c.k === 'planQty' || c.k === 'commitQty') cells += '<td class="amount">' + r[c.k] + '</td>';
+              else if (c.k === 'appointmentDate') cells += '<td>' + (r.appointmentStatus === 'scheduled' ? r.appointmentDate : '—') + '</td>';
+              else if (c.k === 'logisticsProvider' || c.k === 'pickupPerson') cells += '<td>' + (r[c.k] || '—') + '</td>';
+              else if (c.k === 'deliveryAppointmentDate') cells += '<td>' + (r.deliveryAppointmentDate || '—') + '</td>';
+              else cells += '<td>' + (r[c.k] || '—') + '</td>';
+            }
+            return '<tr>' + cells + '</tr>';
+          }).join('');
+        }
+        renderPagination(); updateActionBar(); updateBatchButton();
+      }
+
+      function renderPagination() {
+        const t = state.filteredRecords.length;
+        const tp = Math.ceil(t / state.pageSize) || 1;
+        $('pageInfo').textContent = '共 ' + t + ' 条';
+        let h = '<button class="page-btn" ' + (state.currentPage<=1?'disabled':'') + ' data-page="'+(state.currentPage-1)+'">&laquo;</button>';
+        for (let i=1; i<=tp; i++) {
+          if (tp<=7||i===1||i===tp||(i>=state.currentPage-1&&i<=state.currentPage+1))
+            h += '<button class="page-btn'+(i===state.currentPage?' active':'')+'" data-page="'+i+'">'+i+'</button>';
+          else if (i===state.currentPage-2||i===state.currentPage+2)
+            h += '<span style="padding:0 4px;color:var(--text-3);">...</span>';
+        }
+        h += '<button class="page-btn" '+(state.currentPage>=tp?'disabled':'')+' data-page="'+(state.currentPage+1)+'">&raquo;</button>';
+        $('pageControls').innerHTML = h;
+      }
+
+      function updateBatchButton() {
+        const btn = $('btnBatchConfirm'); if (!btn) return;
+        btn.disabled = state.selectedIds.size === 0;
+        btn.innerHTML = state.selectedIds.size>0
+          ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>确认选中 ('+state.selectedIds.size+')'
+          : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>确认选中';
+      }
+
+      function updateActionBar() {
+        const isPC = state.activeTab === 'planConfirm';
+        const isDD = state.activeTab === 'directDelivery';
+        if (isPC) {
+          $('actionBarLeft').innerHTML = '<label class="checkbox-label"><input type="checkbox" id="selectAll"> 批量确认</label><button class="btn btn-outline" id="btnBatchConfirm" disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>确认选中</button>';
+          $('actionBarRight').innerHTML = '<label class="toggle-label"><span>只看待供应商确认</span><div class="toggle-switch'+(state.toggleOn?' on':'')+'" id="toggleSwitch"></div></label>';
+          $('actionBar').style.display = 'flex';
+          const allPending = state.filteredRecords.slice((state.currentPage-1)*state.pageSize, state.currentPage*state.pageSize).filter(r => r.status === 'pending');
+          const allChecked = allPending.length > 0 && allPending.every(r => state.selectedIds.has(r.id));
+          const sa = $('selectAll'); if (sa) sa.checked = allChecked;
+        } else if (isDD) {
+          $('actionBarLeft').innerHTML = '<button class="btn btn-primary" id="btnAddAppointment"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增预约</button>';
+          $('actionBarRight').innerHTML = '';
+          $('actionBar').style.display = 'flex';
+        } else {
+          $('actionBarLeft').innerHTML = '<span class="action-hint">供应商在此标记「完成备货」并推送物流商端；取货登记（物流商端）与工厂收货由对应系统完成，下方为演示入口</span>';
+          $('actionBarRight').innerHTML = '';
+          $('actionBar').style.display = 'flex';
+        }
+      }
+
+      function updateStats() {
+        $('statPending').textContent = state.records.filter(r => r.status === 'pending').length;
+        $('statPlatform').textContent = state.records.filter(r => r.status === 'platformPending').length;
+        $('statSelf').textContent = state.records.filter(r => r.deliveryMethod === 'self' && r.status === 'confirmed').length;
+        $('statLogistics').textContent = state.records.filter(r => r.deliveryMethod === 'self' && r.status === 'awaitPickup').length;
+      }
+
+      // ===== 确认弹窗 =====
+      function openConfirmModal(ids) {
+        const items = state.records.filter(r => ids.includes(r.id));
+        if (!items.length) return;
+        state.confirmingIds = ids;
+        $('submitCount').textContent = items.length + ' 条数据';
+        const b = $('confirmModalBody');
+        b.innerHTML = items.map(r => {
+          const dm = r.deliveryMethod || '';
+          const cQ = r.commitQtyNum > 0 ? r.commitQtyNum : r.planQtyNum;
+          return '<div class="confirm-record-card" data-id="'+r.id+'">' +
+            '<div class="confirm-info-header">' +
+              '<div class="confirm-info-left">' +
+                '<div class="confirm-info-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>' +
+                '<div class="confirm-info-text"><div class="info-title">供应商编号 <strong>'+r.supplierCode+'</strong> · 物料编号 <strong>'+r.materialCode+'</strong></div><div class="info-sub">'+r.supplierName+'</div></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="info-display-grid">' +
+              '<div class="info-display-item"><span class="label">计划发货日期</span><span class="value">'+r.shipDate+'</span></div>' +
+              '<div class="info-display-item"><span class="label">计划到货日期</span><span class="value">'+r.arriveDate+'</span></div>' +
+              '<div class="info-display-item"><span class="label">物料计划数量</span><span class="value">'+r.planQty+'</span></div>' +
+              '<div class="info-display-item"><span class="label">标准装箱数</span><span class="value">'+formatInt(r.stdBoxQty)+'</span></div>' +
+              '<div class="info-display-item"><span class="label">装托数</span><span class="value">'+formatInt(r.stdPalletQty)+'</span></div>' +
+              '<div class="info-display-item"><span class="label">采购凭证</span><span class="value">'+r.poNumber+'</span></div>' +
+            '</div>' +
+            '<div class="delivery-method-section">' +
+              '<span class="section-label">发货方式:</span>' +
+              '<div class="delivery-radio-group">' +
+                '<label class="delivery-radio-label"><input type="radio" name="method-'+r.id+'" class="method-radio" data-method="self" '+(dm==='self'?'checked':'')+'><span class="radio-circle"></span><span class="radio-text">自提</span></label>' +
+                '<label class="delivery-radio-label"><input type="radio" name="method-'+r.id+'" class="method-radio" data-method="direct" '+(dm==='direct'?'checked':'')+'><span class="radio-circle"></span><span class="radio-text">直送</span></label>' +
+              '</div>' +
+            '</div>' +
+            '<div class="confirm-form-grid">' +
+              '<div class="confirm-field full-row"><label><span class="required">*</span>承诺发货数量</label><input type="number" class="commit-qty" step="0.001" min="0" value="'+cQ+'"></div>' +
+              '<div class="confirm-field delivery-date-field'+(dm?' show':'')+'"><label><span class="required">*</span>承诺发货日期</label><input type="date" class="commit-ship-date" value="'+(r.commitShipDate||r.shipDate)+'"></div>' +
+              '<div class="confirm-field delivery-date-field'+(dm?' show':'')+'"><label><span class="required">*</span>承诺到货日期</label><input type="date" class="commit-arrive-date" value="'+(r.commitArriveDate||r.arriveDate)+'"></div>' +
+            '</div>' +
+            '<div class="auto-calc-row">' +
+              '<div class="auto-calc-item"><span class="label">箱数（自动计算）</span><span class="value box-val">—</span></div>' +
+              '<div class="auto-calc-item"><span class="label">托数（自动计算）</span><span class="value pallet-val">—</span></div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+        b.querySelectorAll('.confirm-record-card').forEach(card => updateAutoCalc(card));
+        openModal('confirmModal');
+      }
+
+      function updateAutoCalc(card) {
+        const qty = parseFloat(card.querySelector('.commit-qty').value) || 0;
+        const rid = card.dataset.id;
+        const rec = state.records.find(r => r.id === rid);
+        if (!rec) return;
+        const stdBoxQty = rec.stdBoxQty || 1;
+        const stdPalletQty = rec.stdPalletQty || 1;
+        const boxCount = qty > 0 ? Math.ceil(qty / stdBoxQty) : 0;
+        const palletCount = qty > 0 ? Math.ceil(qty / stdPalletQty) : 0;
+        card.querySelector('.box-val').textContent = boxCount > 0 ? formatInt(boxCount) : '—';
+        card.querySelector('.pallet-val').textContent = palletCount > 0 ? formatInt(palletCount) : '—';
+      }
+
+      function submitConfirm(e) {
+        e.preventDefault();
+        const now = new Date(), ts = fmtDt(now);
+        const ids = state.confirmingIds;
+
+        // 先验证
+        for (const id of ids) {
+          const r = state.records.find(x => x.id === id);
+          const card = document.querySelector('.confirm-record-card[data-id="'+id+'"]');
+          if (!r || !card) continue;
+          const checked = card.querySelector('.method-radio:checked');
+          if (!checked) { toast('物料 '+r.materialCode+' 请选择发货方式'); return; }
+          const cq = parseFloat(card.querySelector('.commit-qty').value);
+          if (isNaN(cq)||cq<=0) { toast('物料 '+r.materialCode+' 承诺发货数量必须大于0'); return; }
+          if (checked.dataset.method === 'direct') {
+            const sd = card.querySelector('.commit-ship-date').value;
+            const ad = card.querySelector('.commit-arrive-date').value;
+            if (!sd) { toast('物料 '+r.materialCode+' 请填写承诺发货日期'); return; }
+            if (!ad) { toast('物料 '+r.materialCode+' 请填写承诺到货日期'); return; }
+          }
+        }
+
+        // 全通过，更新
+        for (const id of ids) {
+          const r = state.records.find(x => x.id === id);
+          const card = document.querySelector('.confirm-record-card[data-id="'+id+'"]');
+          const checked = card.querySelector('.method-radio:checked');
+          r.deliveryMethod = checked.dataset.method;
+          r.commitQtyNum = parseFloat(card.querySelector('.commit-qty').value);
+          r.commitQty = formatNumber(r.commitQtyNum);
+          r.boxCount = Math.ceil(r.commitQtyNum / (r.stdBoxQty||1));
+          r.palletCount = Math.ceil(r.commitQtyNum / (r.stdPalletQty||1));
+          if (r.deliveryMethod === 'direct') {
+            r.commitShipDate = card.querySelector('.commit-ship-date').value;
+            r.commitArriveDate = card.querySelector('.commit-arrive-date').value;
+          }
+          r.status = 'platformPending'; r.updateTime = ts;
+        }
+
+        const cnt = ids.length;
+        closeModal('confirmModal');
+        state.confirmingIds = []; state.selectedIds.clear();
+        updateStats();
+        applyFilter();
+        toast('供应商已确认 ' + cnt + ' 条计划，状态更新为待平台确认');
+      }
+
+      // ===== 批量确认弹窗（左右分栏） =====
+      function openBatchConfirmModal(ids) {
+        const items = state.records.filter(r => ids.includes(r.id) && r.status === 'pending');
+        if (!items.length) return;
+        state.batchItems = items;
+        state.batchConfirmedSet = new Set();
+        state.batchActiveId = null;
+        renderBatchLeftList();
+        // 默认选中第一条
+        if (items.length > 0) switchBatchItem(items[0].id);
+        updateBatchProgress();
+        openModal('batchConfirmModal');
+      }
+
+      function renderBatchLeftList() {
+        const list = $('batchLeftList');
+        const items = state.batchItems;
+        $('batchItemCount').textContent = items.length + ' 条';
+        list.innerHTML = items.map(r => {
+          const isConfirmed = state.batchConfirmedSet.has(r.id);
+          const isActive = r.id === state.batchActiveId;
+          return '<div class="batch-list-item'+(isActive?' active':'')+(isConfirmed?' confirmed-item':'')+'" data-id="'+r.id+'">' +
+            '<div class="item-info">' +
+              '<div class="item-material">'+r.materialCode+'</div>' +
+              '<div class="item-date">'+r.shipDate+'</div>' +
+            '</div>' +
+            '<span class="batch-item-status '+(isConfirmed?'confirmed-item':'pending-item')+'">'+(isConfirmed?'已确认':'待确认')+'</span>' +
+          '</div>';
+        }).join('');
+      }
+
+      function switchBatchItem(id) {
+        state.batchActiveId = id;
+        renderBatchLeftList();
+        renderBatchRightDetail(id);
+      }
+
+      function renderBatchRightDetail(id) {
+        if (!id) {
+          $('batchRight').innerHTML = '<div class="batch-right-empty">← 请从左侧列表选择物料进行确认</div>';
+          return;
+        }
+        const r = state.records.find(x => x.id === id);
+        if (!r) return;
+        const dm = r.deliveryMethod || '';
+        const cQ = r.commitQtyNum > 0 ? r.commitQtyNum : r.planQtyNum;
+        const isConfirmed = state.batchConfirmedSet.has(id);
+        $('batchRight').innerHTML =
+          '<div class="batch-right-body">' +
+            '<div class="confirm-info-header">' +
+              '<div class="confirm-info-left">' +
+                '<div class="confirm-info-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>' +
+                '<div class="confirm-info-text"><div class="info-title">供应商编号 <strong>'+r.supplierCode+'</strong> · 物料编号 <strong>'+r.materialCode+'</strong></div><div class="info-sub">'+r.supplierName+'</div></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="info-display-grid">' +
+              '<div class="info-display-item"><span class="label">计划发货日期</span><span class="value">'+r.shipDate+'</span></div>' +
+              '<div class="info-display-item"><span class="label">计划到货日期</span><span class="value">'+r.arriveDate+'</span></div>' +
+              '<div class="info-display-item"><span class="label">物料计划数量</span><span class="value">'+r.planQty+'</span></div>' +
+              '<div class="info-display-item"><span class="label">标准装箱数</span><span class="value">'+formatInt(r.stdBoxQty)+'</span></div>' +
+              '<div class="info-display-item"><span class="label">装托数</span><span class="value">'+formatInt(r.stdPalletQty)+'</span></div>' +
+              '<div class="info-display-item"><span class="label">采购凭证</span><span class="value">'+r.poNumber+'</span></div>' +
+            '</div>' +
+            '<div class="delivery-method-section">' +
+              '<span class="section-label">发货方式:</span>' +
+              '<div class="delivery-radio-group">' +
+                '<label class="delivery-radio-label"><input type="radio" name="batch-method-'+r.id+'" class="method-radio batch-method-radio" data-method="self" '+(dm==='self'?'checked':'')+(isConfirmed?' disabled':'')+'><span class="radio-circle"></span><span class="radio-text">自提</span></label>' +
+                '<label class="delivery-radio-label"><input type="radio" name="batch-method-'+r.id+'" class="method-radio batch-method-radio" data-method="direct" '+(dm==='direct'?'checked':'')+(isConfirmed?' disabled':'')+'><span class="radio-circle"></span><span class="radio-text">直送</span></label>' +
+              '</div>' +
+            '</div>' +
+            '<div class="confirm-form-grid">' +
+              '<div class="confirm-field full-row"><label><span class="required">*</span>承诺发货数量</label><input type="number" class="commit-qty batch-commit-qty" step="0.001" min="0" value="'+cQ+'" '+(isConfirmed?'readonly':'')+'></div>' +
+              '<div class="confirm-field delivery-date-field'+(dm?' show':'')+'"><label><span class="required">*</span>承诺发货日期</label><input type="date" class="commit-ship-date batch-commit-ship-date" value="'+(r.commitShipDate||r.shipDate)+'" '+(isConfirmed?'readonly':'')+'></div>' +
+              '<div class="confirm-field delivery-date-field'+(dm?' show':'')+'"><label><span class="required">*</span>承诺到货日期</label><input type="date" class="commit-arrive-date batch-commit-arrive-date" value="'+(r.commitArriveDate||r.arriveDate)+'" '+(isConfirmed?'readonly':'')+'></div>' +
+            '</div>' +
+            '<div class="auto-calc-row">' +
+              '<div class="auto-calc-item"><span class="label">箱数（自动计算）</span><span class="value box-val batch-box-val">—</span></div>' +
+              '<div class="auto-calc-item"><span class="label">托数（自动计算）</span><span class="value pallet-val batch-pallet-val">—</span></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="batch-right-footer">' +
+            '<div></div>' +
+            (isConfirmed
+              ? '<span class="btn" style="background:var(--success-soft);color:#277645;border-color:transparent;cursor:default;">'+'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 已确认</span>'
+              : '<button class="btn btn-primary" type="button" id="btnConfirmThisItem">确认此项</button>')
+            +
+          '</div>';
+        // 初始计算
+        if (!isConfirmed) updateAutoCalcBatch();
+      }
+
+      function updateAutoCalcBatch() {
+        const id = state.batchActiveId;
+        if (!id) return;
+        const rec = state.records.find(r => r.id === id);
+        if (!rec) return;
+        const qty = parseFloat($('batchRight').querySelector('.batch-commit-qty')?.value) || 0;
+        const boxCount = qty > 0 ? Math.ceil(qty / (rec.stdBoxQty||1)) : 0;
+        const palletCount = qty > 0 ? Math.ceil(qty / (rec.stdPalletQty||1)) : 0;
+        const boxEl = $('batchRight').querySelector('.batch-box-val');
+        const palEl = $('batchRight').querySelector('.batch-pallet-val');
+        if (boxEl) boxEl.textContent = boxCount > 0 ? formatInt(boxCount) : '—';
+        if (palEl) palEl.textContent = palletCount > 0 ? formatInt(palletCount) : '—';
+      }
+
+      function confirmBatchItem() {
+        const id = state.batchActiveId;
+        if (!id || state.batchConfirmedSet.has(id)) return;
+        const r = state.records.find(x => x.id === id);
+        if (!r) return;
+        const container = $('batchRight');
+        const checked = container.querySelector('.batch-method-radio:checked');
+        if (!checked) { toast('请选择发货方式'); return; }
+        const cq = parseFloat(container.querySelector('.batch-commit-qty').value);
+        if (isNaN(cq)||cq<=0) { toast('承诺发货数量必须大于0'); return; }
+        // 存储暂存数据到 record
+        r.deliveryMethod = checked.dataset.method;
+        r.commitQtyNum = cq;
+        r.commitQty = formatNumber(cq);
+        r.commitShipDate = container.querySelector('.batch-commit-ship-date').value;
+        r.commitArriveDate = container.querySelector('.batch-commit-arrive-date').value;
+        r.boxCount = Math.ceil(cq / (r.stdBoxQty||1));
+        r.palletCount = Math.ceil(cq / (r.stdPalletQty||1));
+        // 标记已确认
+        state.batchConfirmedSet.add(id);
+        updateBatchProgress();
+        renderBatchLeftList();
+        // 自动跳转到下一条未确认的
+        const next = state.batchItems.find(x => !state.batchConfirmedSet.has(x.id));
+        if (next) switchBatchItem(next.id);
+        else renderBatchRightDetail(id); // 全部确认完，展示当前已确认详情
+        // 全部确认则启用提交按钮
+        $('btnBatchSubmit').disabled = state.batchConfirmedSet.size < state.batchItems.length;
+      }
+
+      function updateBatchProgress() {
+        $('batchConfirmProgress').textContent = '已确认 ' + state.batchConfirmedSet.size + ' / ' + state.batchItems.length;
+        $('btnBatchSubmit').disabled = state.batchConfirmedSet.size < state.batchItems.length;
+      }
+
+      function submitBatchConfirm() {
+        if (state.batchConfirmedSet.size < state.batchItems.length) {
+          toast('请先确认所有物料计划'); return;
+        }
+        const now = new Date(), ts = fmtDt(now);
+        const ids = state.batchItems.map(r => r.id);
+        for (const id of ids) {
+          const r = state.records.find(x => x.id === id);
+          if (r) { r.status = 'platformPending'; r.updateTime = ts; }
+        }
+        closeModal('batchConfirmModal');
+        state.batchItems = []; state.batchConfirmedSet = new Set(); state.batchActiveId = null;
+        state.selectedIds.clear();
+        updateStats(); applyFilter();
+        toast('供应商已确认 ' + ids.length + ' 条计划，状态更新为待平台确认');
+      }
+
+      // ===== 新增预约弹窗 =====
+      function openAppointmentModal() {
+        // 加载所有已确认且直送、未预约的物料
+        state.apptRecords = state.records.filter(r => r.status === 'confirmed' && r.deliveryMethod === 'direct' && r.appointmentStatus !== 'scheduled');
+        state.apptSelectedIds.clear();
+        state.apptCurrentPage = 1;
+        $('apptDateInput').value = '';
+        $('apptFilterMaterial').value = '';
+        $('apptFilterDateStart').value = '';
+        $('apptFilterDateEnd').value = '';
+        renderApptTable();
+        openModal('appointmentModal');
+      }
+
+      function getApptFiltered() {
+        let f = state.records.filter(r => r.status === 'confirmed' && r.deliveryMethod === 'direct' && r.appointmentStatus !== 'scheduled');
+        const mc = $('apptFilterMaterial').value.trim().toLowerCase();
+        const ds = $('apptFilterDateStart').value;
+        const de = $('apptFilterDateEnd').value;
+        if (mc) f = f.filter(r => r.materialCode.toLowerCase().includes(mc));
+        if (ds) f = f.filter(r => (r.commitShipDate || r.shipDate) >= ds);
+        if (de) f = f.filter(r => (r.commitShipDate || r.shipDate) <= de);
+        return f;
+      }
+
+      function renderApptTable() {
+        state.apptRecords = getApptFiltered();
+        const s = (state.apptCurrentPage - 1) * state.apptPageSize;
+        const e = s + state.apptPageSize;
+        const pg = state.apptRecords.slice(s, e);
+        const b = $('apptTableBody');
+        if (!pg.length) {
+          b.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px 16px;color:var(--text-3);"><div style="font-size:14px;">暂无符合条件的物料</div></td></tr>';
+        } else {
+          b.innerHTML = pg.map(r => {
+            return '<tr><td class="col-check"><input type="checkbox" class="appt-row-checkbox" data-id="'+r.id+'" ' + (state.apptSelectedIds.has(r.id)?'checked':'') + '></td><td>' + (r.commitShipDate || r.shipDate) + '</td><td>' + r.materialCode + '</td><td>' + r.warehouseArea + '</td><td>' + r.poNumber + '</td><td class="amount">' + r.planQty + '</td><td class="amount">' + r.commitQty + '</td></tr>';
+          }).join('');
+        }
+        renderApptPagination();
+        updateApptSubmitButton();
+      }
+
+      function renderApptPagination() {
+        const t = state.apptRecords.length;
+        const tp = Math.ceil(t / state.apptPageSize) || 1;
+        $('apptPageInfo').textContent = '共 ' + t + ' 条';
+        let h = '<button class="page-btn" ' + (state.apptCurrentPage<=1?'disabled':'') + ' data-page="'+(state.apptCurrentPage-1)+'">&laquo;</button>';
+        for (let i=1; i<=tp; i++) {
+          if (tp<=7||i===1||i===tp||(i>=state.apptCurrentPage-1&&i<=state.apptCurrentPage+1))
+            h += '<button class="page-btn'+(i===state.apptCurrentPage?' active':'')+'" data-page="'+i+'">'+i+'</button>';
+          else if (i===state.apptCurrentPage-2||i===state.apptCurrentPage+2)
+            h += '<span style="padding:0 4px;color:var(--text-3);">...</span>';
+        }
+        h += '<button class="page-btn" '+(state.apptCurrentPage>=tp?'disabled':'')+' data-page="'+(state.apptCurrentPage+1)+'">&raquo;</button>';
+        $('apptPageControls').innerHTML = h;
+      }
+
+      function updateApptSubmitButton() {
+        $('btnApptSubmit').disabled = state.apptSelectedIds.size === 0 || !$('apptDateInput').value;
+      }
+
+      function submitAppointment() {
+        const date = $('apptDateInput').value;
+        if (!date) { toast('请选择预约日期'); return; }
+        if (state.apptSelectedIds.size === 0) { toast('请至少选择一条物料'); return; }
+        const now = new Date(), ts = fmtDt(now);
+        for (const id of state.apptSelectedIds) {
+          const r = state.records.find(x => x.id === id);
+          if (r) { r.appointmentStatus = 'scheduled'; r.appointmentDate = date; r.updateTime = ts; }
+        }
+        const cnt = state.apptSelectedIds.size;
+        closeModal('appointmentModal');
+        applyFilter();
+        toast('已成功预约 ' + cnt + ' 条物料，状态更新为待发货');
+      }
+
+      function cancelAppointment(id) {
+        const r = state.records.find(x => x.id === id);
+        if (!r) return;
+        r.appointmentStatus = 'none';
+        r.appointmentDate = '';
+        r.updateTime = fmtDt(new Date());
+        applyFilter();
+        toast('已取消物料 ' + r.materialCode + ' 的预约');
+      }
+
+      // ===== 平台确认（供应商确认后，平台审核并流转） =====
+      function platformConfirm(id) {
+        const r = state.records.find(x => x.id === id);
+        if (!r || r.status !== 'platformPending') return;
+        r.status = 'confirmed';
+        r.platformConfirmTime = fmtDt(new Date());
+        r.updateTime = r.platformConfirmTime;
+        updateStats();
+        applyFilter();
+        toast('平台已确认，计划已流转至' + (r.deliveryMethod === 'self' ? '自提预约' : '直送预约'));
+      }
+
+      // ===== 自提预约：完成备货（供应商操作，推送物流商端） =====
+      function markStockReady(id) {
+        const r = state.records.find(x => x.id === id);
+        if (!r || r.status !== 'confirmed' || r.deliveryMethod !== 'self') return;
+        r.status = 'awaitPickup';
+        r.stockReadyTime = fmtDt(new Date());
+        r.updateTime = r.stockReadyTime;
+        updateStats();
+        applyFilter();
+        toast('已完成备货，数据已推送至物流商端，等待物流商预约取货');
+      }
+
+      // ===== 工厂收货（工厂端操作，状态 → 已收货） =====
+      function factoryReceive(id) {
+        const r = state.records.find(x => x.id === id);
+        if (!r || r.status !== 'shipped' || r.deliveryMethod !== 'self') return;
+        r.status = 'received';
+        r.receivedTime = fmtDt(new Date());
+        r.updateTime = r.receivedTime;
+        updateStats();
+        applyFilter();
+        toast('工厂已收货，状态更新为「已收货」');
+      }
+
+      // ===== 物流商端：自提信息录入 + 预约送货日期 =====
+      function openLogisticsModal(id) {
+        const r = state.records.find(x => x.id === id);
+        if (!r) return;
+        state.logisticsActiveId = id;
+        $('logisticsInfoGrid').innerHTML = [
+          ['物料编号', r.materialCode],
+          ['采购凭证', r.poNumber],
+          ['计划发货数量', r.planQty],
+          ['承诺发货数量', r.commitQty],
+          ['所属库区', r.warehouseArea]
+        ].map(([l, v]) => '<div class="info-display-item"><span class="label">' + l + '</span><span class="value">' + v + '</span></div>').join('');
+        $('logisticsProviderInput').value = r.logisticsProvider || '';
+        $('pickupPersonInput').value = r.pickupPerson || '';
+        $('pickupPhoneInput').value = r.pickupPhone || '';
+        $('deliveryApptInput').value = r.deliveryAppointmentDate || '';
+        openModal('logisticsModal');
+      }
+
+      function submitLogistics() {
+        const id = state.logisticsActiveId;
+        const r = state.records.find(x => x.id === id);
+        if (!r) return;
+        const provider = $('logisticsProviderInput').value.trim();
+        const person = $('pickupPersonInput').value.trim();
+        const phone = $('pickupPhoneInput').value.trim();
+        const date = $('deliveryApptInput').value;
+        if (!provider) { toast('请填写物流商名称'); return; }
+        if (!person) { toast('请填写提货人'); return; }
+        if (!phone) { toast('请填写联系电话'); return; }
+        if (!date) { toast('请选择预约送货日期'); return; }
+        r.logisticsProvider = provider;
+        r.pickupPerson = person;
+        r.pickupPhone = phone;
+        r.deliveryAppointmentDate = date;
+        r.status = 'shipped';
+        r.logisticsTime = fmtDt(new Date());
+        r.updateTime = r.logisticsTime;
+        closeModal('logisticsModal');
+        state.logisticsActiveId = null;
+        updateStats();
+        applyFilter();
+        toast('物流商已完成取货登记，状态更新为「已发货」');
+      }
+
+      // ===== 事件绑定 =====
+      $('btnSearch').addEventListener('click', applyFilter);
+      $('btnReset').addEventListener('click', () => {
+        $('filterMaterialCode').value = ''; $('filterPoNumber').value = '';
+        $('filterDateStart').value = ''; $('filterDateEnd').value = '';
+        state.toggleOn = false;
+        const ts = $('toggleSwitch'); if (ts) ts.classList.remove('on');
+        applyFilter();
+      });
+
+      $('actionBarLeft').addEventListener('change', e => {
+        if (e.target.id !== 'selectAll') return;
+        const ck = e.target.checked;
+        const sa = $('selectAllTable'); if (sa) sa.checked = ck;
+        if (ck) state.filteredRecords.slice((state.currentPage-1)*state.pageSize, state.currentPage*state.pageSize).forEach(r => { if (r.status === 'pending') state.selectedIds.add(r.id); });
+        else state.selectedIds.clear();
+        renderTable();
+      });
+      $('dataTable').addEventListener('change', e => {
+        if (e.target.id !== 'selectAllTable') return;
+        const sa = $('selectAll'); if (sa) sa.checked = e.target.checked;
+        if (e.target.checked) state.filteredRecords.slice((state.currentPage-1)*state.pageSize, state.currentPage*state.pageSize).forEach(r => { if (r.status === 'pending') state.selectedIds.add(r.id); });
+        else state.selectedIds.clear();
+        renderTable();
+      });
+
+      $('tableBody').addEventListener('change', e => {
+        if (!e.target.classList.contains('row-checkbox')) return;
+        const id = e.target.dataset.id;
+        if (e.target.checked) state.selectedIds.add(id); else state.selectedIds.delete(id);
+        updateBatchButton();
+        const pids = state.filteredRecords.slice((state.currentPage-1)*state.pageSize, state.currentPage*state.pageSize).map(r => r.id);
+        const ac = pids.length>0 && pids.every(x => state.selectedIds.has(x));
+        const sa = $('selectAll'); if (sa) sa.checked = ac;
+        const sat = $('selectAllTable'); if (sat) sat.checked = ac;
+      });
+
+      $('tableBody').addEventListener('click', e => {
+        const btn = e.target.closest('.row-action');
+        if (!btn) return;
+        if (btn.dataset.id) openConfirmModal([btn.dataset.id]);
+        else if (btn.dataset.cancelId) cancelAppointment(btn.dataset.cancelId);
+        else if (btn.dataset.platformId) platformConfirm(btn.dataset.platformId);
+        else         if (btn.dataset.stockId) markStockReady(btn.dataset.stockId);
+        else if (btn.dataset.logisticsId) openLogisticsModal(btn.dataset.logisticsId);
+        else if (btn.dataset.receiveId) factoryReceive(btn.dataset.receiveId);
+      });
+
+      $('pageControls').addEventListener('click', e => {
+        const btn = e.target.closest('.page-btn');
+        if (btn && !btn.disabled) {
+          const p = parseInt(btn.dataset.page);
+          if (p>=1 && p<=Math.ceil(state.filteredRecords.length/state.pageSize)) {
+            state.currentPage = p; renderTable();
+          }
+        }
+      });
+
+      $('pageSizeSelect').addEventListener('change', e => {
+        state.pageSize = parseInt(e.target.value); state.currentPage = 1; renderTable();
+      });
+
+      $('actionBar').addEventListener('click', e => {
+        const addBtn = e.target.closest('#btnAddAppointment');
+        if (addBtn) { openAppointmentModal(); return; }
+        const batchBtn = e.target.closest('#btnBatchConfirm');
+        if (batchBtn && !batchBtn.disabled) {
+          if (state.selectedIds.size===0) return;
+          if (state.selectedIds.size > 1) {
+            openBatchConfirmModal([...state.selectedIds]);
+          } else {
+            openConfirmModal([...state.selectedIds]);
+          }
+        }
+      });
+
+      $('actionBarRight').addEventListener('click', e => {
+        if (!e.target.closest('.toggle-label')) return;
+        state.toggleOn = !state.toggleOn;
+        const ts = $('toggleSwitch'); if (ts) ts.classList.toggle('on', state.toggleOn);
+        applyFilter();
+      });
+
+      $('tabBar').addEventListener('click', e => {
+        const tab = e.target.closest('.tab-item');
+        if (!tab) return;
+        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        state.activeTab = tab.dataset.tab;
+        state.currentPage = 1; state.selectedIds.clear();
+        const sat = $('selectAllTable'); if (sat) sat.checked = false;
+        applyFilter();
+      });
+
+      $('confirmModalBody').addEventListener('change', e => {
+        if (e.target.classList.contains('method-radio')) {
+          const card = e.target.closest('.confirm-record-card');
+          const dateFields = card.querySelectorAll('.delivery-date-field');
+          dateFields.forEach(f => f.classList.toggle('show', true));
+        }
+      });
+
+      $('confirmModalBody').addEventListener('input', e => {
+        if (e.target.classList.contains('commit-qty')) {
+          const card = e.target.closest('.confirm-record-card');
+          if (card) updateAutoCalc(card);
+        }
+      });
+
+      $('confirmForm').addEventListener('submit', submitConfirm);
+
+      // 批量弹窗：左侧列表点击切换
+      $('batchLeftList').addEventListener('click', e => {
+        const item = e.target.closest('.batch-list-item');
+        if (!item || item.classList.contains('confirmed-item')) return;
+        const id = item.dataset.id;
+        if (id && id !== state.batchActiveId) switchBatchItem(id);
+      });
+
+      // 批量弹窗：右侧——发货方式切换
+      $('batchRight').addEventListener('change', e => {
+        if (e.target.classList.contains('batch-method-radio')) {
+          const container = $('batchRight');
+          const dateFields = container.querySelectorAll('.delivery-date-field');
+          dateFields.forEach(f => f.classList.toggle('show', true));
+        }
+      });
+
+      // 批量弹窗：右侧——数量输入自动计算
+      $('batchRight').addEventListener('input', e => {
+        if (e.target.classList.contains('batch-commit-qty')) updateAutoCalcBatch();
+      });
+
+      // 批量弹窗：右侧——确认此项按钮
+      $('batchRight').addEventListener('click', e => {
+        if (e.target.id === 'btnConfirmThisItem') confirmBatchItem();
+      });
+
+      // 批量弹窗：提交
+      $('btnBatchSubmit').addEventListener('click', submitBatchConfirm);
+
+      // 预约弹窗：选择全选
+      $('apptSelectAll').addEventListener('change', e => {
+        const ck = e.target.checked;
+        if (ck) state.apptRecords.slice((state.apptCurrentPage-1)*state.apptPageSize, state.apptCurrentPage*state.apptPageSize).forEach(r => state.apptSelectedIds.add(r.id));
+        else state.apptSelectedIds.clear();
+        renderApptTable();
+      });
+
+      // 预约弹窗：行选择
+      $('apptTableBody').addEventListener('change', e => {
+        if (!e.target.classList.contains('appt-row-checkbox')) return;
+        const id = e.target.dataset.id;
+        if (e.target.checked) state.apptSelectedIds.add(id); else state.apptSelectedIds.delete(id);
+        updateApptSubmitButton();
+        const pids = state.apptRecords.slice((state.apptCurrentPage-1)*state.apptPageSize, state.apptCurrentPage*state.apptPageSize).map(r => r.id);
+        $('apptSelectAll').checked = pids.length>0 && pids.every(x => state.apptSelectedIds.has(x));
+      });
+
+      // 预约弹窗：日期变化
+      $('apptDateInput').addEventListener('change', updateApptSubmitButton);
+
+      // 预约弹窗：查询/重置
+      $('btnApptSearch').addEventListener('click', () => { state.apptCurrentPage = 1; renderApptTable(); });
+      $('btnApptReset').addEventListener('click', () => {
+        $('apptFilterMaterial').value = '';
+        $('apptFilterDateStart').value = '';
+        $('apptFilterDateEnd').value = '';
+        state.apptCurrentPage = 1; renderApptTable();
+      });
+
+      // 预约弹窗：分页
+      $('apptPageControls').addEventListener('click', e => {
+        const btn = e.target.closest('.page-btn');
+        if (btn && !btn.disabled) {
+          const p = parseInt(btn.dataset.page);
+          if (p>=1 && p<=Math.ceil(state.apptRecords.length/state.apptPageSize)) {
+            state.apptCurrentPage = p; renderApptTable();
+          }
+        }
+      });
+
+      // 预约弹窗：每页条数
+      $('apptPageSizeSelect').addEventListener('change', e => {
+        state.apptPageSize = parseInt(e.target.value); state.apptCurrentPage = 1; renderApptTable();
+      });
+
+      // 预约弹窗：确认预约
+      $('btnApptSubmit').addEventListener('click', submitAppointment);
+
+      // 物流商弹窗：确认录入
+      $('btnLogisticsSubmit').addEventListener('click', submitLogistics);
+
+      document.querySelectorAll('[data-close]').forEach(btn => {
+        btn.addEventListener('click', () => closeModal(btn.dataset.close));
+      });
+      document.querySelectorAll('.modal-layer').forEach(layer => {
+        layer.addEventListener('mousedown', e => { if (e.target===layer) closeModal(layer.id); });
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key==='Escape') {
+          const open = [...document.querySelectorAll('.modal-layer.show')].pop();
+          if (open) closeModal(open.id);
+        }
+      });
+
+      updateStats();
+      renderTable();
+    })();
+  </script>
+</body>
+</html>

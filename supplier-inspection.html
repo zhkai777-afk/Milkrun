@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>博格华纳 · 供应商出货检查</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #07868d;
+      --primary-dark: #046b71;
+      --primary-soft: #e9f7f7;
+      --primary-light: #eef9f9;
+      --text: #27313a;
+      --text-2: #5e6975;
+      --text-3: #8b95a1;
+      --surface: #ffffff;
+      --canvas: #f4f6f8;
+      --muted: #f6f8fa;
+      --border: #e5e9ef;
+      --border-strong: #d8dee7;
+      --danger: #e95d62;
+      --danger-soft: #fff0f0;
+      --success: #48a66b;
+      --success-soft: #eef9f1;
+      --warning: #d99026;
+      --warning-soft: #fff7e8;
+      --info: #3b82f6;
+      --info-soft: #eff6ff;
+      --shadow: 0 12px 30px rgba(27, 39, 51, .08);
+      --shadow-sm: 0 1px 3px rgba(27,39,51,.06);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body {
+      background: var(--canvas); color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px; line-height: 1.5;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(7, 134, 141, .22); outline-offset: 1px;
+    }
+    .app-shell { min-height: 100dvh; display: flex; flex-direction: column; }
+    .top-bar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 24px; min-height: 52px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .top-bar .logo { font-size: 15px; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+    .top-bar .logo-icon {
+      width: 28px; height: 28px; border-radius: 6px; background: var(--primary); color: #fff;
+      display: grid; place-items: center; font-size: 14px; font-weight: 700;
+    }
+    .user-info { display: flex; align-items: center; gap: 12px; color: var(--text-2); font-size: 13px; }
+    .user-info .company { color: var(--text-3); font-size: 12px; }
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%; background: var(--primary-soft); color: var(--primary);
+      display: grid; place-items: center; font-size: 13px; font-weight: 600;
+    }
+    .divider { width: 1px; height: 18px; background: var(--border-strong); }
+    .page-body { flex: 1; padding: 24px; width: 100%; }
+    .welcome-section { margin-bottom: 20px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .welcome-section h1 { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .supplier-info { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-2); flex-wrap: wrap; }
+    .supplier-info strong { color: var(--text); font-weight: 600; }
+    .supplier-info .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border-strong); }
+    .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px;
+      box-shadow: var(--shadow-sm); transition: box-shadow .2s, transform .2s;
+    }
+    .stat-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+    .stat-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .stat-card-label { font-size: 13px; color: var(--text-2); }
+    .stat-card-icon { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; }
+    .stat-card-icon.blue { background: var(--info-soft); color: var(--info); }
+    .stat-card-icon.teal { background: var(--primary-soft); color: var(--primary); }
+    .stat-card-icon.amber { background: var(--warning-soft); color: var(--warning); }
+    .stat-card-icon.green { background: var(--success-soft); color: var(--success); }
+    .stat-card-icon.red { background: var(--danger-soft); color: var(--danger); }
+    .stat-card-value { font-size: 30px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
+    .stat-card-sub { font-size: 12px; color: var(--text-3); }
+    .main-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 20px 24px 24px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 36px; padding: 7px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+      background: var(--surface); color: var(--text); font-size: 13px; font-weight: 500;
+      transition: all .18s; white-space: nowrap; text-decoration: none;
+    }
+    .btn:hover { background: var(--muted); border-color: #cdd3db; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+    .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+    .btn-success:hover { background: #3d8f5b; border-color: #3d8f5b; }
+    .btn-danger { border-color: #f4c9cb; background: var(--danger-soft); color: #c94349; }
+    .btn-danger:hover { border-color: var(--danger); background: #ffe8e9; color: #b73238; }
+    .btn-outline { border-color: var(--border-strong); background: var(--surface); }
+    .btn-sm { min-height: 30px; padding: 5px 11px; font-size: 12px; }
+    .btn-icon { width: 30px; min-width: 30px; padding: 0; }
+    .svg-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .svg-icon.sm { width: 14px; height: 14px; }
+
+    .section-title-bar {
+      display: flex; align-items: center; gap: 10px; margin: 4px 0 16px;
+      font-size: 15px; font-weight: 600; color: var(--text);
+    }
+    .section-title-bar::before { content: ""; width: 4px; height: 16px; border-radius: 2px; background: var(--primary); }
+
+    /* 筛选 */
+    .history-filter { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+    .history-filter .form-field { min-width: 160px; margin-bottom: 0; display: flex; flex-direction: column; gap: 6px; }
+    .history-filter .form-field label { font-size: 12px; color: var(--text-2); font-weight: 500; }
+    .history-filter .form-field input, .history-filter .form-field select {
+      min-height: 38px; border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 11px; font-size: 13px;
+    }
+    .history-filter .spacer { flex: 1; }
+
+    /* 图表 */
+    .chart-area { height: 240px; margin: 4px 0 8px; }
+    .chart-bar-wrap { display: flex; align-items: flex-end; gap: 18px; height: 190px; padding: 0 10px; border-bottom: 1px solid var(--border); }
+    .chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 40px; }
+    .chart-bar { width: 100%; max-width: 60px; border-radius: 6px 6px 0 0; transition: height .3s ease; position: relative; }
+    .chart-bar.ok { background: var(--success); }
+    .chart-bar.ng { background: var(--danger); }
+    .chart-bar .bar-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .chart-axis { display: flex; gap: 18px; padding: 8px 10px 0; }
+    .chart-axis span { flex: 1; text-align: center; font-size: 11px; color: var(--text-2); min-width: 40px; }
+
+    /* 报告卡片 */
+    .report-card {
+      border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 18px;
+      margin-bottom: 12px; background: var(--surface); transition: box-shadow .15s;
+    }
+    .report-card:hover { box-shadow: var(--shadow-sm); }
+    .rc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+    .rc-title { font-size: 15px; font-weight: 600; }
+    .rc-meta { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-3); flex-wrap: wrap; }
+    .rc-meta span { display: inline-flex; align-items: center; gap: 4px; }
+    .rc-body { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 16px; margin: 12px 0; }
+    .rc-item { display: flex; flex-direction: column; gap: 2px; }
+    .rc-item .label { font-size: 11px; color: var(--text-2); }
+    .rc-item .value { font-size: 13px; font-weight: 500; color: var(--text); }
+    .rc-stats { display: flex; gap: 10px; margin-top: 4px; align-items: center; flex-wrap: wrap; }
+    .rc-stat { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+    .rc-stat.ok { background: var(--success-soft); color: #277645; }
+    .rc-stat.ng { background: var(--danger-soft); color: #b73238; }
+    .rc-stat.total { background: var(--muted); color: var(--text-2); }
+    .rc-actions { display: flex; gap: 8px; margin-left: auto; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap;
+    }
+    .status-badge.draft { background: var(--warning-soft); color: #8a5e16; }
+    .status-badge.submitted { background: var(--success-soft); color: #277645; }
+
+    /* 详情弹窗 */
+    .modal-layer {
+      position: fixed; inset: 0; z-index: 1000; background: rgba(22, 28, 34, .54);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-layer.show { display: flex; }
+    .modal {
+      background: var(--surface); border-radius: 12px; box-shadow: 0 24px 70px rgba(0,0,0,.22);
+      width: 100%; max-width: 960px; max-height: calc(100dvh - 40px); display: flex; flex-direction: column;
+      animation: modalIn .2s ease-out;
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .modal-head h3 { font-size: 17px; font-weight: 600; }
+    .close-btn { width: 36px; height: 36px; border: 0; border-radius: 6px; background: transparent; color: var(--text-3); display: grid; place-items: center; font-size: 20px; line-height: 1; }
+    .close-btn:hover { background: var(--muted); color: var(--text); }
+    .modal-body { padding: 20px 24px; overflow-y: auto; }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .detail-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 16px; padding: 14px 16px; background: var(--primary-soft); border: 1px solid #cce5e6; border-radius: var(--radius-sm); margin-bottom: 18px; }
+    .detail-meta .dm-item { display: flex; flex-direction: column; gap: 3px; }
+    .detail-meta .dm-label { font-size: 11px; color: var(--text-2); }
+    .detail-meta .dm-value { font-size: 14px; font-weight: 600; color: var(--text); }
+    .detail-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    table.detail-table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    table.detail-table th, table.detail-table td { padding: 10px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    table.detail-table th { background: #fbfcfd; color: var(--text-2); font-weight: 600; white-space: nowrap; }
+    table.detail-table td.num, table.detail-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.detail-table td.center, table.detail-table th.center { text-align: center; }
+    .result-pass { color: var(--success); font-weight: 600; }
+    .result-fail { color: var(--danger); font-weight: 600; }
+
+    .toast-region { position: fixed; top: 20px; left: 50%; z-index: 1200; transform: translateX(-50%); display: grid; gap: 8px; pointer-events: none; }
+    .toast { min-width: 260px; max-width: calc(100vw - 32px); padding: 11px 15px; border: 1px solid #b8e0ca; border-radius: 7px; background: #f2fbf5; color: #277645; box-shadow: var(--shadow); animation: toastIn .2s ease-out; text-align: center; font-size: 13px; }
+    .toast.error { border-color: #f1bfc1; background: #fff3f3; color: #b63a40; }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 1100px) {
+      .stat-cards { grid-template-columns: repeat(2, 1fr); }
+      .rc-body, .detail-meta { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px) {
+      .page-body { padding: 16px; }
+      .stat-cards { grid-template-columns: 1fr; }
+      .top-bar { padding: 0 16px; }
+      .top-bar .company { display: none; }
+      .rc-body, .detail-meta { grid-template-columns: 1fr; }
+      .rc-actions { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-bar">
+      <div class="logo"><div class="logo-icon">B</div><span>博格华纳 供应商协同平台</span></div>
+      <div class="user-info">
+        <span class="company">苏州瑞玛精密工业集团股份有限公司</span>
+        <div class="divider"></div>
+        <span>配件供应商工作人员</span>
+        <div class="user-avatar">供</div>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="welcome-section">
+        <div>
+          <h1>供应商出货检查</h1>
+          <div class="supplier-info">
+            <span>供应商编码: <strong>90000064</strong></span>
+            <span class="dot"></span>
+            <span>供应商名称: <strong>苏州瑞玛精密工业集团股份有限公司</strong></span>
+          </div>
+        </div>
+        <a class="btn btn-primary" href="supplier-inspection-create.html">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新增出货检验
+        </a>
+      </div>
+
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-card-top"><span class="stat-card-label">待检查</span><div class="stat-card-icon amber"><svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></div></div>
+          <div class="stat-card-value" style="color:var(--warning);" id="statPending">0</div>
+          <div class="stat-card-sub">待创建出货检查</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><span class="stat-card-label">今日提交</span><div class="stat-card-icon teal"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div></div>
+          <div class="stat-card-value" style="color:var(--primary);" id="statToday">0</div>
+          <div class="stat-card-sub">本日已提交检查单</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><span class="stat-card-label">累计检查单</span><div class="stat-card-icon blue"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div></div>
+          <div class="stat-card-value" style="color:var(--info);" id="statTotal">0</div>
+          <div class="stat-card-sub">历史检查单总数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><span class="stat-card-label">不合格项</span><div class="stat-card-icon red"><svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div></div>
+          <div class="stat-card-value" style="color:var(--danger);" id="statFail">0</div>
+          <div class="stat-card-sub">累计不合格检验项</div>
+        </div>
+      </div>
+
+      <div class="main-card">
+        <div class="history-filter">
+          <div class="form-field">
+            <label>零件号</label>
+            <input type="text" id="hMaterialCode" placeholder="请输入零件号">
+          </div>
+          <div class="form-field">
+            <label>检验项目</label>
+            <input type="text" id="hItemName" placeholder="请输入检验项目">
+          </div>
+          <div class="form-field">
+            <label>到料日期 起</label>
+            <input type="date" id="hDateStart">
+          </div>
+          <div class="form-field">
+            <label>到料日期 止</label>
+            <input type="date" id="hDateEnd">
+          </div>
+          <div class="form-field" style="min-width:120px;">
+            <label>结果</label>
+            <select id="hResult" class="cell-input">
+              <option value="">全部</option>
+              <option value="ok">全部合格</option>
+              <option value="ng">存在不合格</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="hSearch" type="button">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            查询
+          </button>
+          <button class="btn btn-outline" id="hReset" type="button">重置</button>
+          <div class="spacer"></div>
+        </div>
+
+        <div class="section-title-bar">近7天合格率趋势</div>
+        <div class="chart-area" id="chartArea">
+          <div class="chart-bar-wrap" id="chartBars"></div>
+          <div class="chart-axis" id="chartAxis"></div>
+        </div>
+
+        <div class="section-title-bar">出货检查报告列表</div>
+        <div id="historyList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 详情弹窗 -->
+  <div class="modal-layer" id="detailModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>出货检查报告详情</h3>
+        <button class="close-btn" type="button" data-close="detailModal" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body" id="detailBody"></div>
+      <div class="modal-foot">
+        <button class="btn" type="button" data-close="detailModal">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-region" id="toastRegion"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const PLAN_KEY = 'material-plan-v5';
+      const INSP_KEY = 'bw_supplier_inspections';
+
+      function uuid() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0;
+          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+      }
+      function pad(n) { return String(n).padStart(2, '0'); }
+      function escapeHtml(v) { return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+      function empty(v) { return v === null || v === undefined || String(v).trim() === ''; }
+      function toNum(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+      function evaluateItem(it) {
+        if (!it || it.type !== 'number') return it && it.result ? it.result : '';
+        const vals = (it.measurements || []).map(v => toNum(v)).filter(v => v !== null);
+        if (!vals.length) return it.result || '';
+        const std = toNum(it.standardValue); if (std === null) return it.result || '';
+        const upper = toNum(it.upperTolerance), lower = toNum(it.lowerTolerance);
+        for (const v of vals) {
+          let fail = false;
+          if (upper !== null && lower !== null) fail = v < std + lower || v > std + upper;
+          else if (upper !== null) fail = v > std + upper;
+          else if (lower !== null) fail = v < std + lower;
+          else fail = v !== std;
+          if (fail) return '不合格';
+        }
+        return '合格';
+      }
+
+      function loadPlans() {
+        try { const p = JSON.parse(localStorage.getItem(PLAN_KEY)); return Array.isArray(p) ? p : []; } catch { return []; }
+      }
+      function loadInspections() {
+        try { const p = JSON.parse(localStorage.getItem(INSP_KEY)); return Array.isArray(p) ? p : []; } catch { return []; }
+      }
+      function saveInspections(list) { localStorage.setItem(INSP_KEY, JSON.stringify(list)); }
+
+      const state = { plans: loadPlans(), inspections: loadInspections() };
+
+      function toast(msg, error) {
+        const region = document.getElementById('toastRegion');
+        const el = document.createElement('div');
+        el.className = 'toast' + (error ? ' error' : '');
+        el.textContent = msg;
+        region.appendChild(el);
+        setTimeout(() => el.remove(), 2500);
+      }
+
+      // 模态框通用控制
+      function openModal(id) { document.getElementById(id).classList.add('show'); }
+      function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+      document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
+      document.querySelectorAll('.modal-layer').forEach(layer => layer.addEventListener('click', e => { if (e.target === layer) closeModal(layer.id); }));
+
+      function getSelectablePlans() {
+        let plans = state.plans.filter(r => ['pending_shipment', 'in_transit', 'received'].includes(r.status));
+        if (!plans.length) {
+          plans = [
+            { id: 'demo-1', materialCode: '108143-101', materialName: '阀体组件 A', supplierName: '苏州瑞玛精密工业集团股份有限公司', voucher: '2026-08-03-108143', shipDate: '2026-08-03', arrivalDate: '2026-08-15', planQty: 800, promisedQty: 800, deliveryMode: '直送', logistics: '顺丰速运', status: 'pending_shipment', asnNo: 'ASN20260803001', customerPartNo: 'CP-108143-101' },
+            { id: 'demo-2', materialCode: '108143-102', materialName: '阀体组件 B', supplierName: '苏州瑞玛精密工业集团股份有限公司', voucher: '2026-08-04-108143', shipDate: '2026-08-04', arrivalDate: '2026-08-15', planQty: 1200, promisedQty: 1200, deliveryMode: '直送', logistics: '德邦物流', status: 'pending_shipment', asnNo: 'ASN20260804002', customerPartNo: 'CP-108143-102' },
+            { id: 'demo-3', materialCode: '110233-301', materialName: '传感器支架', supplierName: '苏州瑞玛精密工业集团股份有限公司', voucher: '2026-08-06-110233', shipDate: '2026-08-06', arrivalDate: '2026-08-18', planQty: 1500, promisedQty: 1500, deliveryMode: '直送', logistics: '中通快递', status: 'pending_shipment', asnNo: 'ASN20260806003', customerPartNo: 'CP-110233-301' }
+          ];
+        }
+        return plans;
+      }
+
+      // 统计
+      function updateStats() {
+        const plans = getSelectablePlans();
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayCount = state.inspections.filter(r => String(r.createdAt).startsWith(todayStr) && r.status === 'submitted').length;
+        const failCount = state.inspections.reduce((sum, r) => sum + (r.items || []).filter(i => i.result === '不合格').length, 0);
+        document.getElementById('statPending').textContent = plans.length;
+        document.getElementById('statToday').textContent = todayCount;
+        document.getElementById('statTotal').textContent = state.inspections.length;
+        document.getElementById('statFail').textContent = failCount;
+      }
+
+      function getFilteredHistory() {
+        const fCode = document.getElementById('hMaterialCode').value.trim().toLowerCase();
+        const fItem = document.getElementById('hItemName').value.trim().toLowerCase();
+        const fStart = document.getElementById('hDateStart').value;
+        const fEnd = document.getElementById('hDateEnd').value;
+        const fResult = document.getElementById('hResult').value;
+        return state.inspections.filter(r => {
+          if (fCode && !String(r.materialCode).toLowerCase().includes(fCode)) return false;
+          if (fStart && r.arrivalDate && r.arrivalDate < fStart) return false;
+          if (fEnd && r.arrivalDate && r.arrivalDate > fEnd) return false;
+          const hasNg = (r.items || []).some(i => i.result === '不合格');
+          if (fResult === 'ok' && hasNg) return false;
+          if (fResult === 'ng' && !hasNg) return false;
+          if (fItem) {
+            const names = (r.items || []).map(i => String(i.name).toLowerCase()).join(' ');
+            if (!names.includes(fItem)) return false;
+          }
+          return true;
+        });
+      }
+
+      function renderList() {
+        const list = getFilteredHistory();
+        const wrap = document.getElementById('historyList');
+        if (!list.length) {
+          wrap.innerHTML = `<div style="background:var(--muted);border-radius:8px;padding:28px;text-align:center;color:var(--text-3);">暂无出货检查报告</div>`;
+          renderChart([]);
+          return;
+        }
+        wrap.innerHTML = list.map(r => {
+          const items = r.items || [];
+          const okCount = items.filter(i => i.result === '合格').length;
+          const ngCount = items.filter(i => i.result === '不合格').length;
+          const isDraft = r.status === 'draft';
+          const actions = isDraft
+            ? `<a class="btn btn-outline btn-sm" href="supplier-inspection-create.html?id=${encodeURIComponent(r.id)}">继续编辑</a>
+               <button class="btn btn-primary btn-sm" type="button" data-action="detail" data-id="${r.id}">查看详情</button>`
+            : `<button class="btn btn-outline btn-sm" type="button" data-action="detail" data-id="${r.id}">查看详情</button>
+               <button class="btn btn-outline btn-sm" type="button" data-action="preview" data-id="${r.id}">预览报告</button>
+               <button class="btn btn-success btn-sm" type="button" data-action="export" data-id="${r.id}">导出报告</button>`;
+          return `
+            <div class="report-card">
+              <div class="rc-head">
+                <div>
+                  <div class="rc-title">${escapeHtml(r.materialCode)} · ${escapeHtml(r.materialName || '未命名零件')}</div>
+                  <div class="rc-meta">
+                    <span>采购凭证: ${escapeHtml(r.voucher)}</span>
+                    <span>到料日期: ${escapeHtml(r.arrivalDate)}</span>
+                    <span>提交时间: ${escapeHtml(r.createdAt)}</span>
+                  </div>
+                </div>
+                <span class="status-badge ${r.status}">${isDraft ? '草稿' : '已提交'}</span>
+              </div>
+              <div class="rc-body">
+                <div class="rc-item"><span class="label">零件名称</span><span class="value">${escapeHtml(r.materialName || '—')}</span></div>
+                <div class="rc-item"><span class="label">供应商名称</span><span class="value">${escapeHtml(r.supplierName || '—')}</span></div>
+                <div class="rc-item"><span class="label">ASN号</span><span class="value">${escapeHtml(r.asnNo || '—')}</span></div>
+                <div class="rc-item"><span class="label">客户零件号</span><span class="value">${escapeHtml(r.customerPartNo || '—')}</span></div>
+              </div>
+              <div class="rc-stats">
+                <span class="rc-stat total">检验项 ${items.length}</span>
+                <span class="rc-stat ok">合格 ${okCount}</span>
+                ${ngCount ? `<span class="rc-stat ng">不合格 ${ngCount}</span>` : ''}
+                <div class="rc-actions">${actions}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        renderChart(list);
+        bindListActions();
+      }
+
+      function bindListActions() {
+        document.querySelectorAll('#historyList [data-action]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.dataset.id;
+            const rec = state.inspections.find(r => r.id === id);
+            if (!rec) return;
+            const action = btn.dataset.action;
+            if (action === 'detail') openDetail(rec);
+            else if (action === 'preview') previewReport(rec);
+            else if (action === 'export') exportReport(rec);
+          });
+        });
+      }
+
+      function renderChart(list) {
+        const days = [];
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) { const d = new Date(today); d.setDate(d.getDate() - i); days.push(d.toISOString().slice(0, 10)); }
+        const map = {}; days.forEach(d => map[d] = { ok: 0, ng: 0 });
+        list.forEach(r => {
+          const d = String(r.createdAt).slice(0, 10);
+          if (!map[d]) return;
+          (r.items || []).forEach(i => { if (i.result === '合格') map[d].ok++; else if (i.result === '不合格') map[d].ng++; });
+        });
+        const max = Math.max(1, ...Object.values(map).map(v => Math.max(v.ok, v.ng)));
+        document.getElementById('chartBars').innerHTML = days.map(d => `
+          <div class="chart-bar-group">
+            <div style="display:flex;align-items:flex-end;gap:3px;height:100%;width:100%;justify-content:center;">
+              <div class="chart-bar ok" style="height:${(map[d].ok / max) * 100}%;">${map[d].ok ? `<span class="bar-label">${map[d].ok}</span>` : ''}</div>
+              <div class="chart-bar ng" style="height:${(map[d].ng / max) * 100}%;">${map[d].ng ? `<span class="bar-label">${map[d].ng}</span>` : ''}</div>
+            </div>
+          </div>`).join('');
+        document.getElementById('chartAxis').innerHTML = days.map(d => `<span>${d.slice(5)}</span>`).join('');
+      }
+
+      // 详情
+      function openDetail(rec) {
+        const items = rec.items || [];
+        const meta = [
+          ['零件号', rec.materialCode], ['零件名称', rec.materialName], ['供应商名称', rec.supplierName], ['ASN号', rec.asnNo],
+          ['到料日期', rec.arrivalDate], ['客户零件号', rec.customerPartNo], ['采购凭证', rec.voucher], ['计划数量', rec.planQty]
+        ];
+        const rows = items.map((it, idx) => `
+          <tr>
+            <td class="center">${idx + 1}</td>
+            <td>${escapeHtml(it.name)}</td>
+            <td>${escapeHtml(it.method)}</td>
+            <td>${it.type === 'text' ? '文字' : '数字'}</td>
+            <td>${escapeHtml(it.requirement)}</td>
+            <td class="num">${empty(it.checkCount) ? '—' : it.checkCount}</td>
+            <td class="num">${empty(it.standardValue) ? '—' : it.standardValue}</td>
+            <td class="num">${empty(it.upperTolerance) ? '—' : it.upperTolerance}</td>
+            <td class="num">${empty(it.lowerTolerance) ? '—' : it.lowerTolerance}</td>
+            <td class="center ${it.result === '不合格' ? 'result-fail' : (it.result === '合格' ? 'result-pass' : '')}">${escapeHtml(it.result || evaluateItem(it) || '—')}</td>
+            <td>${escapeHtml((it.measurements || []).filter(v => !empty(v)).join(' / '))}</td>
+            <td class="num">${empty(it.inspectedQty) ? '—' : it.inspectedQty}</td>
+            <td class="num">${empty(it.bwLabQty) ? '—' : it.bwLabQty}</td>
+          </tr>`).join('');
+        document.getElementById('detailBody').innerHTML = `
+          <div class="detail-meta">
+            ${meta.map(([l, v]) => `<div class="dm-item"><span class="dm-label">${l}</span><span class="dm-value">${escapeHtml(v ?? '—')}</span></div>`).join('')}
+          </div>
+          <div class="detail-table-wrap">
+            <table class="detail-table">
+              <thead><tr>
+                <th class="center" style="width:40px;">序号</th><th>检验项目</th><th>检验方法</th><th>类别</th><th>技术要求</th>
+                <th class="num">检验数</th><th class="num">标准值</th><th class="num">上公差</th><th class="num">下公差</th>
+                <th class="center">检验结果</th><th>实测记录</th><th class="num">检验数量</th><th class="num">BW实验室</th>
+              </tr></thead>
+              <tbody>${rows || `<tr><td colspan="13" style="text-align:center;color:var(--text-3);padding:24px;">无检验项目</td></tr>`}</tbody>
+            </table>
+          </div>`;
+        openModal('detailModal');
+      }
+
+      // 预览报告（可打印）
+      function previewReport(rec) {
+        const items = rec.items || [];
+        const meta = [
+          ['零件号', rec.materialCode], ['零件名称', rec.materialName], ['供应商名称', rec.supplierName], ['ASN号', rec.asnNo],
+          ['到料日期', rec.arrivalDate], ['客户零件号', rec.customerPartNo], ['采购凭证', rec.voucher], ['计划数量', rec.planQty],
+          ['提交时间', rec.createdAt], ['报告状态', rec.status === 'submitted' ? '已提交' : '草稿']
+        ];
+        const rows = items.map((it, idx) => `
+          <tr>
+            <td style="text-align:center;">${idx + 1}</td><td>${escapeHtml(it.name)}</td><td>${escapeHtml(it.method)}</td>
+            <td>${it.type === 'text' ? '文字' : '数字'}</td><td>${escapeHtml(it.requirement)}</td>
+            <td style="text-align:right;">${empty(it.checkCount) ? '—' : it.checkCount}</td>
+            <td style="text-align:right;">${empty(it.standardValue) ? '—' : it.standardValue}</td>
+            <td style="text-align:right;">${empty(it.upperTolerance) ? '—' : it.upperTolerance}</td>
+            <td style="text-align:right;">${empty(it.lowerTolerance) ? '—' : it.lowerTolerance}</td>
+            <td style="text-align:center;">${escapeHtml(it.result || evaluateItem(it) || '—')}</td>
+            <td>${(it.measurements || []).filter(v => !empty(v)).map(escapeHtml).join(' / ')}</td>
+            <td style="text-align:right;">${empty(it.inspectedQty) ? '—' : it.inspectedQty}</td>
+            <td style="text-align:right;">${empty(it.bwLabQty) ? '—' : it.bwLabQty}</td>
+          </tr>`).join('');
+        const win = window.open('', '_blank');
+        if (!win) { toast('预览窗口被浏览器拦截，请允许弹出窗口', true); return; }
+        win.document.open();
+        win.document.write(`<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><title>出货质量检查报告 ${escapeHtml(rec.materialCode)}</title>
+          <style>
+            * { box-sizing: border-box; }
+            body { font-family: "PingFang SC","Microsoft YaHei",sans-serif; color:#27313a; padding: 32px; max-width: 1000px; margin: 0 auto; }
+            h1 { text-align:center; font-size: 22px; margin: 0 0 4px; }
+            .sub { text-align:center; color:#8b95a1; font-size: 13px; margin-bottom: 20px; }
+            .meta { display:grid; grid-template-columns: repeat(2,1fr); gap: 8px 24px; border:1px solid #e5e9ef; border-radius:8px; padding: 14px 18px; margin-bottom: 18px; }
+            .meta div { display:flex; justify-content: space-between; font-size: 13px; border-bottom: 1px dashed #eef1f4; padding-bottom: 4px; }
+            .meta span:first-child { color:#5e6975; }
+            .meta span:last-child { font-weight:600; }
+            table { width:100%; border-collapse: collapse; font-size: 12px; }
+            th, td { border: 1px solid #d8dee7; padding: 7px 9px; text-align:left; }
+            th { background:#f4f6f8; }
+            td.r, th.r { text-align:right; }
+            td.c, th.c { text-align:center; }
+            .ng { color:#c94349; font-weight:600; } .ok { color:#277645; font-weight:600; }
+            .foot { margin-top: 28px; display:flex; justify-content: space-between; font-size: 13px; color:#5e6975; }
+            .foot div { border-top: 1px solid #cbd3db; padding-top: 8px; width: 30%; text-align:center; }
+            @media print { body { padding: 12px; } }
+          </style></head><body>
+          <h1>出货质量检查报告</h1>
+          <div class="sub">博格华纳 · 供应商出货检验报告（${escapeHtml(rec.materialName || rec.materialCode)}）</div>
+          <div class="meta">${meta.map(([l, v]) => `<div><span>${l}</span><span>${escapeHtml(v ?? '—')}</span></div>`).join('')}</div>
+          <table>
+            <thead><tr>
+              <th class="c" style="width:36px;">序号</th><th>检验项目</th><th>检验方法</th><th>类别</th><th>技术要求</th>
+              <th class="r">检验数</th><th class="r">标准值</th><th class="r">上公差</th><th class="r">下公差</th>
+              <th class="c">检验结果</th><th>实测记录</th><th class="r">检验数量</th><th class="r">BW实验室</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="foot"><div>编制：</div><div>审核：</div><div>批准：</div></div>
+          <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script>
+          </body></html>`);
+        win.document.close();
+      }
+
+      // 导出报告 xlsx
+      function exportReport(rec) {
+        if (typeof XLSX === 'undefined') { toast('导出组件未加载，请检查网络后重试', true); return; }
+        const items = rec.items || [];
+        const aoa = [];
+        aoa.push(['出货质量检查报告']);
+        aoa.push([]);
+        const meta = [
+          ['零件号', rec.materialCode], ['零件名称', rec.materialName], ['供应商名称', rec.supplierName], ['ASN号', rec.asnNo],
+          ['到料日期', rec.arrivalDate], ['客户零件号', rec.customerPartNo], ['采购凭证', rec.voucher], ['计划数量', rec.planQty],
+          ['提交时间', rec.createdAt], ['报告状态', rec.status === 'submitted' ? '已提交' : '草稿']
+        ];
+        meta.forEach(([l, v]) => aoa.push([l, v]));
+        aoa.push([]);
+        aoa.push(['序号', '检验项目', '检验方法', '类别', '技术要求', '检验数', '标准值', '上公差', '下公差', '检验结果', '实测记录', '检验数量', 'BW实验室数量']);
+        items.forEach((it, idx) => {
+          aoa.push([
+            idx + 1, it.name, it.method, it.type === 'text' ? '文字' : '数字', it.requirement,
+            it.checkCount, it.standardValue, it.upperTolerance, it.lowerTolerance, it.result,
+            (it.measurements || []).filter(v => !empty(v)).join(' / '), it.inspectedQty, it.bwLabQty
+          ]);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws['!cols'] = [{ wch: 10 }, { wch: 16 }, { wch: 12 }, { wch: 8 }, { wch: 22 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 28 }, { wch: 10 }, { wch: 12 }];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '出货检查报告');
+        const fname = `出货检查报告_${rec.materialCode || '未知'}_${String(rec.createdAt || '').replace(/[:\s]/g, '')}.xlsx`;
+        XLSX.writeFile(wb, fname, { bookType: 'xlsx', type: 'array' });
+        toast('报告已导出');
+      }
+
+      document.getElementById('hSearch').addEventListener('click', renderList);
+      document.getElementById('hReset').addEventListener('click', () => {
+        document.getElementById('hMaterialCode').value = '';
+        document.getElementById('hItemName').value = '';
+        document.getElementById('hDateStart').value = '';
+        document.getElementById('hDateEnd').value = '';
+        document.getElementById('hResult').value = '';
+        renderList();
+      });
+
+      // 初始化
+      updateStats();
+      renderList();
+    })();
+  </script>
+</body>
+</html>

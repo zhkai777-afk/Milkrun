@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="color-scheme" content="light">
+  <title>博格华纳 · 工厂仓库收货</title>
+  <style>
+    :root {
+      --primary: #07868d;
+      --primary-dark: #046b71;
+      --primary-soft: #e9f7f7;
+      --primary-light: #eef9f9;
+      --text: #27313a;
+      --text-2: #5e6975;
+      --text-3: #8b95a1;
+      --surface: #ffffff;
+      --canvas: #f4f6f8;
+      --muted: #f6f8fa;
+      --border: #e5e9ef;
+      --border-strong: #d8dee7;
+      --danger: #e95d62;
+      --danger-soft: #fff0f0;
+      --success: #48a66b;
+      --success-soft: #eef9f1;
+      --warning: #d99026;
+      --warning-soft: #fff7e8;
+      --shadow-sm: 0 1px 3px rgba(27,39,51,.06);
+      --shadow: 0 12px 30px rgba(27,39,51,.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; -webkit-tap-highlight-color: transparent; }
+    body {
+      min-height: 100dvh;
+      background: var(--canvas);
+      color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding-bottom: calc(var(--safe-bottom) + 20px);
+      user-select: none;
+    }
+    button { font: inherit; cursor: pointer; touch-action: manipulation; border: none; background: none; }
+    button:active { transform: scale(.97); }
+
+    /* ── Header ── */
+    .header {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: calc(var(--safe-top) + 10px) 20px 10px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .header-logo {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      display: grid; place-items: center;
+      font-size: 16px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .header-title { font-size: 16px; font-weight: 600; color: var(--text); }
+    .header-sub { font-size: 11px; color: var(--text-3); margin-top: -1px; }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--muted);
+      display: grid; place-items: center;
+      color: var(--text-2); transition: background .15s;
+    }
+    .icon-btn:active { background: var(--border); }
+    .badge-dot { position: relative; }
+    .badge-dot::after {
+      content: '';
+      position: absolute; top: 4px; right: 4px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--danger);
+      border: 1.5px solid var(--surface);
+    }
+
+    /* ── Page Body ── */
+    .page-body { padding: 16px 16px 0; max-width: 640px; margin: 0 auto; }
+    @media (min-width: 768px) { .page-body { padding: 24px 0 0; } }
+
+    /* ── Welcome ── */
+    .welcome { margin-bottom: 18px; }
+    .welcome-greeting { font-size: 22px; font-weight: 700; color: var(--text); }
+    .welcome-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; color: var(--text-3); flex-wrap: wrap; }
+    .welcome-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border-strong); }
+    .welcome-meta strong { color: var(--text-2); font-weight: 500; }
+
+    /* ── Stats Row ── */
+    .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 18px; }
+    @media (min-width: 540px) { .stats-row { gap: 14px; } }
+    .stat-item {
+      background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border);
+      padding: 14px 12px; text-align: center;
+      box-shadow: var(--shadow-sm); transition: box-shadow .2s;
+    }
+    .stat-num { font-size: 24px; font-weight: 700; color: var(--primary); line-height: 1.2; }
+    @media (min-width: 540px) { .stat-num { font-size: 28px; } }
+    .stat-label { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+    .stat-label.warning { color: var(--warning); }
+
+    /* ── Filter Tabs ── */
+    .filter-tabs {
+      display: flex; gap: 6px; background: var(--muted); padding: 4px;
+      border-radius: 10px; margin-bottom: 14px; overflow-x: auto;
+    }
+    .filter-tab {
+      flex: 1; white-space: nowrap; padding: 8px 10px; border-radius: 7px;
+      font-size: 13px; font-weight: 500; color: var(--text-2);
+      transition: background .15s, color .15s;
+    }
+    .filter-tab.active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow-sm); }
+    .filter-tab .t-count {
+      display: inline-block; min-width: 18px; margin-left: 4px;
+      font-size: 11px; color: var(--text-3); font-weight: 600;
+    }
+    .filter-tab.active .t-count { color: var(--primary); }
+
+    /* ── Receipt List ── */
+    .receipt-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .receipt-card {
+      position: relative; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 14px 14px 16px;
+      box-shadow: var(--shadow-sm); cursor: pointer;
+      transition: border-color .15s, box-shadow .2s; overflow: hidden;
+    }
+    .receipt-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    }
+    .receipt-card.sup::before { background: var(--primary); }
+    .receipt-card.car::before { background: var(--warning); }
+    .receipt-card:active { box-shadow: var(--shadow); border-color: var(--border-strong); }
+    .rc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .rc-kind { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 9px; }
+    .rc-kind.sup { background: var(--primary-soft); color: var(--primary); }
+    .rc-kind.car { background: var(--warning-soft); color: var(--warning); }
+    .rc-code { font-size: 15px; font-weight: 600; color: var(--text); }
+    .rc-sub { font-size: 13px; color: var(--text-2); margin-top: 3px; }
+    .rc-meta { font-size: 11px; color: var(--text-3); margin-top: 5px; }
+
+    .recent-status { font-size: 12px; padding: 3px 9px; border-radius: 10px; font-weight: 500; flex-shrink: 0; }
+    .recent-status.ok       { background: var(--success-soft); color: var(--success); }
+    .recent-status.pending  { background: var(--warning-soft); color: var(--warning); }
+
+    .empty-state { padding: 40px 20px; text-align: center; color: var(--text-3); background: var(--surface); border-radius: var(--radius); }
+
+    /* ── Detail Sheet ── */
+    .sheet-mask { position: fixed; inset: 0; background: rgba(27,39,51,.4); z-index: 30; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .sheet-mask.show { opacity: 1; pointer-events: auto; }
+    .sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 31;
+      background: var(--surface); border-radius: 16px 16px 0 0; max-width: 640px; margin: 0 auto;
+      transform: translateY(100%); transition: transform .25s ease; max-height: 90dvh;
+      display: flex; flex-direction: column; padding-bottom: var(--safe-bottom);
+    }
+    .sheet.show { transform: translateY(0); }
+    .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
+    .sheet-title { font-size: 17px; font-weight: 700; }
+    .sheet-close { width: 32px; height: 32px; border-radius: 50%; background: var(--muted); display: grid; place-items: center; color: var(--text-2); }
+    .sheet-body { padding: 16px; overflow-y: auto; }
+    .sheet-foot { padding: 12px 16px calc(12px + var(--safe-bottom)); border-top: 1px solid var(--border); display: flex; gap: 12px; }
+    .sheet-foot .btn-confirm { flex: 1; }
+
+    /* ── Detail content ── */
+    .ds-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+    .ds-code { font-size: 17px; font-weight: 700; color: var(--text); }
+    .ds-type { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-bottom: 18px; }
+    .meta-item { min-width: 0; }
+    .meta-label { font-size: 11px; color: var(--text-3); }
+    .meta-val { font-size: 13px; color: var(--text); font-weight: 500; margin-top: 2px; word-break: break-all; }
+
+    .block-title { font-size: 14px; font-weight: 600; color: var(--text); margin: 18px 0 10px; display: flex; align-items: center; gap: 6px; }
+    .block-title::before { content: ''; width: 3px; height: 13px; background: var(--primary); border-radius: 2px; }
+
+    /* Material table */
+    .mat-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .mat-table th { text-align: left; font-size: 11px; color: var(--text-3); font-weight: 500; padding: 6px 8px; background: var(--muted); }
+    .mat-table th:first-child { border-radius: 6px 0 0 6px; }
+    .mat-table th:last-child { border-radius: 0 6px 6px 0; }
+    .mat-table td { padding: 8px; border-top: 1px solid var(--border); vertical-align: middle; }
+    .mat-table .m-code { font-weight: 600; color: var(--text); }
+    .mat-table .m-sub { color: var(--text-2); font-size: 12px; }
+    .mat-table .m-num { color: var(--primary); font-weight: 600; text-align: right; }
+    .act-input {
+      width: 84px; padding: 7px 8px; font-size: 13px; text-align: right;
+      background: var(--muted); border: 1px solid var(--border); border-radius: 6px;
+      outline: none; font-family: inherit; color: var(--text);
+    }
+    .act-input:focus { border-color: var(--primary); background: var(--surface); }
+    .m-diff { font-size: 11px; margin-top: 2px; }
+    .m-diff.neg { color: var(--danger); }
+    .m-diff.zero { color: var(--text-3); }
+
+    /* Map + Route */
+    .map-wrap {
+      position: relative; border-radius: 14px; overflow: hidden;
+      border: 1px solid var(--border); background: #eef4f0;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.6), 0 8px 24px rgba(17,51,40,.08);
+    }
+    .map-svg { display: block; width: 100%; height: auto; }
+    .map-pin-label { font-size: 9px; fill: var(--text-2); }
+    .map-pin-label.strong { fill: var(--text); font-weight: 700; }
+
+    .map-overlay {
+      position: absolute; left: 10px; top: 10px; right: 10px; display: flex; gap: 8px; justify-content: space-between; pointer-events: none;
+    }
+    .map-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
+      box-shadow: 0 2px 8px rgba(17,51,40,.1); color: var(--text);
+    }
+    .map-badge.dot::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 2px var(--primary-soft); }
+    .map-badge.dot.ok::before { background: var(--success); box-shadow: 0 0 0 2px var(--success-soft); }
+
+    .map-legend {
+      position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+    }
+    .map-legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text-3); background: rgba(255,255,255,.9); padding: 4px 8px; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .map-legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    @keyframes dashFlow { to { stroke-dashoffset: -36; } }
+    @keyframes pinBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+    @keyframes truckPulse {
+      0% { transform: scale(1); opacity: .55; }
+      100% { transform: scale(2.6); opacity: 0; }
+    }
+
+    /* Tracking timeline (Taobao-style) */
+    .timeline { margin-top: 4px; padding: 2px 0; }
+    .tl-item { display: flex; gap: 12px; align-items: stretch; }
+    .tl-rail { display: flex; flex-direction: column; align-items: center; width: 14px; flex-shrink: 0; }
+    .tl-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; box-sizing: border-box; }
+    .tl-dot.done     { background: var(--primary); }
+    .tl-dot.current  { background: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
+    .tl-dot.todo     { background: #fff; border: 2px solid var(--border-strong); }
+    .tl-line { flex: 1; width: 2px; background: var(--border); margin-top: 3px; }
+    .tl-item:last-child .tl-line { display: none; }
+    .tl-item.done .tl-line, .tl-item.current .tl-line { background: var(--primary); }
+    .tl-body { flex: 1; padding-bottom: 16px; min-width: 0; }
+    .tl-item:last-child .tl-body { padding-bottom: 0; }
+    .tl-title { font-size: 13px; color: var(--text-2); line-height: 1.4; }
+    .tl-item.current .tl-title { color: var(--text); font-weight: 600; }
+    .tl-item.done .tl-title { color: var(--text); }
+    .tl-time { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+    /* Buttons */
+    .btn-confirm { padding: 12px; background: var(--primary); color: #fff; font-size: 15px; font-weight: 600; border-radius: var(--radius-sm); }
+    .btn-confirm:active { background: var(--primary-dark); }
+    .ok-banner { width: 100%; text-align: center; padding: 13px; background: var(--success-soft); color: var(--success); border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; }
+
+    .svg-icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .svg-icon.sm { width: 18px; height: 18px; }
+
+    .toast {
+      position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%) scale(.9);
+      background: rgba(39,49,58,.92); color: #fff; padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-logo">BW</div>
+      <div>
+        <div class="header-title">工厂仓库 · 收货</div>
+        <div class="header-sub">博格华纳宁波 · 物流部</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn badge-dot" aria-label="通知">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="菜单">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Page Body -->
+  <div class="page-body">
+
+    <!-- Welcome -->
+    <div class="welcome">
+      <div class="welcome-greeting">收货管理台</div>
+      <div class="welcome-meta" id="welcomeMeta">
+        <span>宁波博格华纳</span>
+        <span class="dot"></span>
+        <span>工厂仓库</span>
+        <span class="dot"></span>
+        <strong id="pendingStrong">待收货 0 笔</strong>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-num" id="statPending">0</div>
+        <div class="stat-label warning">待收货</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="statOk">0</div>
+        <div class="stat-label">已收货</div>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs" id="filterTabs">
+      <button class="filter-tab active" data-filter="all">全部 <span class="t-count" id="cAll">0</span></button>
+      <button class="filter-tab" data-filter="pending">待收货 <span class="t-count" id="cPending">0</span></button>
+      <button class="filter-tab" data-filter="ok">已收货 <span class="t-count" id="cOk">0</span></button>
+    </div>
+
+    <!-- Receipt List -->
+    <div class="receipt-list" id="receiptList"></div>
+
+  </div>
+
+  <!-- Detail Sheet -->
+  <div class="sheet-mask" id="sheetMask" onclick="closeDetail()"></div>
+  <div class="sheet" id="sheet">
+    <div class="sheet-head">
+      <div class="sheet-title">收货详情</div>
+      <button class="sheet-close" onclick="closeDetail()" aria-label="关闭">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body" id="detailBody"></div>
+    <div class="sheet-foot" id="detailFoot"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SUP_KEY = 'bw_supplier_deliveries';
+    const CAR_KEY = 'bw_carrier_pickups';
+    const PLAN_KEY = 'material-plan-v5';
+
+    const SEED_SUP = [
+      { no:'SHP-20260812-101', supplier:'博世汽车部件（苏州）有限公司',
+        items:[{ materialCode:'108143-101', voucher:'2026-08-03-108143', planQty:800, arrivalDate:'2026-08-15', supplierName:'博世汽车部件（苏州）有限公司' }],
+        eta:'2026-08-15 09:30', mode:'供应商直送', remark:'', time:'2026-08-12 14:20', status:'shipped' },
+      { no:'SHP-20260813-202', supplier:'采埃孚传动系统（上海）有限公司',
+        items:[{ materialCode:'110233-301', voucher:'2026-08-06-110233', planQty:1500, arrivalDate:'2026-08-15', supplierName:'采埃孚传动系统（上海）有限公司' }],
+        eta:'2026-08-15 14:00', mode:'供应商直送', remark:'', time:'2026-08-13 10:05', status:'shipped' }
+    ];
+    const SEED_CAR = [
+      { no:'PUP-20260812-301', carrier:'中通快递', relSupplier:'联合汽车电子有限公司',
+        items:[{ materialCode:'109955-201', voucher:'2026-08-05-109955', planQty:500, arrivalDate:'2026-08-15', supplierName:'联合汽车电子有限公司' }],
+        plate:'浙B·8H2K9', driver:'李师傅 139xxxx', trackNo:'ZT202608120033', eta:'2026-08-15 11:00', remark:'', time:'2026-08-12 16:40', status:'shipped' },
+      { no:'PUP-20260813-402', carrier:'德邦物流', relSupplier:'博世汽车部件（苏州）有限公司',
+        items:[{ materialCode:'41256LMN', voucher:'2026-08-07-41256', planQty:2200, arrivalDate:'2026-08-15', supplierName:'博世汽车部件（苏州）有限公司' }],
+        plate:'沪C·5F8L2', driver:'王师傅 137xxxx', trackNo:'DB202608130088', eta:'2026-08-15 15:30', remark:'', time:'2026-08-13 09:30', status:'ok', receivedTime:'2026-08-13 15:20' }
+    ];
+
+    let curFilter = 'all';
+    let cur = null;
+
+    /* ── Helpers ── */
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
+    function shortName(s){ s=String(s||''); return s.length>7 ? s.slice(0,7)+'…' : s; }
+    function nowStr(){ const d=new Date(); const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+    let toastTimer;
+    function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),1600); }
+
+    function loadSup(){ try{ return JSON.parse(localStorage.getItem(SUP_KEY)||'[]'); }catch(e){ return []; } }
+    function loadCar(){ try{ return JSON.parse(localStorage.getItem(CAR_KEY)||'[]'); }catch(e){ return []; } }
+
+    // 收货后按凭证(voucher)回溯更新上游物料计划行的状态
+    function markPlanStatus(vouchers, status){
+      try {
+        const rows = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]');
+        if (!Array.isArray(rows) || !rows.length) return;
+        const set = new Set(vouchers);
+        let changed = false;
+        rows.forEach(r => { if (set.has(r.voucher) && r.status !== status) { r.status = status; changed = true; } });
+        if (changed) localStorage.setItem(PLAN_KEY, JSON.stringify(rows));
+      } catch (e) {}
+    }
+
+    function seedIfEmpty(){
+      if(localStorage.getItem(SUP_KEY)===null && localStorage.getItem(CAR_KEY)===null){
+        localStorage.setItem(SUP_KEY, JSON.stringify(SEED_SUP));
+        localStorage.setItem(CAR_KEY, JSON.stringify(SEED_CAR));
+      }
+    }
+
+    function statusKey(rec){
+      if(rec.status==='ok') return 'ok';
+      return 'pending';
+    }
+    function statusLabel(rec){
+      const k=statusKey(rec);
+      return k==='ok' ? '已收货' : '待收货';
+    }
+
+    function mergeReceipts(){
+      const sup = loadSup().map(r=>({ ...r, kind:'supplier' }));
+      const car = loadCar().map(r=>({ ...r, kind:'carrier' }));
+      return [...sup, ...car].sort((a,b)=> String(b.time||'').localeCompare(String(a.time||'')));
+    }
+
+    function saveByKind(kind, rec){
+      const key = kind==='supplier' ? SUP_KEY : CAR_KEY;
+      const arr = kind==='supplier' ? loadSup() : loadCar();
+      const idx = arr.findIndex(r=>r.no===rec.no);
+      if(idx>=0){
+        const clean = { ...rec }; delete clean.kind;
+        arr[idx] = clean;
+        localStorage.setItem(key, JSON.stringify(arr));
+      }
+    }
+
+    /* ── Render ── */
+    function renderAll(){
+      const list = mergeReceipts();
+      const counts = { all:list.length, pending:0, ok:0 };
+      list.forEach(r=> counts[statusKey(r)]++);
+      document.getElementById('cAll').textContent = counts.all;
+      document.getElementById('cPending').textContent = counts.pending;
+      document.getElementById('cOk').textContent = counts.ok;
+      document.getElementById('statPending').textContent = counts.pending;
+      document.getElementById('statOk').textContent = counts.ok;
+      document.getElementById('pendingStrong').textContent = '待收货 ' + counts.pending + ' 笔';
+
+      const wrap = document.getElementById('receiptList');
+      const shown = curFilter==='all' ? list : list.filter(r=>statusKey(r)===curFilter);
+      if(!shown.length){
+        const label = { all:'暂无收货记录', pending:'暂无待收货', ok:'暂无已收货' }[curFilter];
+        wrap.innerHTML = `<div class="empty-state">${label}</div>`;
+        return;
+      }
+      wrap.innerHTML = shown.map(r=>{
+        const isSup = r.kind==='supplier';
+        const kindLabel = isSup ? '供应商直送' : '物流商取货';
+        const party = isSup ? (r.supplier||'-') : (r.carrier||'-');
+        const total = r.items.reduce((s,i)=>s+(Number(i.planQty)||0),0);
+        const sk = statusKey(r);
+        return `
+        <div class="receipt-card ${r.kind}" onclick="openDetail('${r.kind}|${esc(r.no)}')">
+          <div class="rc-top">
+            <span class="rc-kind ${r.kind}">${kindLabel}</span>
+            <span class="recent-status ${sk}">${statusLabel(r)}</span>
+          </div>
+          <div class="rc-code">${esc(r.no)}</div>
+          <div class="rc-sub">${esc(party)} · 物料 ${r.items.length} 项 · 共 ${fmt(total)} 件</div>
+          <div class="rc-meta">${isSup ? '预计到货' : '预计取货'} ${esc(r.eta||'-')} · 登记 ${esc(r.time||'')}</div>
+        </div>`;
+      }).join('');
+    }
+
+    /* ── Detail ── */
+    function findReceipt(id){
+      const [kind, no] = id.split('|');
+      return mergeReceipts().find(r=>r.kind===kind && r.no===no) || null;
+    }
+
+    /* ── Refined logistics map + route ── */
+    function logisticsMapHtml(rec){
+      const isSup = rec.kind==='supplier';
+      const oName = shortName(isSup ? (rec.supplier||'供应商') : (rec.relSupplier||'供应商'));
+      const cName = shortName(rec.carrier||'物流商');
+      const pathD = isSup
+        ? 'M46 124 C 96 128, 132 110, 168 88 C 204 66, 242 58, 282 54'
+        : 'M46 124 C 86 126, 108 108, 132 92 C 156 76, 158 76, 174 74 C 200 72, 240 62, 282 54';
+
+      const statusDotClass = rec.status==='ok'?'ok':'dot';
+      const statusText = rec.status==='ok'?'已送达':'运输中';
+      const etaText = rec.status==='ok'?'已完成收货':('预计 '+esc(rec.eta||'今日到货'));
+
+      const hubPin = isSup ? '' : `
+        <g transform="translate(174,74)">
+          <g filter="url(#pinShadow)" style="animation:pinBounce 2.6s ease-in-out .3s infinite; transform-origin:0 0">
+            <ellipse cx="0" cy="1" rx="10" ry="4" fill="rgba(0,0,0,.1)"/>
+            <path d="M0,-14 C-6,-14 -10,-9 -10,-4 C-10,2 0,12 0,12 C0,12 10,2 10,-4 C10,-9 6,-14 0,-14 Z" fill="#f59e0b" stroke="#fff" stroke-width="2"/>
+            <circle cx="0" cy="-4" r="3.5" fill="#fff"/>
+          </g>
+          <text class="map-pin-label strong" x="0" y="28" text-anchor="middle">${esc(cName)}</text>
+        </g>`;
+
+      return `
+      <div class="map-wrap">
+        <div class="map-overlay">
+          <span class="map-badge ${statusDotClass}">${statusText} · ${etaText}</span>
+          <span class="map-badge">约 ${rec.distanceKm || (isSup?'68':'92')} km</span>
+        </div>
+        <div class="map-legend">
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#0d9488"></span>当前路线</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#94a3b8"></span>道路网络</div>
+        </div>
+        <svg class="map-svg" viewBox="0 0 320 176" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="landGrad" x1="0" y1="0" x2="320" y2="176" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#f0f7f3"/>
+              <stop offset="1" stop-color="#e6f0ea"/>
+            </linearGradient>
+            <linearGradient id="routeGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#14b8a6"/>
+              <stop offset="1" stop-color="#0f766e"/>
+            </linearGradient>
+            <filter id="routeGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="pinShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,.18)"/>
+            </filter>
+            <filter id="truckShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="rgba(0,0,0,.22)"/>
+            </filter>
+            <pattern id="bldg" width="8" height="8" patternUnits="userSpaceOnUse">
+              <rect width="8" height="8" fill="#dfece4" opacity=".5"/>
+              <rect x="1" y="1" width="3" height="3" fill="#d0e3d7" opacity=".7"/>
+              <rect x="5" y="4" width="2" height="3" fill="#d0e3d7" opacity=".7"/>
+            </pattern>
+          </defs>
+
+          <!-- Base land -->
+          <rect width="320" height="176" fill="url(#landGrad)"/>
+
+          <!-- District blocks -->
+          <rect x="10" y="14" width="82" height="48" rx="10" fill="#e2ebe6"/>
+          <rect x="232" y="98" width="76" height="56" rx="10" fill="#e2ebe6"/>
+          <rect x="118" y="122" width="70" height="36" rx="10" fill="#e8efe9"/>
+          <rect x="238" y="18" width="58" height="42" rx="10" fill="#e8efe9"/>
+          <rect x="96" y="58" width="62" height="38" rx="8" fill="url(#bldg)"/>
+          <rect x="172" y="88" width="54" height="34" rx="8" fill="#e7f0eb" opacity=".8"/>
+
+          <!-- Green belts / parks -->
+          <ellipse cx="52" cy="86" rx="18" ry="10" fill="#d8ecdb" opacity=".7"/>
+          <ellipse cx="286" cy="80" rx="16" ry="9" fill="#d8ecdb" opacity=".6"/>
+          <circle cx="132" cy="112" r="6" fill="#c5e5c9" opacity=".7"/>
+          <circle cx="146" cy="104" r="4" fill="#c5e5c9" opacity=".7"/>
+
+          <!-- River -->
+          <path d="M0 156 C 70 148, 130 168, 210 154 S 320 138, 320 146" stroke="#cce5f0" stroke-width="13" fill="none" opacity=".8"/>
+          <path d="M0 156 C 70 148, 130 168, 210 154 S 320 138, 320 146" stroke="#e0f0f7" stroke-width="7" fill="none" opacity=".9"/>
+
+          <!-- Roads base -->
+          <g stroke="#e4ebe7" stroke-width="9" fill="none" stroke-linecap="round">
+            <path d="M0 72 H320"/>
+            <path d="M0 132 H320"/>
+            <path d="M84 0 V176"/>
+            <path d="M204 0 V176"/>
+            <path d="M46 0 V176" opacity=".6"/>
+            <path d="M282 0 V176" opacity=".6"/>
+            <path d="M0 32 H320" opacity=".5"/>
+            <path d="M0 104 H320" opacity=".5"/>
+          </g>
+          <!-- Road markings -->
+          <g stroke="#fff" stroke-width="1" stroke-dasharray="4 5" fill="none" opacity=".7">
+            <path d="M0 72 H320"/>
+            <path d="M0 132 H320"/>
+            <path d="M84 0 V176"/>
+            <path d="M204 0 V176"/>
+          </g>
+          <!-- Road intersections -->
+          <circle cx="84" cy="72" r="5" fill="#eef4f0"/>
+          <circle cx="204" cy="72" r="5" fill="#eef4f0"/>
+          <circle cx="84" cy="132" r="5" fill="#eef4f0"/>
+          <circle cx="204" cy="132" r="5" fill="#eef4f0"/>
+
+          <!-- Route path glow + animated -->
+          <path id="routeMain" d="${pathD}" fill="none" stroke="url(#routeGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#routeGlow)" stroke-dasharray="8 6">
+            <animate attributeName="stroke-dashoffset" from="0" to="-42" dur="1.4s" repeatCount="indefinite"/>
+          </path>
+          <!-- Route progress overlay (solid behind current truck) -->
+          <path id="routeProgress" d="${pathD}" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="2 10" stroke-linecap="round" opacity=".6">
+            <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1.4s" repeatCount="indefinite"/>
+          </path>
+
+          <!-- Start pin: supplier -->
+          <g transform="translate(46,124)">
+            <g filter="url(#pinShadow)" style="animation:pinBounce 2.6s ease-in-out infinite; transform-origin:0 0">
+              <ellipse cx="0" cy="1" rx="10" ry="4" fill="rgba(0,0,0,.12)"/>
+              <path d="M0,-16 C-6.5,-16 -11,-10.5 -11,-5 C-11,1.5 0,13 0,13 C0,13 11,1.5 11,-5 C11,-10.5 6.5,-16 0,-16 Z" fill="#14b8a6" stroke="#fff" stroke-width="2.5"/>
+              <circle cx="0" cy="-5" r="4" fill="#fff"/>
+              <circle cx="0" cy="-5" r="1.8" fill="#14b8a6"/>
+            </g>
+          </g>
+          <text class="map-pin-label strong" x="46" y="150" text-anchor="middle">${esc(oName)}</text>
+
+          ${hubPin}
+
+          <!-- End pin: warehouse -->
+          <g transform="translate(282,54)">
+            <g filter="url(#pinShadow)" style="animation:pinBounce 2.6s ease-in-out .6s infinite; transform-origin:0 0">
+              <ellipse cx="0" cy="1" rx="10" ry="4" fill="rgba(0,0,0,.12)"/>
+              <path d="M0,-16 C-6.5,-16 -11,-10.5 -11,-5 C-11,1.5 0,13 0,13 C0,13 11,1.5 11,-5 C11,-10.5 6.5,-16 0,-16 Z" fill="#0f766e" stroke="#fff" stroke-width="2.5"/>
+              <rect x="-4.5" y="-8" width="9" height="7" rx="1" fill="#fff"/>
+              <path d="M-4.5 -5 L0 -8 L4.5 -5" stroke="#0f766e" stroke-width="1" fill="none"/>
+            </g>
+          </g>
+          <text class="map-pin-label strong" x="282" y="28" text-anchor="middle">博格华纳·宁波</text>
+
+          <!-- Truck marker -->
+          <g id="truckMarker" transform="translate(46,124)" filter="url(#truckShadow)">
+            <circle cx="0" cy="0" r="16" fill="none" stroke="#14b8a6" stroke-width="2" opacity=".55">
+              <animateTransform attributeName="transform" type="scale" values="1;2.6" dur="1.6s" repeatCount="indefinite" additive="sum"/>
+              <animate attributeName="opacity" values=".55;0" dur="1.6s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="0" cy="0" r="20" fill="none" stroke="#14b8a6" stroke-width="1" opacity=".35">
+              <animateTransform attributeName="transform" type="scale" values="1;2.2" dur="1.6s" repeatCount="indefinite" additive="sum" begin=".4s"/>
+              <animate attributeName="opacity" values=".35;0" dur="1.6s" repeatCount="indefinite" begin=".4s"/>
+            </circle>
+            <circle cx="0" cy="0" r="14" fill="#fff" stroke="#14b8a6" stroke-width="2.5"/>
+            <g transform="translate(-7,-6)">
+              <rect x="0" y="3" width="9" height="6" rx="1" fill="#0f766e"/>
+              <path d="M9 5 h3.5 a1.5 1.5 0 011.5 1.5 v2.5 h-5 z" fill="#0f766e"/>
+              <circle cx="2.5" cy="10" r="1.3" fill="#334155"/>
+              <circle cx="11" cy="10" r="1.3" fill="#334155"/>
+            </g>
+          </g>
+        </svg>
+      </div>`;
+    }
+
+    function positionTruck(rec){
+      const path = document.getElementById('routeMain');
+      const truck = document.getElementById('truckMarker');
+      if(!path || !truck) return;
+      let frac = 0.55;
+      if(rec.status==='ok') frac = 1;
+      const len = path.getTotalLength();
+      const pt = path.getTotalLength ? path.getPointAtLength(len*frac) : { x:46, y:124 };
+      const color = rec.status==='ok'?'#10b981':'#14b8a6';
+      truck.setAttribute('transform', 'translate(' + pt.x + ',' + pt.y + ')');
+      truck.querySelectorAll('circle').forEach(c=>{
+        const s = c.getAttribute('stroke');
+        if(s && (s.includes('14b8a6') || s.includes('0f766e') || s.includes('10b981'))){
+          c.setAttribute('stroke', color);
+        }
+      });
+      // rotate truck slightly along path tangent for natural feel
+      if(path.getPointAtLength){
+        const delta = 2;
+        const pt2 = path.getPointAtLength(Math.min(len, len*frac+delta));
+        const angle = Math.atan2(pt2.y-pt.y, pt2.x-pt.x)*180/Math.PI;
+        const inner = truck.querySelector('g[transform*="translate"]');
+        if(inner) inner.setAttribute('transform', 'translate(-7,-6) rotate('+Math.round(angle)+')');
+      }
+    }
+
+    function trackingStepsForward(rec){
+      const isSup = rec.kind==='supplier';
+      const steps = [];
+      if(isSup){
+        steps.push({ t:'供应商发货', d:rec.time, s:'done' });
+        steps.push({ t:'运输中（'+(rec.mode||'供应商直送')+'）', d:'', s: rec.status==='ok'?'done':'current' });
+        steps.push({ t:'到达博格华纳·宁波工厂仓库', d:'', s: rec.status==='ok'?'done':'todo' });
+        steps.push({ t:'已确认收货', d:rec.receivedTime||'', s: rec.status==='ok'?'current':'todo' });
+      } else {
+        steps.push({ t:(rec.carrier||'物流商')+' 已揽收', d:rec.time, s:'done' });
+        steps.push({ t:'运输中', d:'', s: rec.status==='ok'?'done':'current' });
+        steps.push({ t:'派送中（至博格华纳·宁波）', d:'', s: rec.status==='ok'?'done':'todo' });
+        steps.push({ t:'已确认收货', d:rec.receivedTime||'', s: rec.status==='ok'?'current':'todo' });
+      }
+      return steps;
+    }
+
+    function trackingHtml(rec){
+      const all = trackingStepsForward(rec);
+      const occurred = all.filter(s=>s.s!=='todo').slice().reverse();
+      const future = all.filter(s=>s.s==='todo');
+      const ordered = occurred.concat(future);
+      return `<div class="timeline">${ordered.map(st=>`
+        <div class="tl-item ${st.s}">
+          <div class="tl-rail"><span class="tl-dot ${st.s==='current'?'current':st.s}"></span><span class="tl-line"></span></div>
+          <div class="tl-body">
+            <div class="tl-title">${esc(st.t)}</div>
+            ${st.d?`<div class="tl-time">${esc(st.d)}</div>`:''}
+          </div>
+        </div>`).join('')}</div>`;
+    }
+
+    function metaHtml(rec){
+      const isSup = rec.kind==='supplier';
+      const items = [];
+      items.push(['类型', isSup ? '供应商直送' : '物流商取货']);
+      items.push([isSup ? '供应商' : '物流商', isSup ? (rec.supplier||'-') : (rec.carrier||'-')]);
+      items.push([isSup ? '预计到货' : '预计取货', rec.eta||'-']);
+      if(!isSup){
+        if(rec.relSupplier) items.push(['关联供应商', rec.relSupplier]);
+        if(rec.plate) items.push(['提货车牌', rec.plate]);
+        if(rec.driver) items.push(['司机', rec.driver]);
+        if(rec.trackNo) items.push(['物流单号', rec.trackNo]);
+      }
+      if(rec.remark) items.push(['备注', rec.remark]);
+      return `<div class="meta-grid">${items.map(([l,v])=>`<div class="meta-item"><div class="meta-label">${esc(l)}</div><div class="meta-val">${esc(v)}</div></div>`).join('')}</div>`;
+    }
+
+    function matTableHtml(rec){
+      return `<table class="mat-table">
+        <thead><tr><th>物料编号</th><th>供应商</th><th style="text-align:right">计划</th><th>实际到货</th><th>凭证</th></tr></thead>
+        <tbody>${rec.items.map((it,i)=>{
+          const plan = Number(it.planQty)||0;
+          const act = it.actualQty!=null ? it.actualQty : plan;
+          const diff = plan - act;
+          const diffCls = diff===0 ? 'zero' : 'neg';
+          const diffTxt = diff===0 ? '持平' : ('缺 '+fmt(Math.abs(diff)));
+          return `<tr>
+            <td class="m-code">${esc(it.materialCode)}</td>
+            <td class="m-sub">${esc(it.supplierName||rec.supplier||rec.relSupplier||'-')}</td>
+            <td class="m-num">${fmt(plan)}</td>
+            <td>
+              <input class="act-input" id="act_${i}" type="number" min="0" value="${act}">
+              <div class="m-diff ${diffCls}">${diffTxt}</div>
+            </td>
+            <td class="m-sub">${esc(it.voucher)}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+    }
+
+    function openDetail(id){
+      cur = findReceipt(id);
+      if(!cur) return;
+      const sk = statusKey(cur);
+      const isSup = cur.kind==='supplier';
+      document.getElementById('detailBody').innerHTML = `
+        <div class="ds-summary">
+          <div>
+            <div class="ds-code">${esc(cur.no)}</div>
+            <div class="ds-type">${isSup ? '供应商直送 · ' : '物流商取货 · '}${esc(cur.supplier||cur.carrier||'')}</div>
+          </div>
+          <span class="recent-status ${sk}">${statusLabel(cur)}</span>
+        </div>
+        ${metaHtml(cur)}
+        <div class="block-title">物料明细</div>
+        ${matTableHtml(cur)}
+        <div class="block-title">物流地图与路线</div>
+        ${logisticsMapHtml(cur)}
+        <div class="block-title">物流轨迹</div>
+        ${trackingHtml(cur)}
+      `;
+      // footer
+      const foot = document.getElementById('detailFoot');
+      if(sk==='ok'){
+        foot.innerHTML = `<div class="ok-banner">✓ 已于 ${esc(cur.receivedTime||cur.time||'')} 确认收货</div>`;
+      } else {
+        foot.innerHTML = `
+          <button class="btn-confirm" onclick="confirmReceive()">确认收货</button>`;
+      }
+      document.getElementById('sheetMask').classList.add('show');
+      document.getElementById('sheet').classList.add('show');
+      positionTruck(cur);
+    }
+    function closeDetail(){
+      document.getElementById('sheetMask').classList.remove('show');
+      document.getElementById('sheet').classList.remove('show');
+      cur = null;
+    }
+
+    function confirmReceive(){
+      if(!cur) return;
+      cur.items.forEach((it,i)=>{
+        const v = document.getElementById('act_'+i).value;
+        const act = Number(v)||0;
+        it.actualQty = act;
+        it.diff = (Number(it.planQty)||0) - act;
+      });
+      cur.status = 'ok';
+      cur.receivedTime = nowStr();
+      saveByKind(cur.kind, cur);
+      markPlanStatus((cur.items || []).map(it => it.voucher), 'received');
+      closeDetail();
+      toast('已确认收货，计划状态已更新为已收货');
+      renderAll();
+    }
+
+    /* ── Filter ── */
+    document.getElementById('filterTabs').addEventListener('click', e=>{
+      const btn = e.target.closest('.filter-tab');
+      if(!btn) return;
+      curFilter = btn.dataset.filter;
+      document.querySelectorAll('.filter-tab').forEach(t=>t.classList.toggle('active', t===btn));
+      renderAll();
+    });
+
+    seedIfEmpty();
+    renderAll();
+  </script>
+
+</body>
+</html>

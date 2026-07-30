@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>库区维护</title>
+  <style>
+    :root {
+      --primary: #07868d;
+      --primary-dark: #046b71;
+      --primary-soft: #e9f7f7;
+      --text: #27313a;
+      --text-2: #5e6975;
+      --text-3: #8b95a1;
+      --surface: #ffffff;
+      --canvas: #f4f6f8;
+      --muted: #f6f8fa;
+      --border: #e5e9ef;
+      --border-strong: #d8dee7;
+      --danger: #e95d62;
+      --danger-soft: #fff0f0;
+      --success: #48a66b;
+      --success-soft: #eef9f1;
+      --warning: #d99026;
+      --warning-soft: #fff7e8;
+      --shadow: 0 12px 30px rgba(27, 39, 51, .08);
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background: var(--canvas);
+      color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(7, 134, 141, .22);
+      outline-offset: 1px;
+    }
+    .app-shell { min-height: 100dvh; padding: 20px; }
+    .page-card {
+      width: 100%; min-height: calc(100dvh - 40px); padding: 22px;
+      background: var(--surface); border-radius: 4px;
+    }
+    .page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .page-head h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    .page-note { color: var(--text-3); font-size: 13px; }
+
+    .workspace { display: grid; grid-template-columns: minmax(300px, 370px) minmax(0, 1fr); gap: 16px; min-height: 690px; }
+    .panel { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+    .panel-head { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .panel-title { min-width: 0; }
+    .panel-title h2 { margin: 0; font-size: 16px; font-weight: 600; }
+    .panel-title p { margin: 3px 0 0; color: var(--text-3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .btn { min-height: 40px; padding: 0 15px; border: 1px solid var(--border-strong); border-radius: 5px; background: var(--surface); color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; gap: 7px; transition: background .18s, border-color .18s, color .18s, transform .18s; }
+    .btn:hover { border-color: #bfc8d3; color: var(--text); background: #fafbfc; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .btn-primary:hover { border-color: var(--primary-dark); background: var(--primary-dark); color: #fff; }
+    .btn-danger { border-color: #f4c9cb; background: var(--danger-soft); color: #c94349; }
+    .btn-danger:hover { border-color: var(--danger); background: #ffe8e9; color: #b73238; }
+    .btn[disabled] { opacity: .45; cursor: not-allowed; transform: none; }
+    .btn-icon { width: 40px; padding: 0; }
+    .icon { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    .left-panel { display: flex; flex-direction: column; }
+    .left-actions { display: flex; align-items: center; gap: 8px; }
+    .filter-area { padding: 14px 16px; background: var(--muted); border-bottom: 1px solid var(--border); }
+    .search-row { display: flex; gap: 8px; }
+    .input-wrap { position: relative; flex: 1; min-width: 0; }
+    .input-wrap .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
+    input[type="text"], input[type="number"], select {
+      width: 100%; min-height: 40px; border: 1px solid var(--border-strong); border-radius: 5px; background: #fff; color: var(--text); padding: 8px 11px;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    input:hover, select:hover { border-color: #bbc5d0; }
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7, 134, 141, .1); outline: none; }
+    input::placeholder { color: #a8b0ba; }
+    .search-input { padding-left: 38px !important; }
+    .filter-secondary { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 8px; }
+
+    .zone-list { flex: 1; overflow: auto; padding: 8px; }
+    .zone-item { position: relative; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: start; padding: 13px 10px; border: 1px solid transparent; border-radius: 7px; cursor: pointer; transition: background .18s, border-color .18s; }
+    .zone-item + .zone-item { margin-top: 4px; }
+    .zone-item:hover { background: #f8fafb; }
+    .zone-item.active { background: var(--primary-soft); border-color: #b7e1e3; }
+    .check { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--primary); cursor: pointer; }
+    .zone-main { min-width: 0; }
+    .zone-title { display: flex; align-items: center; gap: 7px; font-weight: 600; }
+    .zone-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .zone-meta { display: flex; flex-wrap: wrap; gap: 5px 10px; color: var(--text-3); font-size: 12px; margin-top: 5px; font-variant-numeric: tabular-nums; }
+    .badge { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 7px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .badge.on { color: #388951; background: var(--success-soft); }
+    .badge.off { color: #7b8590; background: #eef1f4; }
+    .item-menu { display: flex; gap: 2px; opacity: .68; }
+    .mini-action { width: 32px; height: 32px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--primary); display: grid; place-items: center; }
+    .mini-action:hover { background: rgba(7, 134, 141, .1); }
+    .mini-action.delete { color: var(--danger); }
+    .mini-action.delete:hover { background: var(--danger-soft); }
+    .list-footer { min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12px; }
+    .empty { padding: 70px 20px; color: var(--text-3); text-align: center; }
+    .empty .icon { width: 34px; height: 34px; margin-bottom: 8px; color: #b8c0ca; }
+
+    .calendar-panel { display: flex; flex-direction: column; }
+    .calendar-tools { display: flex; align-items: center; gap: 8px; }
+    .month-nav { display: flex; align-items: center; gap: 2px; }
+    .month-title { width: 120px; font-size: 16px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+    .summary-bar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--border); background: #fbfcfd; }
+    .summary-item { padding: 13px 16px; min-width: 0; }
+    .summary-item + .summary-item { border-left: 1px solid var(--border); }
+    .summary-label { color: var(--text-3); font-size: 12px; }
+    .summary-value { margin-top: 3px; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .summary-value small { color: var(--text-3); font-size: 12px; font-weight: 400; }
+
+    .calendar-wrap { flex: 1; padding: 14px 16px 16px; overflow: auto; }
+    .calendar-grid { min-width: 690px; display: grid; grid-template-columns: repeat(7, minmax(90px, 1fr)); border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+    .weekday { min-height: 42px; display: grid; place-items: center; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--muted); color: var(--text-2); font-size: 12px; font-weight: 600; }
+    .weekday.weekend { color: var(--warning); }
+    .day { position: relative; min-height: 118px; padding: 9px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); background: #fff; transition: background .18s, box-shadow .18s; }
+    .day:not(.other):hover { z-index: 1; background: #fbfefe; box-shadow: inset 0 0 0 1px rgba(7, 134, 141, .24); }
+    .day.other { background: #fafbfc; color: #c2c8d0; }
+    .day.today { box-shadow: inset 0 0 0 2px var(--primary); }
+    .day-top { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
+    .date-number { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-variant-numeric: tabular-nums; }
+    .today .date-number { background: var(--primary); color: #fff; }
+    .holiday-name { color: var(--danger); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .capacity-button { width: 100%; min-height: 55px; margin-top: 10px; padding: 5px 8px; border: 1px solid transparent; border-radius: 5px; background: var(--primary-soft); color: var(--primary-dark); text-align: left; transition: border-color .18s, background .18s; }
+    .capacity-button:hover { border-color: #97d1d4; background: #def2f3; }
+    .capacity-label { display: block; color: var(--text-3); font-size: 10px; }
+    .capacity-value { display: block; margin-top: 1px; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .capacity-slots { display: flex; flex-wrap: wrap; gap: 1px 8px; margin-top: 2px; font-size: 11px; font-variant-numeric: tabular-nums; }
+    .capacity-slots span { white-space: nowrap; }
+    .capacity-button.blank { background: var(--warning-soft); color: #b66b13; }
+    .capacity-button.blank:hover { border-color: #f0c781; background: #fff2d8; }
+    .day.modified::after { content: ""; position: absolute; top: 0; right: 0; width: 0; height: 0; border-top: 12px solid var(--primary); border-left: 12px solid transparent; }
+    .calendar-empty { flex: 1; display: grid; place-items: center; padding: 40px; text-align: center; color: var(--text-3); }
+    .calendar-empty .icon { width: 44px; height: 44px; margin-bottom: 10px; color: #bdc5ce; }
+
+    .modal-layer { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(22, 28, 34, .54); }
+    .modal-layer.show { display: flex; }
+    .modal { width: min(600px, 100%); max-height: calc(100dvh - 40px); overflow: auto; border-radius: 12px; background: #fff; box-shadow: 0 24px 70px rgba(0,0,0,.22); animation: modalIn .2s ease-out; }
+    .modal.small { width: min(430px, 100%); }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; min-height: 72px; padding: 0 24px; border-bottom: 1px solid var(--border); }
+    .modal-head h3 { margin: 0; font-size: 19px; }
+    .close-btn { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-3); display: grid; place-items: center; }
+    .close-btn:hover { background: var(--muted); color: var(--text); }
+    .modal-body { padding: 24px; }
+    .form-row { display: grid; grid-template-columns: 105px minmax(0, 1fr); gap: 14px; align-items: start; margin-bottom: 20px; }
+    .form-label { padding-top: 10px; color: var(--text-2); text-align: right; }
+    .required { color: var(--danger); margin-right: 5px; }
+    .field-error { min-height: 19px; margin-top: 4px; color: var(--danger); font-size: 12px; }
+    .number-stepper { display: grid; grid-template-columns: 44px minmax(80px, 160px) 44px; width: fit-content; }
+    .number-stepper input { border-radius: 0; text-align: center; font-variant-numeric: tabular-nums; }
+    .step-btn { border: 1px solid var(--border-strong); background: var(--muted); color: var(--text-2); font-size: 20px; }
+    .step-btn:first-child { border-radius: 5px 0 0 5px; border-right: 0; }
+    .step-btn:last-child { border-radius: 0 5px 5px 0; border-left: 0; }
+    .radio-group { display: flex; gap: 16px; }
+    .radio-card { min-height: 44px; padding: 0 16px; border: 1px solid var(--border-strong); border-radius: 5px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .radio-card:has(input:checked) { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+    .radio-card input { width: 17px; height: 17px; accent-color: var(--primary); }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px 22px; }
+    .modal-foot .btn { min-width: 88px; }
+    .confirm-copy { margin: 0; color: var(--text-2); line-height: 1.75; }
+    .edit-date { color: var(--text-3); margin: 2px 0 18px; }
+    .slot-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .slot-field label { display: block; margin-bottom: 6px; color: var(--text-2); font-weight: 500; }
+    .quick-values { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .quick-values button { min-height: 34px; padding: 0 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--muted); color: var(--text-2); }
+    .quick-values button:hover { border-color: var(--primary); color: var(--primary); }
+    .helper { color: var(--text-3); font-size: 12px; margin-top: 8px; }
+
+    .toast-region { position: fixed; top: 20px; left: 50%; z-index: 1200; transform: translateX(-50%); display: grid; gap: 8px; pointer-events: none; }
+    .toast { min-width: 260px; max-width: calc(100vw - 32px); padding: 11px 15px; border: 1px solid #b8e0ca; border-radius: 7px; background: #f2fbf5; color: #277645; box-shadow: var(--shadow); animation: toastIn .2s ease-out; }
+    .toast.error { border-color: #f1bfc1; background: #fff3f3; color: #b63a40; }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 1050px) {
+      .workspace { grid-template-columns: minmax(280px, 330px) minmax(0, 1fr); }
+      .summary-bar { grid-template-columns: repeat(2, 1fr); }
+      .summary-item:nth-child(3) { border-left: 0; border-top: 1px solid var(--border); }
+      .summary-item:nth-child(4) { border-top: 1px solid var(--border); }
+    }
+    @media (max-width: 820px) {
+      .app-shell { padding: 12px; }
+      .page-card { min-height: calc(100dvh - 24px); padding: 16px; }
+      .workspace { display: flex; flex-direction: column; min-height: 0; }
+      .left-panel { max-height: 480px; }
+      .calendar-panel { min-height: 700px; }
+      .page-note { display: none; }
+    }
+    @media (max-width: 560px) {
+      body { font-size: 14px; }
+      .app-shell { padding: 0; }
+      .page-card { min-height: 100dvh; padding: 14px 10px 24px; border-radius: 0; }
+      .page-head { margin: 2px 4px 14px; }
+      .page-head h1 { font-size: 18px; }
+      .panel-head { padding: 12px; }
+      .filter-area { padding: 12px; }
+      .filter-secondary { grid-template-columns: 1fr; }
+      .filter-secondary .btn { width: 100%; }
+      .calendar-panel .panel-head { align-items: flex-start; flex-direction: column; }
+      .calendar-tools { width: 100%; justify-content: space-between; }
+      .month-title { width: 105px; }
+      .summary-item { padding: 10px 12px; }
+      .summary-value { font-size: 16px; }
+      .calendar-wrap { padding: 10px; }
+      .modal-layer { padding: 10px; align-items: flex-end; }
+      .modal { border-radius: 12px 12px 0 0; max-height: calc(100dvh - 20px); }
+      .modal-head { min-height: 64px; padding: 0 16px; }
+      .modal-body { padding: 20px 16px; }
+      .modal-foot { padding: 12px 16px 18px; }
+      .form-row { grid-template-columns: 1fr; gap: 5px; margin-bottom: 15px; }
+      .form-label { padding-top: 0; text-align: left; }
+      .number-stepper { width: 100%; grid-template-columns: 44px 1fr 44px; }
+      .radio-group { gap: 8px; }
+      .radio-card { flex: 1; justify-content: center; padding: 0 10px; }
+      .slot-grid { grid-template-columns: 1fr; gap: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="page-card" aria-labelledby="pageTitle">
+      <header class="page-head">
+        <h1 id="pageTitle">库区维护</h1>
+        <span class="page-note">库区基础信息与每日托数统一维护</span>
+      </header>
+
+      <div class="workspace">
+        <aside class="panel left-panel" aria-label="库区列表">
+          <div class="panel-head">
+            <div class="panel-title">
+              <h2>库区</h2>
+              <p id="zoneCountText">共 0 个库区</p>
+            </div>
+            <div class="left-actions">
+              <button class="btn btn-danger btn-icon" id="batchDeleteBtn" type="button" aria-label="批量删除" title="批量删除" disabled>
+                <svg class="icon" aria-hidden="true"><path d="M3 5h12M7 5V3h4v2m2 0-.7 10H5.7L5 5m3 3v4m3-4v4"/></svg>
+              </button>
+              <button class="btn btn-primary" id="addZoneBtn" type="button">
+                <svg class="icon" aria-hidden="true"><path d="M9 3v12M3 9h12"/></svg>新增
+              </button>
+            </div>
+          </div>
+          <div class="filter-area">
+            <div class="search-row">
+              <div class="input-wrap">
+                <svg class="icon" aria-hidden="true"><circle cx="7.5" cy="7.5" r="4.5"/><path d="m11 11 4 4"/></svg>
+                <input id="keywordInput" class="search-input" type="text" aria-label="查询库区编号或名称" placeholder="请输入库区编号 / 名称">
+              </div>
+            </div>
+            <div class="filter-secondary">
+              <select id="statusFilter" aria-label="状态筛选">
+                <option value="all">全部状态</option>
+                <option value="enabled">启用</option>
+                <option value="disabled">停用</option>
+              </select>
+              <button class="btn" id="resetFilterBtn" type="button">重置</button>
+            </div>
+          </div>
+          <div class="zone-list" id="zoneList"></div>
+          <div class="list-footer">
+            <label><input class="check" id="selectAll" type="checkbox"> 全选当前结果</label>
+            <span id="selectedCount">已选 0 项</span>
+          </div>
+        </aside>
+
+        <section class="panel calendar-panel" aria-label="每日托数日历">
+          <div class="panel-head">
+            <div class="panel-title">
+              <h2 id="calendarZoneName">每日托数</h2>
+              <p id="calendarZoneMeta">选择左侧库区后维护每日托数</p>
+            </div>
+            <div class="calendar-tools">
+              <button class="btn" id="todayBtn" type="button">今天</button>
+              <div class="month-nav">
+                <button class="btn btn-icon" id="prevMonthBtn" type="button" aria-label="上个月"><svg class="icon" aria-hidden="true"><path d="m11 4-5 5 5 5"/></svg></button>
+                <div class="month-title" id="monthTitle" aria-live="polite"></div>
+                <button class="btn btn-icon" id="nextMonthBtn" type="button" aria-label="下个月"><svg class="icon" aria-hidden="true"><path d="m7 4 5 5-5 5"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <div id="calendarContent"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-layer" id="zoneModal" role="presentation">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="zoneModalTitle">
+      <div class="modal-head">
+        <h3 id="zoneModalTitle">新增库区</h3>
+        <button class="close-btn" type="button" data-close="zoneModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
+      </div>
+      <form id="zoneForm" novalidate>
+        <div class="modal-body">
+          <div class="form-row">
+            <label class="form-label" for="zoneCode"><span class="required">*</span>库区编号</label>
+            <div><input id="zoneCode" name="code" type="text" maxlength="20" placeholder="请输入库区编号" autocomplete="off"><div class="field-error" id="codeError" role="alert"></div></div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="zoneName"><span class="required">*</span>库区名称</label>
+            <div><input id="zoneName" name="name" type="text" maxlength="30" placeholder="请输入库区名称" autocomplete="off"><div class="field-error" id="nameError" role="alert"></div></div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="zoneLimit"><span class="required">*</span>托数上限</label>
+            <div>
+              <div class="number-stepper">
+                <button class="step-btn" id="minusLimit" type="button" aria-label="减少托数上限">−</button>
+                <input id="zoneLimit" name="limit" type="number" min="0" max="99999999" step="100" inputmode="numeric" value="10000">
+                <button class="step-btn" id="plusLimit" type="button" aria-label="增加托数上限">＋</button>
+              </div>
+              <div class="field-error" id="limitError" role="alert"></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <span class="form-label"><span class="required">*</span>状态</span>
+            <div class="radio-group" role="radiogroup" aria-label="库区状态">
+              <label class="radio-card"><input type="radio" name="status" value="enabled" checked>启用</label>
+              <label class="radio-card"><input type="radio" name="status" value="disabled">停用</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn" type="button" data-close="zoneModal">取消</button>
+          <button class="btn btn-primary" type="submit">确认</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="capacityModal" role="presentation">
+    <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="capacityModalTitle">
+      <div class="modal-head">
+        <h3 id="capacityModalTitle">修改每日托数</h3>
+        <button class="close-btn" type="button" data-close="capacityModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
+      </div>
+      <form id="capacityForm" novalidate>
+        <div class="modal-body">
+          <p class="edit-date" id="capacityDateText"></p>
+          <div class="slot-grid">
+            <div class="slot-field">
+              <label for="capacityAm">上午托数</label>
+              <input id="capacityAm" type="number" min="0" max="99999999" inputmode="numeric" placeholder="上午留空">
+            </div>
+            <div class="slot-field">
+              <label for="capacityPm">下午托数</label>
+              <input id="capacityPm" type="number" min="0" max="99999999" inputmode="numeric" placeholder="下午留空">
+            </div>
+          </div>
+          <div class="field-error" id="capacityError" role="alert"></div>
+          <div class="quick-values">
+            <button type="button" data-slot="all" data-value="150">全天各 150</button>
+            <button type="button" data-slot="am" data-value="150">上午 150</button>
+            <button type="button" data-slot="pm" data-value="150">下午 150</button>
+            <button type="button" data-slot="all" data-value="">全天清空</button>
+          </div>
+          <div class="helper">上午、下午可分别调整或清空。工作日默认各 150 托；周末及法定节假日默认留空。修改后的日期右上角会显示青色标记。</div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn" type="button" data-close="capacityModal">取消</button>
+          <button class="btn btn-primary" type="submit">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="confirmModal" role="presentation">
+    <div class="modal small" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+      <div class="modal-head"><h3 id="confirmTitle">确认删除</h3><button class="close-btn" type="button" data-close="confirmModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button></div>
+      <div class="modal-body"><p class="confirm-copy" id="confirmText"></p></div>
+      <div class="modal-foot"><button class="btn" type="button" data-close="confirmModal">取消</button><button class="btn btn-danger" id="confirmDeleteBtn" type="button">删除</button></div>
+    </div>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const STORAGE_KEY = 'warehouse-zone-maintenance-v1';
+      const DEFAULT_DAILY = 300;
+      const DEFAULT_HALF_DAY = DEFAULT_DAILY / 2;
+      const DEFAULT_ZONE_LIMIT = 10000;
+      const svg = {
+        edit: '<svg class="icon" aria-hidden="true"><path d="m10.8 3.2 2 2L6 12l-3 .8.8-3 7-6.6ZM9.5 4.5l2 2"/></svg>',
+        trash: '<svg class="icon" aria-hidden="true"><path d="M3 5h12M7 5V3h4v2m2 0-.7 10H5.7L5 5m3 3v4m3-4v4"/></svg>',
+        calendar: '<svg class="icon" aria-hidden="true"><path d="M3 5h12v10H3zM6 2v4m6-4v4M3 8h12"/></svg>',
+        search: '<svg class="icon" aria-hidden="true"><circle cx="7.5" cy="7.5" r="4.5"/><path d="m11 11 4 4"/></svg>'
+      };
+
+      // 2025–2026 放假日期按国务院办公厅年度通知内置；周末及节假日默认托数为空。
+      const holidayMap = {
+        '2025-01-01': '元旦', '2025-01-28': '春节', '2025-01-29': '春节', '2025-01-30': '春节', '2025-01-31': '春节', '2025-02-01': '春节', '2025-02-02': '春节', '2025-02-03': '春节', '2025-02-04': '春节',
+        '2025-04-04': '清明节', '2025-04-05': '清明节', '2025-04-06': '清明节', '2025-05-01': '劳动节', '2025-05-02': '劳动节', '2025-05-03': '劳动节', '2025-05-04': '劳动节', '2025-05-05': '劳动节',
+        '2025-05-31': '端午节', '2025-06-01': '端午节', '2025-06-02': '端午节', '2025-10-01': '国庆/中秋', '2025-10-02': '国庆节', '2025-10-03': '国庆节', '2025-10-04': '国庆节', '2025-10-05': '国庆节', '2025-10-06': '国庆节', '2025-10-07': '国庆节', '2025-10-08': '国庆节',
+        '2026-01-01': '元旦', '2026-01-02': '元旦', '2026-01-03': '元旦', '2026-02-15': '春节', '2026-02-16': '春节', '2026-02-17': '春节', '2026-02-18': '春节', '2026-02-19': '春节', '2026-02-20': '春节', '2026-02-21': '春节', '2026-02-22': '春节', '2026-02-23': '春节',
+        '2026-04-04': '清明节', '2026-04-05': '清明节', '2026-04-06': '清明节', '2026-05-01': '劳动节', '2026-05-02': '劳动节', '2026-05-03': '劳动节', '2026-05-04': '劳动节', '2026-05-05': '劳动节',
+        '2026-06-19': '端午节', '2026-06-20': '端午节', '2026-06-21': '端午节', '2026-09-25': '中秋节', '2026-09-26': '中秋节', '2026-09-27': '中秋节', '2026-10-01': '国庆节', '2026-10-02': '国庆节', '2026-10-03': '国庆节', '2026-10-04': '国庆节', '2026-10-05': '国庆节', '2026-10-06': '国庆节', '2026-10-07': '国庆节'
+      };
+
+      const seedZones = [
+        { id: crypto.randomUUID(), code: '1', name: '1号库区', limit: 10000, status: 'enabled', createdAt: '2026-01-29 15:03:52', daily: {} },
+        { id: crypto.randomUUID(), code: '2', name: '2号库区', limit: 10000, status: 'enabled', createdAt: '2026-03-17 11:10:10', daily: {} },
+        { id: crypto.randomUUID(), code: '3', name: '3号库区', limit: 10000, status: 'enabled', createdAt: '2026-01-29 15:04:36', daily: {} },
+        { id: crypto.randomUUID(), code: '4', name: '4号库区', limit: 10000, status: 'disabled', createdAt: '2026-01-29 15:04:50', daily: {} }
+      ];
+
+      const state = {
+        zones: loadZones(),
+        selectedZoneId: null,
+        checkedIds: new Set(),
+        keyword: '', status: 'all',
+        viewDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+        editingZoneId: null,
+        editingDateKey: null,
+        pendingDeleteIds: []
+      };
+      state.selectedZoneId = state.zones[0]?.id || null;
+
+      const $ = id => document.getElementById(id);
+      const els = {
+        zoneList: $('zoneList'), zoneCountText: $('zoneCountText'), selectedCount: $('selectedCount'), selectAll: $('selectAll'), batchDeleteBtn: $('batchDeleteBtn'),
+        keywordInput: $('keywordInput'), statusFilter: $('statusFilter'), calendarContent: $('calendarContent'), calendarZoneName: $('calendarZoneName'), calendarZoneMeta: $('calendarZoneMeta'), monthTitle: $('monthTitle'),
+        zoneModal: $('zoneModal'), zoneForm: $('zoneForm'), zoneModalTitle: $('zoneModalTitle'), zoneCode: $('zoneCode'), zoneName: $('zoneName'), zoneLimit: $('zoneLimit'),
+        capacityModal: $('capacityModal'), capacityForm: $('capacityForm'), capacityAm: $('capacityAm'), capacityPm: $('capacityPm'), capacityDateText: $('capacityDateText'), confirmModal: $('confirmModal'), confirmText: $('confirmText')
+      };
+
+      function loadZones() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          return Array.isArray(parsed) && parsed.length ? parsed : seedZones;
+        } catch { return seedZones; }
+      }
+      function saveZones() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.zones)); }
+      function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+      function pad(n) { return String(n).padStart(2, '0'); }
+      function dateKey(date) { return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`; }
+      function formatNumber(value) { return Number(value).toLocaleString('zh-CN'); }
+      function formatNow() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+      function getSelectedZone() { return state.zones.find(z => z.id === state.selectedZoneId); }
+      function getFilteredZones() {
+        const q = state.keyword.trim().toLowerCase();
+        return state.zones.filter(z => (!q || z.code.toLowerCase().includes(q) || z.name.toLowerCase().includes(q)) && (state.status === 'all' || z.status === state.status));
+      }
+      function getDailySlots(zone, key) {
+        if (Object.prototype.hasOwnProperty.call(zone.daily || {}, key)) {
+          const saved = zone.daily[key];
+          if (saved && typeof saved === 'object') return { am: saved.am ?? null, pm: saved.pm ?? null };
+          if (saved === null || saved === '') return { am: null, pm: null };
+          const legacyTotal = Number(saved);
+          const am = Math.floor(legacyTotal / 2);
+          return { am, pm: legacyTotal - am };
+        }
+        const dayOfWeek = new Date(`${key}T00:00:00`).getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        return holidayMap[key] || isWeekend ? { am: null, pm: null } : { am: DEFAULT_HALF_DAY, pm: DEFAULT_HALF_DAY };
+      }
+      function getSlotsTotal(slots) {
+        const values = [slots.am, slots.pm].filter(value => value !== null && value !== '');
+        return values.length ? values.reduce((sum, value) => sum + Number(value), 0) : null;
+      }
+
+      function renderZones() {
+        const zones = getFilteredZones();
+        els.zoneCountText.textContent = `共 ${state.zones.length} 个库区 · 当前 ${zones.length} 个`;
+        if (!zones.length) {
+          els.zoneList.innerHTML = `<div class="empty">${svg.search}<div>未找到符合条件的库区</div></div>`;
+        } else {
+          els.zoneList.innerHTML = zones.map(z => `
+            <div class="zone-item ${z.id === state.selectedZoneId ? 'active' : ''}" data-id="${z.id}" tabindex="0" role="button" aria-pressed="${z.id === state.selectedZoneId}">
+              <input class="check zone-check" type="checkbox" data-id="${z.id}" aria-label="选择${escapeHtml(z.name)}" ${state.checkedIds.has(z.id) ? 'checked' : ''}>
+              <div class="zone-main">
+                <div class="zone-title"><span class="zone-name">${escapeHtml(z.name)}</span><span class="badge ${z.status === 'enabled' ? 'on' : 'off'}">${z.status === 'enabled' ? '启用' : '停用'}</span></div>
+                <div class="zone-meta"><span>编号 ${escapeHtml(z.code)}</span><span>上限 ${formatNumber(z.limit)}</span></div>
+              </div>
+              <div class="item-menu">
+                <button class="mini-action edit-zone" data-id="${z.id}" type="button" aria-label="编辑${escapeHtml(z.name)}" title="编辑">${svg.edit}</button>
+                <button class="mini-action delete delete-zone" data-id="${z.id}" type="button" aria-label="删除${escapeHtml(z.name)}" title="删除">${svg.trash}</button>
+              </div>
+            </div>`).join('');
+        }
+        const visibleIds = zones.map(z => z.id);
+        const checkedVisible = visibleIds.filter(id => state.checkedIds.has(id)).length;
+        els.selectAll.checked = visibleIds.length > 0 && checkedVisible === visibleIds.length;
+        els.selectAll.indeterminate = checkedVisible > 0 && checkedVisible < visibleIds.length;
+        els.selectedCount.textContent = `已选 ${state.checkedIds.size} 项`;
+        els.batchDeleteBtn.disabled = state.checkedIds.size === 0;
+      }
+
+      function renderCalendar() {
+        const zone = getSelectedZone();
+        const year = state.viewDate.getFullYear();
+        const month = state.viewDate.getMonth();
+        els.monthTitle.textContent = `${year}年${month + 1}月`;
+        if (!zone) {
+          els.calendarZoneName.textContent = '每日托数';
+          els.calendarZoneMeta.textContent = '选择左侧库区后维护每日托数';
+          els.calendarContent.innerHTML = `<div class="calendar-empty"><div><div>${svg.calendar}</div><div>暂无可维护的库区<br>请先在左侧新增库区</div></div></div>`;
+          return;
+        }
+        els.calendarZoneName.textContent = `${zone.name} · 每日托数`;
+        els.calendarZoneMeta.textContent = `库区编号 ${zone.code} · 托数上限 ${formatNumber(zone.limit)} · 点击日期中的托数即可修改`;
+
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        let total = 0, workingDays = 0, blankDays = 0, modified = 0;
+        for (let d = 1; d <= daysInMonth; d++) {
+          const key = dateKey(new Date(year, month, d));
+          const value = getSlotsTotal(getDailySlots(zone, key));
+          if (value === null) blankDays++; else { total += value; workingDays++; }
+          if (Object.prototype.hasOwnProperty.call(zone.daily || {}, key)) modified++;
+        }
+        const summaries = `
+          <div class="summary-bar">
+            <div class="summary-item"><div class="summary-label">本月托数合计</div><div class="summary-value">${formatNumber(total)} <small>托</small></div></div>
+            <div class="summary-item"><div class="summary-label">有计划天数</div><div class="summary-value">${workingDays} <small>天</small></div></div>
+            <div class="summary-item"><div class="summary-label">空白天数</div><div class="summary-value">${blankDays} <small>天</small></div></div>
+            <div class="summary-item"><div class="summary-label">手动调整</div><div class="summary-value">${modified} <small>天</small></div></div>
+          </div>`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const start = new Date(year, month, 1 - firstDay);
+        const todayKey = dateKey(new Date());
+        const weekdays = ['日','一','二','三','四','五','六'];
+        let cells = weekdays.map((w, i) => `<div class="weekday ${i === 0 || i === 6 ? 'weekend' : ''}">周${w}</div>`).join('');
+        for (let i = 0; i < 42; i++) {
+          const date = new Date(start); date.setDate(start.getDate() + i);
+          const key = dateKey(date);
+          const other = date.getMonth() !== month;
+          const holiday = holidayMap[key] || '';
+          const slots = other ? { am: null, pm: null } : getDailySlots(zone, key);
+          const value = getSlotsTotal(slots);
+          const isModified = !other && Object.prototype.hasOwnProperty.call(zone.daily || {}, key);
+          cells += `<div class="day ${other ? 'other' : ''} ${key === todayKey ? 'today' : ''} ${isModified ? 'modified' : ''}">
+            <div class="day-top"><span class="date-number">${date.getDate()}</span>${holiday && !other ? `<span class="holiday-name" title="${holiday}">${holiday}</span>` : ''}</div>
+            ${other ? '' : `<button class="capacity-button ${value === null ? 'blank' : ''}" type="button" data-date="${key}" aria-label="修改${key}上午和下午托数">
+              <span class="capacity-label">${holiday ? '节假日托数' : '全天合计'}</span><span class="capacity-value">${value === null ? '未设置' : formatNumber(value)}</span>
+              <span class="capacity-slots"><span>上午 ${slots.am === null || slots.am === '' ? '—' : formatNumber(slots.am)}</span><span>下午 ${slots.pm === null || slots.pm === '' ? '—' : formatNumber(slots.pm)}</span></span>
+            </button>`}
+          </div>`;
+        }
+        els.calendarContent.innerHTML = `${summaries}<div class="calendar-wrap"><div class="calendar-grid">${cells}</div></div>`;
+      }
+
+      function renderAll() { renderZones(); renderCalendar(); }
+      function openModal(id) {
+        const layer = $(id); layer.classList.add('show'); document.body.style.overflow = 'hidden';
+        setTimeout(() => layer.querySelector('input, button, select')?.focus(), 0);
+      }
+      function closeModal(id) { $(id).classList.remove('show'); if (!document.querySelector('.modal-layer.show')) document.body.style.overflow = ''; }
+      function toast(message, type = 'success') {
+        const node = document.createElement('div'); node.className = `toast ${type === 'error' ? 'error' : ''}`; node.textContent = message; $('toastRegion').appendChild(node);
+        setTimeout(() => node.remove(), 3200);
+      }
+      function clearErrors() { ['codeError','nameError','limitError','capacityError'].forEach(id => $(id).textContent = ''); }
+
+      function openZoneForm(zoneId = null) {
+        state.editingZoneId = zoneId;
+        clearErrors();
+        const zone = state.zones.find(z => z.id === zoneId);
+        els.zoneModalTitle.textContent = zone ? '编辑库区' : '新增库区';
+        els.zoneCode.value = zone?.code || '';
+        els.zoneName.value = zone?.name || '';
+        els.zoneLimit.value = zone?.limit ?? DEFAULT_ZONE_LIMIT;
+        document.querySelector(`input[name="status"][value="${zone?.status || 'enabled'}"]`).checked = true;
+        openModal('zoneModal');
+      }
+
+      function submitZone(event) {
+        event.preventDefault(); clearErrors();
+        const code = els.zoneCode.value.trim();
+        const name = els.zoneName.value.trim();
+        const limit = Number(els.zoneLimit.value);
+        let valid = true;
+        if (!code) { $('codeError').textContent = '请输入库区编号'; valid = false; }
+        else if (state.zones.some(z => z.code.toLowerCase() === code.toLowerCase() && z.id !== state.editingZoneId)) { $('codeError').textContent = '库区编号已存在，请更换'; valid = false; }
+        if (!name) { $('nameError').textContent = '请输入库区名称'; valid = false; }
+        if (!Number.isInteger(limit) || limit < 0 || limit > 99999999) { $('limitError').textContent = '请输入 0–99,999,999 之间的整数'; valid = false; }
+        if (!valid) { els.zoneForm.querySelector('input:invalid, .field-error:not(:empty)')?.parentElement?.querySelector('input')?.focus(); return; }
+        const status = new FormData(els.zoneForm).get('status');
+        if (state.editingZoneId) {
+          const zone = state.zones.find(z => z.id === state.editingZoneId);
+          Object.assign(zone, { code, name, limit, status });
+          toast('库区信息已更新');
+        } else {
+          const zone = { id: crypto.randomUUID(), code, name, limit, status, createdAt: formatNow(), daily: {} };
+          state.zones.unshift(zone); state.selectedZoneId = zone.id;
+          toast('库区新增成功，工作日托数已默认设为 300');
+        }
+        saveZones(); closeModal('zoneModal'); renderAll();
+      }
+
+      function requestDelete(ids) {
+        const validIds = [...new Set(ids)].filter(id => state.zones.some(z => z.id === id));
+        if (!validIds.length) return;
+        state.pendingDeleteIds = validIds;
+        const names = state.zones.filter(z => validIds.includes(z.id)).map(z => z.name);
+        els.confirmText.textContent = validIds.length === 1 ? `删除“${names[0]}”后，该库区的每日托数数据也会一并删除，且无法恢复。` : `确定删除选中的 ${validIds.length} 个库区吗？相关每日托数数据也会一并删除，且无法恢复。`;
+        openModal('confirmModal');
+      }
+
+      function confirmDelete() {
+        const removed = state.pendingDeleteIds.length;
+        state.zones = state.zones.filter(z => !state.pendingDeleteIds.includes(z.id));
+        state.pendingDeleteIds.forEach(id => state.checkedIds.delete(id));
+        if (!state.zones.some(z => z.id === state.selectedZoneId)) state.selectedZoneId = state.zones[0]?.id || null;
+        state.pendingDeleteIds = []; saveZones(); closeModal('confirmModal'); renderAll(); toast(`已删除 ${removed} 个库区`);
+      }
+
+      function openCapacityForm(key) {
+        const zone = getSelectedZone(); if (!zone) return;
+        state.editingDateKey = key; clearErrors();
+        const slots = getDailySlots(zone, key);
+        els.capacityAm.value = slots.am === null || slots.am === '' ? '' : slots.am;
+        els.capacityPm.value = slots.pm === null || slots.pm === '' ? '' : slots.pm;
+        const date = new Date(`${key}T00:00:00`);
+        const week = ['日','一','二','三','四','五','六'][date.getDay()];
+        els.capacityDateText.textContent = `${key.replaceAll('-', '年').replace(/年(\d{2})$/, '月$1日')} · 周${week}${holidayMap[key] ? ` · ${holidayMap[key]}` : ''}`;
+        openModal('capacityModal');
+      }
+
+      function submitCapacity(event) {
+        event.preventDefault(); $('capacityError').textContent = '';
+        const rawAm = els.capacityAm.value.trim();
+        const rawPm = els.capacityPm.value.trim();
+        const am = rawAm === '' ? null : Number(rawAm);
+        const pm = rawPm === '' ? null : Number(rawPm);
+        const invalidAm = am !== null && (!Number.isInteger(am) || am < 0 || am > 99999999);
+        const invalidPm = pm !== null && (!Number.isInteger(pm) || pm < 0 || pm > 99999999);
+        if (invalidAm || invalidPm) {
+          $('capacityError').textContent = '上午和下午均需输入 0–99,999,999 之间的整数，或留空';
+          (invalidAm ? els.capacityAm : els.capacityPm).focus();
+          return;
+        }
+        const zone = getSelectedZone(); if (!zone) return;
+        zone.daily ||= {}; zone.daily[state.editingDateKey] = { am, pm };
+        saveZones(); closeModal('capacityModal'); renderCalendar(); toast('上午、下午托数已保存');
+      }
+
+      $('addZoneBtn').addEventListener('click', () => openZoneForm());
+      els.zoneForm.addEventListener('submit', submitZone);
+      els.capacityForm.addEventListener('submit', submitCapacity);
+      $('confirmDeleteBtn').addEventListener('click', confirmDelete);
+      $('minusLimit').addEventListener('click', () => { els.zoneLimit.value = Math.max(0, (Number(els.zoneLimit.value) || 0) - 100); });
+      $('plusLimit').addEventListener('click', () => { els.zoneLimit.value = Math.min(99999999, (Number(els.zoneLimit.value) || 0) + 100); });
+      $('batchDeleteBtn').addEventListener('click', () => requestDelete([...state.checkedIds]));
+      $('resetFilterBtn').addEventListener('click', () => { state.keyword = ''; state.status = 'all'; els.keywordInput.value = ''; els.statusFilter.value = 'all'; renderZones(); });
+      els.keywordInput.addEventListener('input', e => { state.keyword = e.target.value; renderZones(); });
+      els.statusFilter.addEventListener('change', e => { state.status = e.target.value; renderZones(); });
+      els.selectAll.addEventListener('change', e => { getFilteredZones().forEach(z => e.target.checked ? state.checkedIds.add(z.id) : state.checkedIds.delete(z.id)); renderZones(); });
+
+      els.zoneList.addEventListener('click', e => {
+        const edit = e.target.closest('.edit-zone'); if (edit) { e.stopPropagation(); openZoneForm(edit.dataset.id); return; }
+        const del = e.target.closest('.delete-zone'); if (del) { e.stopPropagation(); requestDelete([del.dataset.id]); return; }
+        const check = e.target.closest('.zone-check'); if (check) { e.stopPropagation(); check.checked ? state.checkedIds.add(check.dataset.id) : state.checkedIds.delete(check.dataset.id); renderZones(); return; }
+        const item = e.target.closest('.zone-item'); if (item) { state.selectedZoneId = item.dataset.id; renderAll(); }
+      });
+      els.zoneList.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('zone-item')) { e.preventDefault(); state.selectedZoneId = e.target.dataset.id; renderAll(); } });
+      els.calendarContent.addEventListener('click', e => { const btn = e.target.closest('.capacity-button'); if (btn) openCapacityForm(btn.dataset.date); });
+      $('prevMonthBtn').addEventListener('click', () => { state.viewDate.setMonth(state.viewDate.getMonth() - 1); state.viewDate = new Date(state.viewDate); renderCalendar(); });
+      $('nextMonthBtn').addEventListener('click', () => { state.viewDate.setMonth(state.viewDate.getMonth() + 1); state.viewDate = new Date(state.viewDate); renderCalendar(); });
+      $('todayBtn').addEventListener('click', () => { const d = new Date(); state.viewDate = new Date(d.getFullYear(), d.getMonth(), 1); renderCalendar(); });
+      document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
+      document.querySelectorAll('.modal-layer').forEach(layer => layer.addEventListener('mousedown', e => { if (e.target === layer) closeModal(layer.id); }));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') { const open = [...document.querySelectorAll('.modal-layer.show')].pop(); if (open) closeModal(open.id); } });
+      document.querySelectorAll('.quick-values button').forEach(btn => btn.addEventListener('click', () => {
+        if (btn.dataset.slot === 'all' || btn.dataset.slot === 'am') els.capacityAm.value = btn.dataset.value;
+        if (btn.dataset.slot === 'all' || btn.dataset.slot === 'pm') els.capacityPm.value = btn.dataset.value;
+        (btn.dataset.slot === 'pm' ? els.capacityPm : els.capacityAm).focus();
+      }));
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,2313 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>物料计划管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #07868d;
+      --primary-dark: #046b71;
+      --primary-soft: #e9f7f7;
+      --text: #27313a;
+      --text-2: #5e6975;
+      --text-3: #8b95a1;
+      --surface: #ffffff;
+      --canvas: #f4f6f8;
+      --muted: #f6f8fa;
+      --border: #e5e9ef;
+      --border-strong: #d8dee7;
+      --danger: #e95d62;
+      --danger-soft: #fff0f0;
+      --success: #48a66b;
+      --success-soft: #eef9f1;
+      --warning: #d99026;
+      --warning-soft: #fff7e8;
+      --shadow: 0 12px 30px rgba(27, 39, 51, .08);
+      --radius: 10px;
+      --col-operate-w: 240px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background: var(--canvas);
+      color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(7, 134, 141, .22); outline-offset: 1px; }
+
+    .app-shell { min-height: 100dvh; padding: 20px; }
+    .page-card { width: 100%; min-height: calc(100dvh - 40px); padding: 22px; background: var(--surface); border-radius: 4px; }
+    .page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .page-head h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    .page-note { color: var(--text-3); font-size: 13px; }
+
+    /* 标签页 */
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .tab { min-height: 40px; padding: 0 16px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-2); font-weight: 500; }
+    .tab:hover { color: var(--primary); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab .count { margin-left: 6px; padding: 1px 7px; border-radius: 10px; background: var(--border); color: var(--text-2); font-size: 12px; font-weight: 600; }
+    .tab.active .count { background: var(--primary-soft); color: var(--primary-dark); }
+
+    /* 搜索筛选 */
+    .filter-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; padding: 16px; margin-bottom: 16px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--radius); }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { color: var(--text-2); font-size: 13px; font-weight: 500; }
+    .field input, .field select { min-width: 170px; min-height: 38px; padding: 7px 11px; border: 1px solid var(--border-strong); border-radius: 5px; background: #fff; color: var(--text); transition: border-color .18s, box-shadow .18s; }
+    .field input:hover, .field select:hover { border-color: #bbc5d0; }
+    .field input:focus, .field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); outline: none; }
+    .field input::placeholder { color: #a8b0ba; }
+    .filter-actions { display: flex; gap: 8px; margin-left: auto; }
+
+    /* 按钮 */
+    .btn { min-height: 38px; padding: 0 16px; border: 1px solid var(--border-strong); border-radius: 5px; background: var(--surface); color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; gap: 7px; transition: background .18s, border-color .18s, color .18s, transform .18s; }
+    .btn:hover { border-color: #bfc8d3; color: var(--text); background: #fafbfc; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .btn-primary:hover { border-color: var(--primary-dark); background: var(--primary-dark); color: #fff; }
+    .btn-danger { border-color: #f4c9cb; background: var(--danger-soft); color: #c94349; }
+    .btn-danger:hover { border-color: var(--danger); background: #ffe8e9; color: #b73238; }
+    .btn-warning { border-color: #f0c781; background: var(--warning-soft); color: #b66b13; }
+    .btn-warning:hover { border-color: var(--warning); background: #fff2d8; color: #9d5b0c; }
+    .btn-success { border-color: #b8e0ca; background: var(--success-soft); color: #277645; }
+    .btn-success:hover { border-color: var(--success); background: #d4eddd; color: #1e5f35; }
+    .btn[disabled] { opacity: .45; cursor: not-allowed; transform: none; }
+    .btn-icon { width: 38px; padding: 0; }
+    .icon { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .toolbar .sep { flex: 1; }
+    .toolbar-divider { width: 1px; align-self: stretch; margin: 4px 2px; background: var(--border-strong); }
+    .toolbar label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); cursor: pointer; }
+    .toolbar .check { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+
+    /* 表格 */
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 2200px; }
+    thead th { position: sticky; top: 0; z-index: 1; background: #fbfcfd; color: var(--text-2); font-weight: 600; font-size: 13px; text-align: left; padding: 13px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    tbody td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr { transition: background .15s; }
+    tbody tr:hover { background: var(--primary-soft); }
+    tbody tr.diff { background: #fff8f0; }
+    tbody tr.diff:hover { background: #fff0e2; }
+    .col-check { width: 44px; text-align: center; }
+    .col-status { width: 90px; white-space: nowrap; }
+    .col-operate { width: var(--col-operate-w); min-width: var(--col-operate-w); white-space: nowrap; }
+    thead th.col-status { position: sticky; top: 0; right: var(--col-operate-w); z-index: 4; background: #fbfcfd; box-shadow: -2px 0 4px rgba(0,0,0,.06); }
+    thead th.col-operate { position: sticky; top: 0; right: 0; z-index: 4; background: #fbfcfd; }
+    tbody td.col-status { position: sticky; right: var(--col-operate-w); z-index: 2; background: #fff; box-shadow: -2px 0 4px rgba(0,0,0,.06); }
+    tbody td.col-operate { position: sticky; right: 0; z-index: 2; background: #fff; }
+    tbody tr:hover td.col-status { background: var(--primary-soft); }
+    tbody tr:hover td.col-operate { background: var(--primary-soft); }
+    tbody tr.diff td.col-status { background: #fff8f0; }
+    tbody tr.diff td.col-operate { background: #fff8f0; }
+    tbody tr.diff:hover td.col-status { background: #fff0e2; }
+    tbody tr.diff:hover td.col-operate { background: #fff0e2; }
+    .col-num { text-align: right; font-variant-numeric: tabular-nums; }
+    .col-num .th-sub { display: block; font-size: 10px; font-weight: 400; opacity: .8; margin-top: 1px; }
+    .col-time { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-2); }
+    .cell-input { width: 78px; height: 30px; padding: 4px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: #fff; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; transition: border-color .15s, box-shadow .15s; }
+    .cell-input:hover { border-color: #bbc5d0; }
+    .cell-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(7,134,141,.1); outline: none; }
+    .cell-input::placeholder { color: #c0c6cf; text-align: right; }
+    .check { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; }
+    .row-actions { display: flex; flex-wrap: nowrap; gap: 4px; }
+    .link-btn { border: 0; background: transparent; padding: 5px 9px; border-radius: 4px; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex: 0 0 auto; }
+    .link-btn.edit { color: var(--primary); }
+    .link-btn.edit:hover { background: rgba(7,134,141,.1); }
+    .link-btn.delete { color: var(--danger); }
+    .link-btn.delete:hover { background: var(--danger-soft); }
+    .link-btn.confirm { color: var(--success); }
+    .link-btn.confirm:hover { background: var(--success-soft); }
+
+    .badge { display: inline-flex; align-items: center; white-space: nowrap; min-height: 22px; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .status-pending_shipment { color: #1a5f6a; background: #e6f4f5; }
+    .status-in_transit { color: #2b5a8a; background: #eaf2fb; }
+    .status-received { color: #388951; background: var(--success-soft); }
+    .status-cancelled { color: #7b8590; background: #eef1f4; text-decoration: line-through; }
+    .status-supplier-pending { color: #b66b13; background: var(--warning-soft); }
+    .status-platform-pending { color: #7a4fb5; background: #f1ebfa; }
+    /* 确认中页签：隐藏实际到货相关列（表头与数据列整体隐藏，保持一致） */
+    .tab-confirming .col-arrival,
+    .tab-confirming .col-arrivalgap { display: none; }
+
+    .diff-tag { display: inline-flex; align-items: center; white-space: nowrap; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .diff-tag.same { color: #388951; background: var(--success-soft); }
+    .diff-tag.diff { color: #b73238; background: var(--danger-soft); }
+    .diff-tag.missing { color: #7b8590; background: #eef1f4; }
+    .logistics-cell { display: inline-flex; align-items: center; gap: 6px; }
+    .logistics-cell .logistics-name { white-space: nowrap; }
+    .logistics-cell .change-btn { border: 0; background: transparent; color: var(--primary); cursor: pointer; font-size: 12px; padding: 2px 4px; white-space: nowrap; border-radius: 3px; }
+    .logistics-cell .change-btn:hover { background: rgba(7,134,141,.1); text-decoration: underline; }
+
+    .empty { padding: 64px 20px; text-align: center; color: var(--text-3); }
+    .empty .icon { width: 34px; height: 34px; margin-bottom: 8px; color: #b8c0ca; }
+
+    /* 分页 */
+    .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    .pagination .total { color: var(--text-3); font-size: 13px; margin-right: auto; }
+    .page-size { min-height: 34px; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: 5px; background: #fff; color: var(--text); }
+    .page-btn { min-width: 34px; min-height: 34px; padding: 0 9px; border: 1px solid var(--border-strong); border-radius: 5px; background: #fff; color: var(--text-2); }
+    .page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+    .page-btn.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .page-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .go-page { display: flex; align-items: center; gap: 6px; color: var(--text-3); font-size: 13px; }
+    .go-page input { width: 56px; min-height: 34px; text-align: center; border: 1px solid var(--border-strong); border-radius: 5px; }
+
+    /* 弹窗 */
+    .modal-layer { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(22, 28, 34, .54); }
+    .modal-layer.show { display: flex; }
+    .modal { width: min(760px, 100%); max-height: calc(100dvh - 40px); overflow: auto; border-radius: 12px; background: #fff; box-shadow: 0 24px 70px rgba(0,0,0,.22); animation: modalIn .2s ease-out; }
+    .modal.small { width: min(430px, 100%); }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; min-height: 72px; padding: 0 24px; border-bottom: 1px solid var(--border); }
+    .modal-head h3 { margin: 0; font-size: 19px; }
+    .close-btn { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-3); display: grid; place-items: center; }
+    .close-btn:hover { background: var(--muted); color: var(--text); }
+    .modal-body { padding: 24px; }
+    .form-row { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 14px; align-items: start; margin-bottom: 18px; }
+    .form-label { padding-top: 10px; color: var(--text-2); text-align: right; }
+    .required { color: var(--danger); margin-right: 5px; }
+    .form-row input, .form-row select { width: 100%; min-height: 40px; padding: 8px 11px; border: 1px solid var(--border-strong); border-radius: 5px; background: #fff; color: var(--text); }
+    .form-row input:focus, .form-row select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); outline: none; }
+    .form-row input:disabled, .form-row select:disabled { background: #f4f6f8; color: #6c7680; cursor: not-allowed; border-color: #e0e4e8; }
+    .field-error { min-height: 19px; margin-top: 4px; color: var(--danger); font-size: 12px; }
+
+    /* 编辑计划弹窗：双列紧凑布局 */
+    .plan-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 20px; }
+    .plan-form-grid .form-row { display: flex; flex-direction: column; gap: 5px; align-items: stretch; margin-bottom: 0; }
+    .plan-form-grid .form-label { text-align: left; padding-top: 0; font-size: 13px; color: var(--text-2); line-height: 1.4; }
+    .plan-form-grid .form-row.full-width { grid-column: 1 / -1; }
+    .plan-form-grid .form-row textarea { width: 100%; border-radius: 5px; resize: vertical; }
+    .plan-form-grid .form-section-title { grid-column: 1 / -1; font-size: 14px; font-weight: 600; color: var(--text); margin-top: 4px; padding-bottom: 2px; border-bottom: 1px solid var(--border); }
+    .plan-form-grid .form-section-title:first-child { margin-top: 0; }
+
+    .promise-summary { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; font-size: 13px; line-height: 1.9; color: var(--text-2); }
+    .promise-summary p { margin: 0; }
+    .promise-summary strong { color: var(--text); font-weight: 600; }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px 22px; }
+    .modal-foot .btn { min-width: 88px; }
+    .confirm-copy { margin: 0; color: var(--text-2); line-height: 1.75; }
+    .diff-summary { padding: 14px; border-radius: 8px; background: var(--muted); margin-bottom: 18px; }
+    .diff-summary p { margin: 0 0 8px; }
+    .diff-summary p:last-child { margin-bottom: 0; }
+
+    /* 导入弹窗 - 上传区域 */
+    .upload-zone { border: 2px dashed var(--border-strong); border-radius: 8px; padding: 36px 20px; text-align: center; cursor: pointer; transition: border-color .18s, background .18s; }
+    .upload-zone:hover, .upload-zone.dragover { border-color: var(--primary); background: var(--primary-soft); }
+    .upload-zone .upload-icon { width: 40px; height: 40px; margin-bottom: 10px; color: var(--text-3); }
+    .upload-zone:hover .upload-icon, .upload-zone.dragover .upload-icon { color: var(--primary); }
+    .upload-zone .upload-text { color: var(--text); font-size: 14px; }
+    .upload-zone .upload-hint { color: var(--text-3); font-size: 12px; margin-top: 4px; }
+    .upload-file { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 5px; background: var(--primary-soft); color: var(--primary-dark); font-size: 13px; margin-top: 12px; }
+    .upload-file .remove { border: 0; background: transparent; color: var(--text-3); cursor: pointer; padding: 0 0 0 4px; font-size: 16px; line-height: 1; }
+    .upload-file .remove:hover { color: var(--danger); }
+    .import-modal-foot { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px 22px; gap: 12px; }
+    .tpl-link { color: var(--primary); font-size: 13px; display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; cursor: pointer; white-space: nowrap; }
+    .tpl-link:hover { text-decoration: underline; }
+    .import-modal-foot .actions { display: flex; gap: 10px; }
+
+    /* 导入弹窗 - 校验摘要 */
+    .import-summary { margin-top: 16px; border-radius: 10px; padding: 13px 15px; font-size: 13px; display: none; }
+    .import-summary.show { display: block; }
+    .import-summary.ok { background: #f2fbf5; border: 1px solid #b8e0ca; color: #277645; }
+    .import-summary.warn { background: #fff8ec; border: 1px solid #f3d9a6; color: #9a6b12; }
+    .import-summary.err { background: #fff3f3; border: 1px solid #f1bfc1; color: #b63a40; }
+    .is-title { font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .is-grid { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    .is-cell { display: inline-flex; align-items: baseline; gap: 6px; }
+    .is-cell .is-num { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .is-cell .is-lab { color: inherit; opacity: .85; }
+    .is-cell.danger .is-num { color: var(--danger); }
+    .is-note { margin-top: 8px; font-size: 12px; opacity: .9; }
+
+    /* 覆盖提醒弹窗 */
+    .modal.overwrite { width: min(480px, 100%); }
+    .ow-icon { width: 44px; height: 44px; color: #d98a1a; }
+    .ow-body { padding: 8px 24px 4px; }
+    .ow-body p { margin: 0 0 12px; color: var(--text-2); line-height: 1.7; }
+    .ow-stats { display: flex; gap: 14px; padding: 14px; border-radius: 10px; background: var(--muted); margin-bottom: 14px; }
+    .ow-stat { flex: 1; text-align: center; }
+    .ow-stat .n { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .ow-stat .n.danger { color: var(--danger); }
+    .ow-stat .l { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+    .ow-warn { display: flex; gap: 8px; align-items: flex-start; padding: 11px 13px; border-radius: 8px; background: #fff8ec; border: 1px solid #f3d9a6; color: #9a6b12; font-size: 13px; line-height: 1.6; }
+    .ow-warn .icon { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+
+    /* 提示 */
+    .toast-region { position: fixed; top: 20px; left: 50%; z-index: 1200; transform: translateX(-50%); display: grid; gap: 8px; pointer-events: none; }
+    .toast { min-width: 260px; max-width: calc(100vw - 32px); padding: 11px 15px; border: 1px solid #b8e0ca; border-radius: 7px; background: #f2fbf5; color: #277645; box-shadow: var(--shadow); animation: toastIn .2s ease-out; }
+    .toast.error { border-color: #f1bfc1; background: #fff3f3; color: #b63a40; }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 980px) {
+      .filter-actions { margin-left: 0; width: 100%; }
+      .filter-actions .btn { flex: 1; }
+    }
+    @media (max-width: 820px) {
+      .app-shell { padding: 12px; }
+      .page-card { min-height: calc(100dvh - 24px); padding: 16px; }
+      .filter-bar { padding: 14px; }
+      .field input, .field select { min-width: 140px; }
+      .pagination { justify-content: center; }
+      .pagination .total { margin-right: 0; width: 100%; text-align: center; }
+      .tabs { overflow-x: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+
+    /* 视图切换 */
+    .view-switch { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 16px; background: var(--muted); border: 1px solid var(--border); border-radius: 8px; }
+    .view-tab { min-height: 34px; padding: 0 20px; border: 0; border-radius: 6px; background: transparent; color: var(--text-2); font-weight: 500; transition: background .15s, color .15s, box-shadow .15s; }
+    .view-tab:hover { color: var(--primary); }
+    .view-tab.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px rgba(27,39,51,.14); }
+
+    /* 物料视图 */
+    .material-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .material-list { max-height: calc(100dvh - 230px); overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+    .material-card { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--border); background: var(--surface); padding: 14px 16px; display: block; cursor: pointer; transition: background .15s; }
+    .material-card:last-child { border-bottom: 0; }
+    .material-card:hover { background: var(--primary-soft); }
+    .material-card.active { background: var(--primary-soft); box-shadow: inset 3px 0 0 var(--primary); }
+    .material-card .mc-code { font-weight: 600; color: var(--text); font-size: 14px; }
+    .material-card .mc-supplier { color: var(--text-3); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .material-card .mc-metrics { display: flex; gap: 14px; margin-top: 8px; }
+    .material-card .mc-metric { font-size: 12px; color: var(--text-2); }
+    .material-card .mc-metric b { color: var(--text); font-variant-numeric: tabular-nums; }
+    .material-card .mc-gap { margin-top: 7px; }
+    .material-list .empty { padding: 44px 16px; }
+
+    .material-detail { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; min-height: calc(100dvh - 230px); }
+    .material-detail-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); background: #fbfcfd; }
+    .material-detail-head h2 { margin: 0; font-size: 17px; }
+    .material-detail-head .md-sub { color: var(--text-3); font-size: 12px; margin-top: 3px; }
+    .material-summary { display: flex; gap: 22px; flex-wrap: wrap; }
+    .material-summary .ms-item { text-align: right; }
+    .material-summary .ms-item .ms-label { font-size: 12px; color: var(--text-2); }
+    .material-summary .ms-item .ms-value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .material-summary .ms-item .ms-value.gap { color: var(--danger); }
+
+    .date-group { border-bottom: 1px solid var(--border); padding: 14px 18px; }
+    .date-group:last-child { border-bottom: 0; }
+    .date-group-head { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
+    .date-group-head .dg-date { font-weight: 600; font-size: 14px; }
+    .date-group-head .dg-total { font-size: 13px; color: var(--text-2); }
+    .date-group-head .dg-total b { color: var(--text); font-variant-numeric: tabular-nums; }
+    .plan-row { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; align-items: center; padding: 11px 13px; border: 1px solid var(--border); border-radius: 8px; background: var(--muted); margin-bottom: 8px; }
+    .plan-row:last-child { margin-bottom: 0; }
+    .plan-row .pr-voucher { font-size: 13px; font-weight: 500; color: var(--text); }
+    .plan-row .pr-meta { display: flex; gap: 16px; margin-top: 6px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); }
+    .plan-row .pr-meta b { color: var(--text); font-variant-numeric: tabular-nums; }
+    .plan-row .pr-actions { display: flex; gap: 4px; align-items: center; }
+    .material-detail .empty { padding: 64px 20px; }
+
+    /* 物料视图日历 */
+    .cal-toolbar { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .cal-title { font-weight: 600; font-size: 15px; min-width: 108px; text-align: center; }
+    .cal-legend { margin-left: auto; font-size: 12px; color: var(--text-3); }
+    .cal-legend b { color: var(--primary); font-weight: 600; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .cal-head { background: #fbfcfd; border-bottom: 1px solid var(--border); }
+    .cal-head > div { padding: 8px 0; text-align: center; font-size: 12px; color: var(--text-2); font-weight: 500; }
+    .cal-cell { min-height: 94px; padding: 6px 8px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface); }
+    .cal-cell.blank { background: #fcfcfd; }
+    .cal-cell:nth-child(7n) { border-right: 0; }
+    .cal-cell .cal-date { font-size: 12px; color: var(--text-3); }
+    .cal-cell.has-data { cursor: pointer; background: var(--primary-soft); transition: background .15s; }
+    .cal-cell.has-data:hover { background: #d7efef; }
+    .cal-cell.selected { box-shadow: inset 0 0 0 2px var(--primary); background: #d0eded; }
+    .cal-cell .cal-plan, .cal-cell .cal-promised { font-size: 12px; margin-top: 5px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-cell .cal-plan b, .cal-cell .cal-promised b { font-weight: 600; }
+    .cal-cell .cal-gap { display: inline-block; margin-top: 5px; font-size: 11px; font-weight: 700; color: var(--danger); }
+    .cal-detail { padding: 14px 18px; border-top: 1px solid var(--border); background: #fbfcfd; }
+    .cal-detail-head { font-weight: 600; margin-bottom: 10px; }
+    .cal-detail .empty { padding: 18px 0; }
+    @media (max-width: 820px) {
+      .material-layout { grid-template-columns: 1fr; }
+      .material-list { max-height: 300px; }
+      .material-detail { min-height: auto; }
+      .cal-cell { min-height: 74px; }
+    }
+    /* 承诺调整 / 历史 / 缺口预警 */
+    textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); resize: vertical; }
+    .req { color: var(--danger); }
+    .form-summary { background: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 13px; color: var(--text-2); }
+    .form-summary p { margin: 0 0 4px; }
+    .form-summary p:last-child { margin-bottom: 0; }
+    .field-error { color: var(--danger); font-size: 12px; min-height: 16px; margin-top: 4px; }
+    .adj-badge { border: 1px solid var(--warning); color: var(--warning); background: var(--warning-soft); border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .adj-badge:hover { filter: brightness(.97); }
+    .warn-tag { display: inline-block; margin-left: 4px; color: var(--danger); background: var(--danger-soft); border: 1px solid var(--danger); border-radius: 999px; padding: 0 7px; font-size: 11px; font-weight: 600; }
+    .history-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .history-list li { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--surface); }
+    .history-list .h-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); }
+    .history-list .h-change { font-size: 14px; font-weight: 600; margin: 4px 0; font-variant-numeric: tabular-nums; }
+    .history-list .h-reason { font-size: 13px; color: var(--text-2); }
+    .summary-bar { display: flex; gap: 24px; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; color: var(--text-2); }
+    .summary-bar b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .summary-bar .sb-gap { color: var(--danger); }
+    .pr-meta .cal-promise { width: 84px; padding: 2px 6px; }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="page-card" aria-labelledby="pageTitle">
+      <header class="page-head">
+        <h1 id="pageTitle">物料计划管理</h1>
+        <span class="page-note">导入物料计划与 SAP ASN 数据，按计划或物料维度管理，自动比对差异与计划/承诺发货缺口</span>
+      </header>
+
+      <!-- 视图切换 -->
+      <div class="view-switch" id="viewSwitch" role="tablist" aria-label="视图切换">
+        <button class="view-tab active" data-view="plan" type="button" role="tab" aria-selected="true">计划视图</button>
+        <button class="view-tab" data-view="material" type="button" role="tab" aria-selected="false">物料视图</button>
+      </div>
+
+      <!-- 计划视图 -->
+      <div id="planView">
+        <!-- 状态标签 -->
+        <div class="tabs" id="statusTabs" role="tablist"></div>
+
+        <!-- 搜索筛选 -->
+        <form class="filter-bar" id="searchForm" role="search">
+          <div class="field">
+            <label for="fMaterialCode">物料编号</label>
+            <input id="fMaterialCode" type="text" placeholder="请输入物料编号" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="fSupplier">供应商</label>
+            <input id="fSupplier" type="text" placeholder="请输入供应商" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="fVoucher">采购凭证</label>
+            <input id="fVoucher" type="text" placeholder="请输入采购凭证" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="fPlanner">计划员</label>
+            <input id="fPlanner" type="text" placeholder="请输入计划员" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="fShipDate">发货日期</label>
+            <input id="fShipDate" type="date">
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-primary" type="submit">
+              <svg class="icon" aria-hidden="true"><circle cx="7.5" cy="7.5" r="4.5"/><path d="m11 11 4 4"/></svg>查询
+            </button>
+            <button class="btn" type="button" id="resetBtn">
+              <svg class="icon" aria-hidden="true"><path d="M4 4v5h5M5 9a7 7 0 1 1-1 4"/></svg>重置
+            </button>
+          </div>
+        </form>
+
+        <!-- 操作工具栏 -->
+        <div class="toolbar">
+          <button class="btn btn-primary" id="importPlanBtn" type="button">
+            <svg class="icon" aria-hidden="true"><path d="M9 12V3m0 0L5 7m4-4 4 4M3 14v3h12v-3"/></svg>导入物料计划
+          </button>
+          <button class="btn btn-success" id="importAsnBtn" type="button">
+            <svg class="icon" aria-hidden="true"><path d="M9 12V3m0 0L5 7m4-4 4 4M3 14v3h12v-3"/></svg>导入 SAP ASN
+          </button>
+          <button class="btn" id="exportPlanBtn" type="button">
+            <svg class="icon" aria-hidden="true"><path d="M9 3v9m0 0 4-4M9 12 5 8M3 17v3h12v-3"/></svg>导出物料
+          </button>
+          <span class="toolbar-divider"></span>
+          <button class="btn btn-warning" id="batchConfirmBtn" type="button" disabled>
+            <svg class="icon" aria-hidden="true"><path d="M5 12l3 3 7-7"/></svg>批量确认
+          </button>
+          <button class="btn btn-danger" id="batchCancelBtn" type="button" disabled>
+            <svg class="icon" aria-hidden="true"><path d="M3 5h12M7 5V3h4v2m2 0-.7 10H5.7L5 5m3 3v4m3-4v4"/></svg>批量作废
+          </button>
+          <span class="sep"></span>
+          <label><input class="check" id="onlyDiff" type="checkbox"> 只看有差异</label>
+          <label><input class="check" id="onlyGap" type="checkbox"> 只看有缺口</label>
+        </div>
+
+        <!-- 缺口汇总 -->
+        <div class="summary-bar" id="planSummary"></div>
+
+        <!-- 数据表格 -->
+        <div class="table-wrap">
+          <table id="planTable">
+            <thead>
+              <tr>
+                <th class="col-check"><input class="check" id="selectAll" type="checkbox" aria-label="全选"></th>
+                <th>物料编号</th>
+                <th>SAP供应商编号</th>
+                <th>供应商名称</th>
+                <th>计划员</th>
+                <th>采购凭证</th>
+                <th class="col-time">计划发货日期</th>
+                <th class="col-time">计划到货日期</th>
+                <th class="col-num">计划发货数量</th>
+                <th class="col-num">承诺发货数量<span class="th-sub">ASN导入数量</span></th>
+                <th class="col-num">计划与承诺差异</th>
+                <th class="col-num col-arrival">实际到货数量</th>
+                <th class="col-num col-arrivalgap">实际到货缺口</th>
+                <th class="col-num col-confirmqty">确认发货数量</th>
+                <th class="col-num">标准装箱数量</th>
+                <th class="col-num">标准装托数量</th>
+                <th class="col-num">箱数</th>
+                <th class="col-num">托数</th>
+                <th>配送方式</th>
+                <th>指定物流商</th>
+                <th class="col-time">计划创建时间</th>
+                <th class="col-time">计划更新时间</th>
+                <th class="col-status">状态</th>
+                <th class="col-operate">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination">
+          <span class="total" id="totalText">共 0 条</span>
+          <select class="page-size" id="pageSize">
+            <option value="10" selected>10 条/页</option>
+            <option value="20">20 条/页</option>
+            <option value="50">50 条/页</option>
+          </select>
+          <button class="page-btn" id="prevPage" type="button" aria-label="上一页">‹</button>
+          <span id="pageNumbers" style="display:flex;gap:8px;"></span>
+          <button class="page-btn" id="nextPage" type="button" aria-label="下一页">›</button>
+          <span class="go-page">前往 <input id="goPageInput" type="number" min="1"> 页</span>
+        </div>
+      </div>
+
+      <!-- 物料视图 -->
+      <div id="materialView" hidden>
+        <div class="toolbar material-toolbar">
+          <div class="field" style="flex:1; min-width:220px;">
+            <label for="fMaterialKeyword">物料 / 供应商</label>
+            <input id="fMaterialKeyword" type="text" placeholder="搜索物料编号或供应商" autocomplete="off">
+          </div>
+          <label><input class="check" id="materialOnlyGap" type="checkbox"> 只看有缺口</label>
+        </div>
+        <div class="material-layout">
+          <aside class="material-list" id="materialList" aria-label="物料列表"></aside>
+          <section class="material-detail" id="materialDetail"></section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 编辑弹窗 -->
+  <div class="modal-layer" id="formModal" role="presentation">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
+      <div class="modal-head">
+        <h3 id="formModalTitle">编辑计划</h3>
+        <button class="close-btn" type="button" data-close="formModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
+      </div>
+      <form id="planForm" novalidate>
+        <div class="modal-body">
+          <div class="form-grid plan-form-grid">
+            <div class="form-section-title">基础信息</div>
+            <div class="form-row">
+              <label class="form-label" for="mMaterialCode"><span class="required">*</span>物料编号</label>
+              <div><input id="mMaterialCode" type="text" maxlength="30" placeholder="请输入物料编号" autocomplete="off"><div class="field-error" id="materialCodeError" role="alert"></div></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mSapSupplierCode"><span class="required">*</span>SAP供应商编号</label>
+              <div><input id="mSapSupplierCode" type="text" maxlength="20" placeholder="请输入SAP供应商编号" autocomplete="off"><div class="field-error" id="sapSupplierCodeError" role="alert"></div></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mSupplierName"><span class="required">*</span>供应商名称</label>
+              <div><input id="mSupplierName" type="text" maxlength="60" placeholder="请输入供应商名称" autocomplete="off"><div class="field-error" id="supplierNameError" role="alert"></div></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mPlanner"><span class="required">*</span>计划员</label>
+              <div><input id="mPlanner" type="text" maxlength="30" placeholder="请输入计划员" autocomplete="off"><div class="field-error" id="plannerError" role="alert"></div></div>
+            </div>
+            <div class="form-row full-width">
+              <label class="form-label" for="mVoucher"><span class="required">*</span>采购凭证</label>
+              <div><input id="mVoucher" type="text" maxlength="40" placeholder="请输入采购凭证" autocomplete="off"><div class="field-error" id="voucherError" role="alert"></div></div>
+            </div>
+
+            <div class="form-section-title">数量与承诺</div>
+            <div class="form-row">
+              <label class="form-label" for="mPlanQty"><span class="required">*</span>计划发货数量</label>
+              <div><input id="mPlanQty" type="number" min="0" step="1" inputmode="numeric" placeholder="请输入计划发货数量"><div class="field-error" id="planQtyError" role="alert"></div></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mPromisedQty">承诺发货数量</label>
+              <div><input id="mPromisedQty" type="number" min="0" step="1" inputmode="numeric" placeholder="请输入承诺发货数量（ASN导入数量）"><div class="field-error" id="promisedQtyError" role="alert"></div></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mConfirmQty">确认发货数量</label>
+              <div><input id="mConfirmQty" type="number" min="0" step="1" inputmode="numeric" placeholder="请输入确认发货数量"></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mActualArrivalQty">实际到货数量</label>
+              <div><input id="mActualArrivalQty" type="number" min="0" step="1" inputmode="numeric" placeholder="请输入实际到货数量"></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mPerBoxQty">标准装箱数量</label>
+              <div><input id="mPerBoxQty" type="number" min="0" step="1" inputmode="numeric" placeholder="请输入标准装箱数量"></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mPerPalletQty">标准装托数量</label>
+              <div><input id="mPerPalletQty" type="number" min="0" step="1" inputmode="numeric" placeholder="请输入标准装托数量"></div>
+            </div>
+            <div class="form-row full-width" id="promiseReasonRow">
+              <label class="form-label" for="mPromiseReason">承诺调整原因 <span class="req">*</span></label>
+              <div><textarea id="mPromiseReason" rows="2" placeholder="修改承诺发货数量时必填，便于后续追溯审计"></textarea><div class="field-error" id="promiseReasonError" role="alert"></div></div>
+            </div>
+
+            <div class="form-section-title">物流与日期</div>
+            <div class="form-row">
+              <label class="form-label" for="mDeliveryMode">配送方式</label>
+              <div><select id="mDeliveryMode"><option value="直送">直送</option><option value="自提">自提</option></select></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mLogistics">指定物流商</label>
+              <div><input id="mLogistics" type="text" maxlength="40" placeholder="请输入指定物流商" autocomplete="off"></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mShipDate">计划发货日期</label>
+              <div><input id="mShipDate" type="date"></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="mArrivalDate">计划到货日期</label>
+              <div><input id="mArrivalDate" type="date"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn" type="button" data-close="formModal">取消</button>
+          <button class="btn btn-primary" type="submit">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 差异确认弹窗 -->
+  <div class="modal-layer" id="diffModal" role="presentation">
+    <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="diffModalTitle">
+      <div class="modal-head"><h3 id="diffModalTitle">确认差异</h3><button class="close-btn" type="button" data-close="diffModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button></div>
+      <div class="modal-body">
+        <div class="diff-summary" id="diffSummary"></div>
+        <p class="confirm-copy">存在差异，确认后将按计划数量更新为 ASN 数量并标记为「已确认」。是否继续？</p>
+      </div>
+      <div class="modal-foot"><button class="btn" type="button" data-close="diffModal">取消</button><button class="btn btn-primary" id="diffConfirmBtn" type="button">确认</button></div>
+    </div>
+  </div>
+
+  <!-- 作废确认弹窗 -->
+  <div class="modal-layer" id="cancelModal" role="presentation">
+    <div class="modal small" role="alertdialog" aria-modal="true" aria-labelledby="cancelTitle" aria-describedby="cancelText">
+      <div class="modal-head"><h3 id="cancelTitle">确认作废</h3><button class="close-btn" type="button" data-close="cancelModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button></div>
+      <div class="modal-body"><p class="confirm-copy" id="cancelText"></p></div>
+      <div class="modal-foot"><button class="btn" type="button" data-close="cancelModal">取消</button><button class="btn btn-danger" id="doCancelBtn" type="button">作废</button></div>
+    </div>
+  </div>
+
+  <!-- 变更物流商弹窗 -->
+  <div class="modal-layer" id="logisticsModal" role="presentation">
+    <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="logisticsTitle">
+      <div class="modal-head">
+        <h3 id="logisticsTitle">变更物流商</h3>
+        <button class="close-btn" type="button" data-close="logisticsModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label" for="mLogisticsSelect"><span class="required">*</span>物流商</label>
+            <div>
+              <select id="mLogisticsSelect">
+                <option value="顺丰速运">顺丰速运</option>
+                <option value="德邦物流">德邦物流</option>
+                <option value="中通快递">中通快递</option>
+                <option value="ZTO快递">ZTO快递</option>
+                <option value="圆通速递">圆通速递</option>
+                <option value="京东物流">京东物流</option>
+                <option value="韵达快递">韵达快递</option>
+                <option value="申通快递">申通快递</option>
+                <option value="百世快递">百世快递</option>
+                <option value="EMS">EMS</option>
+                <option value="__custom">自定义...</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" id="customLogisticsWrap" style="display:none;">
+            <label class="form-label" for="mLogisticsCustom">自定义物流商</label>
+            <div><input id="mLogisticsCustom" type="text" maxlength="40" placeholder="请输入物流商名称" autocomplete="off"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" type="button" data-close="logisticsModal">取消</button>
+        <button class="btn btn-primary" id="saveLogisticsBtn" type="button">确认变更</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 导入物料计划弹窗 -->
+  <div class="modal-layer" id="importPlanModal" role="presentation">
+    <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="importPlanTitle">
+      <div class="modal-head">
+        <h3 id="importPlanTitle">导入物料计划</h3>
+        <button class="close-btn" type="button" data-close="importPlanModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <!-- 上传区域 -->
+        <div class="upload-zone" id="planDropZone" tabindex="0" role="button" aria-label="点击或拖拽文件上传">
+          <svg class="icon upload-icon" aria-hidden="true"><path d="M9 12V3m0 0L5 7m4-4 4 4M3 14v3h12v-3"/></svg>
+          <div class="upload-text">点击或拖拽文件到此处上传</div>
+          <div class="upload-hint">支持 CSV / JSON / Excel 格式，文件大小不超过 10MB</div>
+          <div class="upload-file" id="planFileName" style="display:none;"></div>
+        </div>
+        <!-- 校验摘要 -->
+        <div class="import-summary" id="planImportSummary"></div>
+      </div>
+      <div class="import-modal-foot">
+        <button class="tpl-link" id="importPlanTpl" type="button">
+          <svg class="icon" aria-hidden="true"><path d="M9 3v9m0 0L5 8m4 4 4-4M3 17v3h12v-3"/></svg>下载物料计划模板
+        </button>
+        <div class="actions">
+          <button class="btn" type="button" data-close="importPlanModal">取消</button>
+          <button class="btn btn-primary" id="importPlanConfirm" type="button" disabled>确认导入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 导入SAP ASN弹窗 -->
+  <div class="modal-layer" id="importAsnModal" role="presentation">
+    <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="importAsnTitle">
+      <div class="modal-head">
+        <h3 id="importAsnTitle">导入 SAP ASN</h3>
+        <button class="close-btn" type="button" data-close="importAsnModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <!-- 上传区域 -->
+        <div class="upload-zone" id="asnDropZone" tabindex="0" role="button" aria-label="点击或拖拽文件上传">
+          <svg class="icon upload-icon" aria-hidden="true"><path d="M9 12V3m0 0L5 7m4-4 4 4M3 14v3h12v-3"/></svg>
+          <div class="upload-text">点击或拖拽文件到此处上传</div>
+          <div class="upload-hint">支持 CSV / JSON / Excel 格式，文件大小不超过 10MB</div>
+          <div class="upload-file" id="asnFileName" style="display:none;"></div>
+        </div>
+        <!-- 校验摘要 -->
+        <div class="import-summary" id="asnImportSummary"></div>
+      </div>
+      <div class="import-modal-foot">
+        <button class="tpl-link" id="importAsnTpl" type="button">
+          <svg class="icon" aria-hidden="true"><path d="M9 3v9m0 0L5 8m4 4 4-4M3 17v3h12v-3"/></svg>下载 ASN 模板
+        </button>
+        <div class="actions">
+          <button class="btn" type="button" data-close="importAsnModal">取消</button>
+          <button class="btn btn-primary" id="importAsnConfirm" type="button" disabled>确认导入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 重复导入覆盖提醒弹窗 -->
+  <div class="modal-layer" id="overwriteModal" role="presentation">
+    <div class="modal overwrite" role="dialog" aria-modal="true" aria-labelledby="overwriteTitle">
+      <div class="modal-head">
+        <h3 id="overwriteTitle">重复导入提醒</h3>
+        <button class="close-btn" type="button" data-close="overwriteModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
+      </div>
+      <div class="ow-body">
+        <svg class="ow-icon" aria-hidden="true" style="display:block;margin:4px auto 12px;"><path d="M12 3 1.8 21h20.4L12 3Z"/><path d="M12 9.5v5M12 17.4v.2"/></svg>
+        <p style="text-align:center;">本次导入将与系统中<strong>已有数据重复</strong>，继续将<strong>覆盖之前导入的数据</strong>。请确认是否继续？</p>
+        <div class="ow-stats">
+          <div class="ow-stat"><div class="n" id="owAdd">0</div><div class="l">新增</div></div>
+          <div class="ow-stat"><div class="n danger" id="owOverwrite">0</div><div class="l">覆盖更新</div></div>
+        </div>
+        <div class="ow-warn">
+          <svg class="icon" aria-hidden="true"><circle cx="8" cy="8" r="6.4"/><path d="M8 7.2v3.4M8 4.6v.2"/></svg>
+          <span id="owHint">校验规则：按「物料编号 + 发货日期」匹配，重复即覆盖原记录。</span>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" type="button" data-close="overwriteModal">取消</button>
+        <button class="btn btn-primary" id="overwriteConfirm" type="button">继续导入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 承诺调整历史弹窗 -->
+  <div class="modal-layer" id="historyModal" role="presentation">
+    <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+      <div class="modal-head">
+        <h3 id="historyTitle">承诺调整历史</h3>
+        <button class="close-btn" type="button" data-close="historyModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
+      </div>
+      <div class="modal-body" id="historyBody"></div>
+      <div class="modal-foot">
+        <button class="btn" type="button" data-close="historyModal">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const STORAGE_KEY = 'material-plan-v5';
+      const ASN_KEY = 'material-plan-asn-v2';
+
+      const svg = {
+        edit: '<svg class="icon" aria-hidden="true"><path d="m10.8 3.2 2 2L6 12l-3 .8.8-3 7-6.6ZM9.5 4.5l2 2"/></svg>',
+        trash: '<svg class="icon" aria-hidden="true"><path d="M3 5h12M7 5V3h4v2m2 0-.7 10H5.7L5 5m3 3v4m3-4v4"/></svg>',
+        check: '<svg class="icon" aria-hidden="true"><path d="M5 12l3 3 7-7"/></svg>',
+        search: '<svg class="icon" aria-hidden="true"><circle cx="7.5" cy="7.5" r="4.5"/><path d="m11 11 4 4"/></svg>'
+      };
+
+      const STATUS_MAP = {
+        supplier_pending: { label: '待供应商确认', class: 'status-supplier-pending' },
+        platform_pending: { label: '待平台确认', class: 'status-platform-pending' },
+        confirming: { label: '待供应商确认', class: 'status-supplier-pending' },
+        pending_shipment: { label: '待发货', class: 'status-pending_shipment' },
+        in_transit: { label: '运输中', class: 'status-in_transit' },
+        received: { label: '已收货', class: 'status-received' },
+        cancelled: { label: '已作废', class: 'status-cancelled' }
+      };
+
+      const TABS = [
+        { key: 'confirming', label: '确认中', statuses: ['supplier_pending', 'platform_pending', 'confirming'] },
+        { key: 'pending_shipment', label: '待发货', statuses: ['pending_shipment'] },
+        { key: 'in_transit', label: '运输中', statuses: ['in_transit'] },
+        { key: 'received', label: '已收货', statuses: ['received'] },
+        { key: 'cancelled', label: '已作废', statuses: ['cancelled'] }
+      ];
+
+      function uuid() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0;
+          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+      }
+
+      const seedPlans = [
+        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: 'Dr. Julien Heller', voucher: '2026-05-31-10626MSC', shipDate: '2026-05-26', arrivalDate: '2026-05-31', planQty: 500, promisedQty: 300, confirmQty: null, perBoxQty: 50, perPalletQty: 250, deliveryMode: '直送', logistics: '新增物流商', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-05-26 14:21:39', updatedAt: '2026-05-26 14:30:40' },
+        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: 'Dr. Julien Heller', voucher: '2026-05-14-10626MSC', shipDate: '2026-05-14', arrivalDate: '2026-05-14', planQty: 3680, promisedQty: 0, confirmQty: null, perBoxQty: 80, perPalletQty: 400, deliveryMode: '自提', logistics: 'ZTO快递', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-04-29 14:04:23', updatedAt: '2026-05-29 14:23:30' },
+        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: '齐桂英', voucher: '2026-05-15-10626MSC', shipDate: '2026-05-15', arrivalDate: '2026-05-15', planQty: 9620, promisedQty: null, confirmQty: null, perBoxQty: 50, perPalletQty: 250, deliveryMode: '直送', logistics: 'ZTO快递', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-04-29 14:04:23', updatedAt: '2026-04-29 14:04:23' },
+        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: '第二次导入', voucher: '2026-05-05-10626MSC', shipDate: '2026-05-03', arrivalDate: '2026-05-05', planQty: 4000, promisedQty: 4000, confirmQty: null, perBoxQty: 100, perPalletQty: 500, deliveryMode: '直送', logistics: 'ZTO快递', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-04-29 13:25:28', updatedAt: '2026-04-29 14:03:27' },
+        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: '王五', voucher: '2026-05-04-10626MSC', shipDate: '2026-05-03', arrivalDate: '2026-05-04', planQty: 4000, promisedQty: 3000, confirmQty: null, perBoxQty: 80, perPalletQty: 400, deliveryMode: '自提', logistics: 'ZTO快递', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-04-29 13:11:56', updatedAt: '2026-04-29 13:23:00' },
+        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: '张三', voucher: '2026-06-29-10626MSC', shipDate: '2026-06-29', arrivalDate: '2026-06-29', planQty: 3000, promisedQty: 2000, confirmQty: null, perBoxQty: 50, perPalletQty: 250, deliveryMode: '直送', logistics: 'ZTO快递', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-04-29 09:44:07', updatedAt: '2026-04-29 11:07:48' },
+        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: '李四', voucher: '2026-07-01-10626MSC', shipDate: '2026-06-20', arrivalDate: '2026-06-25', planQty: 1500, promisedQty: 1500, confirmQty: 1500, perBoxQty: 50, perPalletQty: 250, deliveryMode: '直送', logistics: '顺丰速运', planCode: '202', actualArrivalQty: null, status: 'pending_shipment', createdAt: '2026-06-18 10:12:33', updatedAt: '2026-06-19 09:05:21' },
+        { id: uuid(), materialCode: '20815ABC', sapSupplierCode: '18002', supplierName: '无锡威孚精密制造有限公司', planner: '王芳', voucher: '2026-07-10-20815ABC', shipDate: '2026-07-05', arrivalDate: '2026-07-12', planQty: 2200, promisedQty: 2000, confirmQty: null, perBoxQty: 50, perPalletQty: 250, deliveryMode: '自提', logistics: '德邦物流', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-07-02 15:40:11', updatedAt: '2026-07-03 08:22:49' },
+        { id: uuid(), materialCode: '20815ABC', sapSupplierCode: '18002', supplierName: '无锡威孚精密制造有限公司', planner: '赵强', voucher: '2026-07-20-20815ABC', shipDate: '2026-07-15', arrivalDate: '2026-07-22', planQty: 800, promisedQty: null, confirmQty: null, perBoxQty: null, perPalletQty: null, deliveryMode: '直送', logistics: '中通快递', planCode: '202', actualArrivalQty: null, status: 'cancelled', createdAt: '2026-07-08 11:03:55', updatedAt: '2026-07-09 16:48:30' },
+        { id: uuid(), materialCode: '30987XYZ', sapSupplierCode: '19005', supplierName: '上海博格华纳动力系统有限公司', planner: '陈晨', voucher: '2026-07-25-30987XYZ', shipDate: '2026-07-22', arrivalDate: '2026-07-28', planQty: 1000, promisedQty: null, confirmQty: null, perBoxQty: 50, perPalletQty: 250, deliveryMode: '直送', logistics: '顺丰速运', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-07-20 09:15:33', updatedAt: '2026-07-21 14:30:12' },
+        { id: uuid(), materialCode: '41256LMN', sapSupplierCode: '19005', supplierName: '上海博格华纳动力系统有限公司', planner: '陈晨', voucher: '2026-07-28-41256LMN', shipDate: '2026-07-25', arrivalDate: '2026-07-30', planQty: 2000, promisedQty: null, confirmQty: null, perBoxQty: 100, perPalletQty: 500, deliveryMode: '自提', logistics: '德邦物流', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-07-20 09:15:33', updatedAt: '2026-07-21 14:30:12' }
+      ];
+
+      const seedAsn = [
+        { materialCode: '30987XYZ', voucher: '2026-07-25-30987XYZ', asnQty: 950 },
+        { materialCode: '41256LMN', voucher: '2026-07-28-41256LMN', asnQty: 2200 }
+      ];
+
+      const state = {
+        rows: loadPlans(),
+        asn: loadAsn(),
+        checkedIds: new Set(),
+        filters: { materialCode: '', supplier: '', voucher: '', planner: '', shipDate: '' },
+        viewMode: 'plan',
+        activeTab: 'confirming',
+        page: 1,
+        pageSize: 10,
+        onlyDiff: false,
+        onlyGap: false,
+        materialKeyword: '',
+        materialOnlyGap: false,
+        selectedMaterial: null,
+        matMonth: null,
+        matSelectedDay: null,
+        editingId: null,
+        pendingCancelIds: [],
+        pendingDiffId: null
+      };
+
+      const $ = id => document.getElementById(id);
+      const els = {
+        statusTabs: $('statusTabs'),
+        tableBody: $('tableBody'), selectAll: $('selectAll'),
+        batchConfirmBtn: $('batchConfirmBtn'), batchCancelBtn: $('batchCancelBtn'),
+        onlyDiff: $('onlyDiff'),
+        totalText: $('totalText'), pageNumbers: $('pageNumbers'), prevPage: $('prevPage'), nextPage: $('nextPage'),
+        pageSize: $('pageSize'), goPageInput: $('goPageInput'),
+        formModal: $('formModal'), formModalTitle: $('formModalTitle'), planForm: $('planForm'),
+        diffModal: $('diffModal'), diffSummary: $('diffSummary'), diffConfirmBtn: $('diffConfirmBtn'),
+        cancelModal: $('cancelModal'), cancelText: $('cancelText'), doCancelBtn: $('doCancelBtn')
+      };
+
+      function loadPlans() {
+        let rows;
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          rows = (Array.isArray(parsed) && parsed.length) ? parsed : seedPlans.slice();
+        } catch { rows = seedPlans.slice(); }
+        // 数据迁移：回填缺失的标准装箱/装托数量（按「物料编号+采购凭证」匹配种子，避免旧缓存缺字段导致显示"—"）
+        const seedByKey = new Map(seedPlans.map(s => [makeKey(s.materialCode, s.voucher), s]));
+        let migrated = false;
+        rows = rows.map(r => {
+          const s = seedByKey.get(makeKey(r.materialCode, r.voucher));
+          const nr = { ...r };
+          if ((nr.perBoxQty === null || nr.perBoxQty === undefined) && s && s.perBoxQty != null) { nr.perBoxQty = s.perBoxQty; migrated = true; }
+          if ((nr.perPalletQty === null || nr.perPalletQty === undefined) && s && s.perPalletQty != null) { nr.perPalletQty = s.perPalletQty; migrated = true; }
+          return nr;
+        });
+        if (migrated) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); } catch (e) {} }
+        return rows;
+      }
+      function loadAsn() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(ASN_KEY));
+          return Array.isArray(parsed) ? parsed : seedAsn;
+        } catch { return seedAsn; }
+      }
+      function savePlans() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.rows)); }
+      function saveAsn() { localStorage.setItem(ASN_KEY, JSON.stringify(state.asn)); }
+
+      function escapeHtml(v) { return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+      function pad(n) { return String(n).padStart(2, '0'); }
+      function formatNow() {
+        const d = new Date();
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      }
+      function formatNumber(n) {
+        if (n === null || n === undefined || n === '') return '—';
+        return Number(n).toLocaleString('zh-CN');
+      }
+      function makeKey(materialCode, voucher) { return `${String(materialCode).trim()}|${String(voucher).trim()}`; }
+
+      function getAsnQty(row) {
+        const key = makeKey(row.materialCode, row.voucher);
+        const asn = state.asn.find(a => makeKey(a.materialCode, a.voucher) === key);
+        if (!asn) return null;
+        const qty = Number(asn.asnQty ?? asn.qty ?? asn.quantity ?? asn.发货数量 ?? asn['ASN数量'] ?? NaN);
+        return Number.isFinite(qty) ? qty : null;
+      }
+
+      // 计划与承诺差异：以「承诺发货数量」(promisedQty) 为准。承诺有数据即代表已通过 ASN 导入，
+      // 因此不会出现「未导入」；仅当承诺发货数量为空时才视为未承诺。
+      function getDiff(row) {
+        const qty = row.promisedQty;
+        if (qty === null || qty === undefined || qty === '') return null;
+        return row.planQty - Number(qty);
+      }
+
+      // 计划与承诺发货的缺口：承诺未填写时视为「未承诺」
+      function getGap(row) {
+        if (row.promisedQty === null || row.promisedQty === undefined || row.promisedQty === '') return null;
+        return (Number(row.planQty) || 0) - (Number(row.promisedQty) || 0);
+      }
+
+      // 计划与实际到货的缺口：实际到货未填写时视为「未到货」
+      function getActualGap(row) {
+        if (row.actualArrivalQty === null || row.actualArrivalQty === undefined || row.actualArrivalQty === '') return null;
+        return (Number(row.planQty) || 0) - (Number(row.actualArrivalQty) || 0);
+      }
+
+      function actualGapTag(row) {
+        const gap = getActualGap(row);
+        if (gap === null) return '<span class="diff-tag missing">未到货</span>';
+        if (gap === 0) return '<span class="diff-tag same">无缺口</span>';
+        if (gap > 0) return `<span class="diff-tag diff">缺口 +${formatNumber(gap)}</span>`;
+        return `<span class="diff-tag diff">超收货 ${formatNumber(-gap)}</span>`;
+      }
+
+      function gapTag(row) {
+        const gap = getGap(row);
+        if (gap === null) return '<span class="diff-tag missing">未承诺</span>';
+        if (gap === 0) return '<span class="diff-tag same">无缺口</span>';
+        if (gap > 0) return `<span class="diff-tag diff">缺口 +${formatNumber(gap)}</span>`;
+        return `<span class="diff-tag diff">超承诺 ${formatNumber(-gap)}</span>`;
+      }
+
+      function gapTagForValue(gap) {
+        if (gap === null || gap === undefined) return '<span class="diff-tag missing">未承诺</span>';
+        if (gap === 0) return '<span class="diff-tag same">无缺口</span>';
+        if (gap > 0) return `<span class="diff-tag diff">缺口 +${formatNumber(gap)}</span>`;
+        return `<span class="diff-tag diff">超承诺 ${formatNumber(-gap)}</span>`;
+      }
+
+      // 承诺是否已被调整：有调整历史，或与 ASN 原始承诺不一致（未承诺不算已调整）
+      function isAdjusted(row) {
+        if (row.promiseHistory && row.promiseHistory.length) return true;
+        if (row.promisedQty === null || row.promisedQty === undefined || row.promisedQty === '') return false;
+        const asnQty = getAsnQty(row);
+        return asnQty !== null && Number(row.promisedQty) !== asnQty;
+      }
+
+      // 箱数/托数：基于「计划发货数量」结合「标准装箱数量/标准装托数量」计算（物料计划导入即有数据）
+      function calcBoxCount(row) {
+        if (!row.planQty || !row.perBoxQty || row.perBoxQty <= 0) return null;
+        return Math.ceil(row.planQty / row.perBoxQty);
+      }
+
+      function calcPalletCount(row) {
+        if (!row.planQty || !row.perPalletQty || row.perPalletQty <= 0) return null;
+        return Math.ceil(row.planQty / row.perPalletQty);
+      }
+
+      function autoConfirm() {
+        let auto = 0;
+        state.rows.forEach(row => {
+          if (['pending_shipment', 'in_transit', 'received', 'cancelled'].includes(row.status)) return;
+          const diff = getDiff(row);
+          if (diff !== null && diff === 0) {
+            row.status = 'platform_pending';
+            row.confirmQty = row.planQty;
+            row.updatedAt = formatNow();
+            auto++;
+          }
+        });
+        if (auto > 0) {
+          savePlans();
+          toast(`${auto} 条无差异记录已自动确认（待平台确认）`);
+        }
+      }
+
+      function getFilteredRows() {
+        const f = state.filters;
+        const tabStatuses = TABS.find(t => t.key === state.activeTab)?.statuses || [];
+        return state.rows.filter(r => {
+          if (!tabStatuses.includes(r.status)) return false;
+          if (state.onlyDiff) {
+            const diff = getDiff(r);
+            if (diff === null || diff === 0) return false;
+          }
+          if (state.onlyGap) {
+            const pg = (Number(r.planQty) || 0) - (Number(r.promisedQty) || 0);
+            if (pg <= 0) return false;
+          }
+          return (
+            (!f.materialCode || r.materialCode.toLowerCase().includes(f.materialCode.toLowerCase())) &&
+            (!f.supplier || r.supplierName.toLowerCase().includes(f.supplier.toLowerCase()) || r.sapSupplierCode.toLowerCase().includes(f.supplier.toLowerCase())) &&
+            (!f.voucher || r.voucher.toLowerCase().includes(f.voucher.toLowerCase())) &&
+            (!f.planner || r.planner.toLowerCase().includes(f.planner.toLowerCase())) &&
+            (!f.shipDate || r.shipDate === f.shipDate)
+          );
+        });
+      }
+
+      function renderTabs() {
+        els.statusTabs.innerHTML = TABS.map(tab => {
+          const count = state.rows.filter(r => tab.statuses.includes(r.status)).length;
+          return `<button class="tab ${tab.key === state.activeTab ? 'active' : ''}" data-tab="${tab.key}" role="tab" aria-selected="${tab.key === state.activeTab}">${tab.label}<span class="count">${count}</span></button>`;
+        }).join('');
+      }
+
+      function renderTable() {
+        document.getElementById('planTable').className = 'tab-' + state.activeTab;
+        const filtered = getFilteredRows();
+        const total = filtered.length;
+        const pageCount = Math.max(1, Math.ceil(total / state.pageSize));
+        if (state.page > pageCount) state.page = pageCount;
+        const start = (state.page - 1) * state.pageSize;
+        const pageRows = filtered.slice(start, start + state.pageSize);
+
+        if (!pageRows.length) {
+          els.tableBody.innerHTML = `<tr><td colspan="26"><div class="empty">${svg.search}<div>未找到符合条件的物料计划</div></div></td></tr>`;
+        } else {
+          els.tableBody.innerHTML = pageRows.map(r => {
+            const diff = getDiff(r);
+            const status = STATUS_MAP[r.status] || STATUS_MAP.confirming;
+            let diffHtml;
+            if (diff === null) diffHtml = '<span class="diff-tag missing">未承诺</span>';
+            else if (diff === 0) diffHtml = '<span class="diff-tag same">无差异</span>';
+            else diffHtml = `<span class="diff-tag diff">${diff > 0 ? '+' : ''}${formatNumber(diff)}</span>`;
+
+            const gap = getGap(r);
+            const canSupplierConfirm = ['supplier_pending', 'confirming'].includes(r.status);
+            const canPlatformConfirm = r.status === 'platform_pending';
+            const confirmQtyShown = ['platform_pending', 'pending_shipment', 'in_transit', 'received'].includes(r.status);
+            return `
+              <tr class="${diff !== null && diff !== 0 ? 'diff' : ''}" data-id="${r.id}" data-status="${r.status}">
+                <td class="col-check"><input class="check row-check" type="checkbox" data-id="${r.id}" aria-label="选择${escapeHtml(r.materialCode)}" ${state.checkedIds.has(r.id) ? 'checked' : ''}></td>
+                <td>${escapeHtml(r.materialCode)}</td>
+                <td>${escapeHtml(r.sapSupplierCode)}</td>
+                <td>${escapeHtml(r.supplierName)}</td>
+                <td>${escapeHtml(r.planner)}</td>
+                <td>${escapeHtml(r.voucher)}</td>
+                <td class="col-time">${escapeHtml(r.shipDate)}</td>
+                <td class="col-time">${escapeHtml(r.arrivalDate)}</td>
+                <td class="col-num">${formatNumber(r.planQty)}</td>
+                <td class="col-num">${formatNumber(r.promisedQty)}${(gap !== null && gap > 0) ? ' <span class="warn-tag">承诺不足</span>' : ''}${isAdjusted(r) ? ` <button class="adj-badge" data-history="${r.id}" type="button">已调整</button>` : ''}</td>
+                <td class="col-num">${diffHtml}</td>
+                <td class="col-num col-arrival">${formatNumber(r.actualArrivalQty)}</td>
+                <td class="col-num col-arrivalgap">${actualGapTag(r)}</td>
+                <td class="col-num col-confirmqty">${confirmQtyShown ? formatNumber(r.confirmQty) : ''}</td>
+                <td class="col-num">${formatNumber(r.perBoxQty)}</td>
+                <td class="col-num">${formatNumber(r.perPalletQty)}</td>
+                <td class="col-num" data-calc="boxCount">${formatNumber(calcBoxCount(r))}</td>
+                <td class="col-num" data-calc="palletCount">${formatNumber(calcPalletCount(r))}</td>
+                <td>${escapeHtml(r.deliveryMode)}</td>
+                <td>
+                  <span class="logistics-cell">
+                    <span class="logistics-name">${escapeHtml(r.logistics)}</span>
+                    <button class="change-btn" data-logistics="${r.id}" type="button">变更</button>
+                  </span>
+                </td>
+                <td class="col-time">${escapeHtml(r.createdAt)}</td>
+                <td class="col-time">${escapeHtml(r.updatedAt)}</td>
+                <td class="col-status"><span class="badge ${status.class}">${status.label}</span></td>
+                <td class="col-operate">
+                  <div class="row-actions">
+                    <button class="link-btn edit" data-edit="${r.id}" type="button">${svg.edit}修改</button>
+                    ${canSupplierConfirm ? `<button class="link-btn confirm" data-confirm="${r.id}" type="button">${svg.check}确认</button>` : ''}
+                    ${canPlatformConfirm ? `<button class="link-btn confirm" data-confirm-platform="${r.id}" type="button">${svg.check}平台确认</button>` : ''}
+                    <button class="link-btn delete" data-cancel="${r.id}" type="button">${svg.trash}作废</button>
+                  </div>
+                </td>
+              </tr>`;
+          }).join('');
+        }
+
+        const visibleIds = pageRows.map(r => r.id);
+        const checkedVisible = visibleIds.filter(id => state.checkedIds.has(id)).length;
+        els.selectAll.checked = visibleIds.length > 0 && checkedVisible === visibleIds.length;
+        els.selectAll.indeterminate = checkedVisible > 0 && checkedVisible < visibleIds.length;
+        els.batchConfirmBtn.disabled = state.checkedIds.size === 0;
+        els.batchCancelBtn.disabled = state.checkedIds.size === 0;
+
+        els.totalText.textContent = `共 ${total} 条`;
+        els.prevPage.disabled = state.page <= 1;
+        els.nextPage.disabled = state.page >= pageCount;
+        const pages = [];
+        for (let i = 1; i <= pageCount; i++) pages.push(i);
+        els.pageNumbers.innerHTML = pages.map(p => `<button class="page-btn ${p === state.page ? 'active' : ''}" data-page="${p}" type="button">${p}</button>`).join('');
+        els.goPageInput.max = pageCount;
+
+        const sumPlan = filtered.reduce((s, r) => s + (Number(r.planQty) || 0), 0);
+        const sumProm = filtered.reduce((s, r) => s + (Number(r.promisedQty) || 0), 0);
+        const sumGap = sumPlan - sumProm;
+        $('planSummary').innerHTML = `<span>计划合计 <b>${formatNumber(sumPlan)}</b></span><span>承诺合计 <b>${formatNumber(sumProm)}</b></span><span class="sb-gap">缺口合计 <b>${formatNumber(sumGap)}</b></span>`;
+      }
+
+      function renderAll() {
+        renderTabs();
+        renderTable();
+        syncStickyOffsets();
+        if (state.viewMode === 'material') renderMaterialView();
+      }
+
+      /* ============ 物料视图 ============ */
+      function getMaterialRows() {
+        // 与计划视图保持完全一致：复用 getFilteredRows()（状态页签 / 差异筛选 / 缺口筛选 / 搜索条件），
+        // 再叠加物料视图自身可见的「物料/供应商搜索」与「只看有缺口」。
+        let rows = getFilteredRows();
+        const kw = state.materialKeyword.trim().toLowerCase();
+        if (kw) {
+          rows = rows.filter(r => r.materialCode.toLowerCase().includes(kw) || r.supplierName.toLowerCase().includes(kw) || r.sapSupplierCode.toLowerCase().includes(kw));
+        }
+        if (state.materialOnlyGap) {
+          rows = rows.filter(r => ((Number(r.planQty) || 0) - (Number(r.promisedQty) || 0)) > 0);
+        }
+        return rows;
+      }
+
+      function buildMaterials() {
+        const groups = new Map();
+        getMaterialRows().forEach(r => {
+          if (!groups.has(r.materialCode)) groups.set(r.materialCode, []);
+          groups.get(r.materialCode).push(r);
+        });
+        // 状态页签 / 差异 / 缺口 / 搜索条件已由 getMaterialRows() 统一处理，
+        // 此处仅按物料分组并排序，避免与计划视图过滤规则重复或冲突。
+        const arr = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+        return arr;
+      }
+
+      function renderMaterialList(groups) {
+        const list = $('materialList');
+        if (!groups.length) {
+          list.innerHTML = `<div class="empty">${svg.search}<div>未找到符合条件的物料</div></div>`;
+          return;
+        }
+        list.innerHTML = groups.map(([code, rows]) => {
+          const first = rows[0];
+          const totalPlan = rows.reduce((s, r) => s + (Number(r.planQty) || 0), 0);
+          const totalPromised = rows.reduce((s, r) => s + (Number(r.promisedQty) || 0), 0);
+          const gap = totalPlan - totalPromised;
+          const active = state.selectedMaterial === code;
+          return `<button class="material-card ${active ? 'active' : ''}" data-material="${escapeHtml(code)}" type="button">
+            <div class="mc-code">${escapeHtml(code)}</div>
+            <div class="mc-supplier">${escapeHtml(first.supplierName)}</div>
+            <div class="mc-metrics">
+              <span class="mc-metric">计划 <b>${formatNumber(totalPlan)}</b></span>
+              <span class="mc-metric">承诺 <b>${formatNumber(totalPromised)}</b></span>
+            </div>
+            <div class="mc-gap">${gapTagForValue(gap === 0 ? 0 : gap)}</div>
+          </button>`;
+        }).join('');
+      }
+
+      function renderPlanRowsHtml(rows) {
+        return rows.map(r => {
+          const canSupplierConfirm = ['supplier_pending', 'confirming'].includes(r.status);
+          const canPlatformConfirm = r.status === 'platform_pending';
+          const canCancel = r.status !== 'cancelled';
+          return `<div class="plan-row">
+            <div class="pr-main">
+              <div class="pr-voucher">${escapeHtml(r.voucher)} ${isAdjusted(r) ? `<button class="adj-badge" data-history="${r.id}" type="button">已调整</button>` : ''}</div>
+              <div class="pr-meta">
+                <span>计划 <b>${formatNumber(r.planQty)}</b></span>
+                <span>承诺 <b>${formatNumber(r.promisedQty)}</b></span>
+                <span>缺口 <b>${gapTag(r)}</b></span>
+                <span>确认 <b>${formatNumber(r.confirmQty)}</b></span>
+                <span>配送 <b>${escapeHtml(r.deliveryMode)}</b></span>
+              </div>
+            </div>
+            <div class="pr-actions">
+              ${canSupplierConfirm ? `<button class="link-btn edit" data-edit="${r.id}" type="button">${svg.edit}修改</button><button class="link-btn confirm" data-confirm="${r.id}" type="button">${svg.check}确认</button>` : ''}
+              ${canPlatformConfirm ? `<button class="link-btn confirm" data-confirm-platform="${r.id}" type="button">${svg.check}平台确认</button>` : ''}
+              ${canCancel ? `<button class="link-btn delete" data-cancel="${r.id}" type="button">${svg.trash}作废</button>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      function defaultMonthForMaterial(code) {
+        const rows = getMaterialRows().filter(r => r.materialCode === code && r.shipDate);
+        if (!rows.length) {
+          const n = new Date();
+          return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`;
+        }
+        const dates = rows.map(r => r.shipDate).sort();
+        return dates[0].slice(0, 7);
+      }
+
+      function renderMaterialDetail(code) {
+        const detail = $('materialDetail');
+        if (!code) {
+          detail.innerHTML = `<div class="empty">${svg.search}<div>请选择左侧物料查看计划</div></div>`;
+          return;
+        }
+        const rows = getMaterialRows().filter(r => r.materialCode === code);
+        if (!rows.length) {
+          detail.innerHTML = `<div class="empty">${svg.search}<div>该物料暂无计划</div></div>`;
+          return;
+        }
+        const first = rows[0];
+        const totalPlan = rows.reduce((s, r) => s + (Number(r.planQty) || 0), 0);
+        const totalPromised = rows.reduce((s, r) => s + (Number(r.promisedQty) || 0), 0);
+        const totalConfirm = rows.reduce((s, r) => s + (Number(r.confirmQty) || 0), 0);
+        const totalGap = totalPlan - totalPromised;
+
+        // 按日期分组（日维度）
+        const byDate = new Map();
+        rows.forEach(r => {
+          const d = r.shipDate || '未排期';
+          if (!byDate.has(d)) byDate.set(d, []);
+          byDate.get(d).push(r);
+        });
+
+        // 当前展示月份
+        if (!state.matMonth || !/^\d{4}-\d{2}$/.test(state.matMonth)) {
+          state.matMonth = defaultMonthForMaterial(code);
+        }
+        const [yy, mm] = state.matMonth.split('-').map(Number);
+        const monthTitle = `${yy}年${mm}月`;
+
+        // 构建日历网格（周一为起始）
+        const firstDay = new Date(yy, mm - 1, 1);
+        const leading = (firstDay.getDay() + 6) % 7;
+        const daysInMonth = new Date(yy, mm, 0).getDate();
+        const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+        let cells = '';
+        for (let i = 0; i < leading; i++) cells += `<div class="cal-cell blank"></div>`;
+        for (let d = 1; d <= daysInMonth; d++) {
+          const ds = `${yy}-${String(mm).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          const dRows = byDate.get(ds);
+          if (dRows) {
+            const plan = dRows.reduce((s, r) => s + (Number(r.planQty) || 0), 0);
+            const promised = dRows.reduce((s, r) => s + (Number(r.promisedQty) || 0), 0);
+            const gap = plan - promised;
+            const isSel = state.matSelectedDay === ds;
+            const gapHtml = gap > 0 ? `<span class="cal-gap">缺口 +${formatNumber(gap)}</span>` : '';
+            cells += `<div class="cal-cell has-data ${isSel ? 'selected' : ''}" data-day="${ds}">
+              <div class="cal-date">${d}</div>
+              <div class="cal-plan">计 <b>${formatNumber(plan)}</b></div>
+              <div class="cal-promised">诺 <b>${formatNumber(promised)}</b></div>
+              ${gapHtml}
+            </div>`;
+          } else {
+            cells += `<div class="cal-cell"><div class="cal-date">${d}</div></div>`;
+          }
+        }
+        const trailing = (7 - ((leading + daysInMonth) % 7)) % 7;
+        for (let i = 0; i < trailing; i++) cells += `<div class="cal-cell blank"></div>`;
+
+        // 选中日期的当日明细
+        let detailHtml;
+        if (state.matSelectedDay && byDate.has(state.matSelectedDay)) {
+          const dr = byDate.get(state.matSelectedDay);
+          detailHtml = `<div class="cal-detail">
+            <div class="cal-detail-head">${escapeHtml(state.matSelectedDay)} · 当日计划明细（${dr.length} 条）</div>
+            ${renderPlanRowsHtml(dr)}
+          </div>`;
+        } else {
+          detailHtml = `<div class="cal-detail"><div class="empty">点击日历中高亮的日期，查看该日计划与供应商承诺发货明细</div></div>`;
+        }
+
+        detail.innerHTML = `
+          <div class="material-detail-head">
+            <div>
+              <h2>${escapeHtml(code)}</h2>
+              <div class="md-sub">${escapeHtml(first.supplierName)} · SAP ${escapeHtml(first.sapSupplierCode)}</div>
+            </div>
+            <div class="material-summary">
+              <div class="ms-item"><div class="ms-label">计划总量</div><div class="ms-value">${formatNumber(totalPlan)}</div></div>
+              <div class="ms-item"><div class="ms-label">承诺总量</div><div class="ms-value">${formatNumber(totalPromised)}</div></div>
+              <div class="ms-item"><div class="ms-label">缺口总量</div><div class="ms-value ${totalGap > 0 ? 'gap' : ''}">${gapTagForValue(totalGap)}</div></div>
+              <div class="ms-item"><div class="ms-label">确认总量</div><div class="ms-value">${formatNumber(totalConfirm)}</div></div>
+            </div>
+          </div>
+          <div class="cal-toolbar">
+            <button class="page-btn" data-cal="prev" type="button" aria-label="上个月">‹</button>
+            <span class="cal-title">${monthTitle}</span>
+            <button class="page-btn" data-cal="next" type="button" aria-label="下个月">›</button>
+            <span class="cal-legend">每个日期显示：<b>计</b>划数量 · 供应商<b>诺</b>发货数量 · 红色为缺口</span>
+          </div>
+          <div class="cal-grid cal-head">${weekDays.map(w => `<div>${w}</div>`).join('')}</div>
+          <div class="cal-grid">${cells}</div>
+          ${detailHtml}`;
+      }
+
+      function renderMaterialView() {
+        const groups = buildMaterials();
+        if (state.selectedMaterial && !groups.some(([c]) => c === state.selectedMaterial)) state.selectedMaterial = null;
+        if (!state.selectedMaterial && groups.length) state.selectedMaterial = groups[0][0];
+        renderMaterialList(groups);
+        renderMaterialDetail(state.selectedMaterial);
+      }
+
+      function syncStickyOffsets() {
+        const th = document.querySelector('thead th.col-operate');
+        if (!th) return;
+        const w = th.offsetWidth;
+        document.documentElement.style.setProperty('--col-operate-w', w + 'px');
+      }
+
+      function openModal(id) {
+        $(id).classList.add('show'); document.body.style.overflow = 'hidden';
+        setTimeout(() => $(id).querySelector('input, button, select')?.focus(), 0);
+      }
+      function closeModal(id) {
+        $(id).classList.remove('show');
+        if (id === 'overwriteModal') pendingOverwrite = null;
+        if (!document.querySelector('.modal-layer.show')) document.body.style.overflow = '';
+      }
+      function toast(message, type = 'success') {
+        const node = document.createElement('div');
+        node.className = `toast ${type === 'error' ? 'error' : ''}`;
+        node.textContent = message;
+        $('toastRegion').appendChild(node);
+        setTimeout(() => node.remove(), 3200);
+      }
+      function clearErrors() {
+        ['materialCodeError','sapSupplierCodeError','supplierNameError','plannerError','voucherError','planQtyError','promisedQtyError','promiseReasonError'].forEach(id => $(id).textContent = '');
+      }
+
+      function openForm(id = null) {
+        state.editingId = id;
+        clearErrors();
+        const row = state.rows.find(r => r.id === id);
+        els.formModalTitle.textContent = row ? '编辑计划' : '新增计划';
+        $('mMaterialCode').value = row?.materialCode || '';
+        $('mSapSupplierCode').value = row?.sapSupplierCode || '';
+        $('mSupplierName').value = row?.supplierName || '';
+        $('mPlanner').value = row?.planner || '';
+        $('mVoucher').value = row?.voucher || '';
+        $('mPlanQty').value = row?.planQty ?? '';
+        $('mPromisedQty').value = row?.promisedQty ?? '';
+        $('mConfirmQty').value = row?.confirmQty ?? '';
+        $('mPerBoxQty').value = row?.perBoxQty ?? '';
+        $('mPerPalletQty').value = row?.perPalletQty ?? '';
+        $('mLogistics').value = row?.logistics || '';
+        $('mDeliveryMode').value = row?.deliveryMode || '直送';
+        $('mShipDate').value = row?.shipDate || '';
+        $('mArrivalDate').value = row?.arrivalDate || '';
+        $('mActualArrivalQty').value = row?.actualArrivalQty ?? '';
+        $('mPromiseReason').value = '';
+        $('promiseReasonRow').hidden = !id;
+        setFormReadonly(!!id);
+        openModal('formModal');
+      }
+
+      function setFormReadonly(readonly) {
+        ['mMaterialCode','mSapSupplierCode','mSupplierName','mPlanner','mVoucher'].forEach(id => {
+          const el = $(id);
+          el.disabled = readonly;
+          if (readonly) el.setAttribute('title', '编辑时不可修改');
+          else el.removeAttribute('title');
+        });
+      }
+
+      function submitForm(event) {
+        event.preventDefault();
+        clearErrors();
+        const editingRow = state.editingId ? state.rows.find(r => r.id === state.editingId) : null;
+        // 编辑时红框内关键字段不可改，读取原记录值；新增时从表单读取
+        const materialCode = editingRow ? editingRow.materialCode : $('mMaterialCode').value.trim();
+        const sapSupplierCode = editingRow ? editingRow.sapSupplierCode : $('mSapSupplierCode').value.trim();
+        const supplierName = editingRow ? editingRow.supplierName : $('mSupplierName').value.trim();
+        const planner = editingRow ? editingRow.planner : $('mPlanner').value.trim();
+        const voucher = editingRow ? editingRow.voucher : $('mVoucher').value.trim();
+        const planQty = Number($('mPlanQty').value);
+        const confirmQty = $('mConfirmQty').value === '' ? null : Number($('mConfirmQty').value);
+        const perBoxQty = $('mPerBoxQty').value === '' ? null : Number($('mPerBoxQty').value);
+        const perPalletQty = $('mPerPalletQty').value === '' ? null : Number($('mPerPalletQty').value);
+        const logistics = $('mLogistics').value.trim();
+        const deliveryMode = $('mDeliveryMode').value;
+        const shipDate = $('mShipDate').value;
+        const arrivalDate = $('mArrivalDate').value;
+        const actualArrivalQty = $('mActualArrivalQty').value === '' ? null : Number($('mActualArrivalQty').value);
+        const promisedQty = $('mPromisedQty').value === '' ? null : Number($('mPromisedQty').value);
+
+        let valid = true;
+        if (!materialCode) { $('materialCodeError').textContent = '请输入物料编号'; valid = false; }
+        if (!sapSupplierCode) { $('sapSupplierCodeError').textContent = '请输入SAP供应商编号'; valid = false; }
+        if (!supplierName) { $('supplierNameError').textContent = '请输入供应商名称'; valid = false; }
+        if (!planner) { $('plannerError').textContent = '请输入计划员'; valid = false; }
+        if (!voucher) { $('voucherError').textContent = '请输入采购凭证'; valid = false; }
+        if (!Number.isFinite(planQty) || planQty < 0 || !Number.isInteger(planQty)) { $('planQtyError').textContent = '请输入大于等于 0 的整数'; valid = false; }
+        if (promisedQty !== null && (!Number.isFinite(promisedQty) || promisedQty < 0 || !Number.isInteger(promisedQty))) { $('promisedQtyError').textContent = '请输入大于等于 0 的整数'; valid = false; }
+        // 编辑已有记录且承诺发货数量发生变化时，必须填写调整原因（审计）
+        if (editingRow && String(promisedQty) !== String(editingRow.promisedQty)) {
+          const reason = $('mPromiseReason').value.trim();
+          if (!reason) { $('promiseReasonError').textContent = '修改承诺发货数量时请填写调整原因（必填）'; valid = false; }
+        }
+        if (!valid) return;
+
+        const now = formatNow();
+        if (state.editingId) {
+          const row = state.rows.find(r => r.id === state.editingId);
+          const origPromised = row.promisedQty;
+          if (String(promisedQty) !== String(origPromised)) {
+            if (!row.promiseHistory) row.promiseHistory = [];
+            row.promiseHistory.push({ time: formatNow(), from: Number(origPromised) || 0, to: promisedQty, by: row.planner || '计划员', reason: $('mPromiseReason').value.trim() });
+          }
+          Object.assign(row, { planQty, promisedQty, confirmQty, perBoxQty, perPalletQty, deliveryMode, logistics, shipDate, arrivalDate, actualArrivalQty, updatedAt: now });
+          toast('计划已更新');
+        } else {
+          state.rows.unshift({ id: uuid(), materialCode, sapSupplierCode, supplierName, planner, voucher, planQty, promisedQty, confirmQty, perBoxQty, perPalletQty, deliveryMode, logistics, planCode: '202', status: 'supplier_pending', shipDate, arrivalDate, actualArrivalQty, createdAt: now, updatedAt: now });
+          toast('计划新增成功');
+        }
+        savePlans();
+        closeModal('formModal');
+        renderAll();
+      }
+
+      // 两步确认：供应商确认 → 待平台确认；平台确认 → 流转待发货
+      function advanceConfirm(id, silent = false) {
+        const row = state.rows.find(r => r.id === id);
+        if (!row) return false;
+        if (row.status === 'platform_pending') return platformConfirm(row, silent);
+        // 供应商确认步骤（待供应商确认状态）
+        const committed = row.promisedQty;
+        const diff = getDiff(row);
+        if (committed === null || committed === undefined || committed === '' || Number.isNaN(Number(committed))) {
+          if (!silent) toast('尚未承诺发货数量（请先导入 ASN），无法确认', 'error');
+          return false;
+        }
+        if (diff !== 0) {
+          if (!silent) {
+            state.pendingDiffId = id;
+            els.diffSummary.innerHTML = `
+              <p><strong>物料编号：</strong>${escapeHtml(row.materialCode)}</p>
+              <p><strong>采购凭证：</strong>${escapeHtml(row.voucher)}</p>
+              <p><strong>计划数量：</strong>${formatNumber(row.planQty)} &nbsp;|&nbsp; <strong>承诺发货数量：</strong>${formatNumber(row.promisedQty)}</p>
+              <p><strong>差异：</strong><span class="diff-tag diff">${diff > 0 ? '+' : ''}${formatNumber(diff)}</span></p>`;
+            openModal('diffModal');
+          }
+          return false;
+        }
+        row.confirmQty = row.planQty;
+        row.status = 'platform_pending';
+        row.updatedAt = formatNow();
+        if (!silent) toast('供应商已确认，待平台确认');
+        return true;
+      }
+
+      function platformConfirm(row, silent = false) {
+        if (!row.confirmQty) row.confirmQty = row.planQty;
+        row.status = 'pending_shipment';
+        row.updatedAt = formatNow();
+        if (!silent) toast('平台已确认，数据已流转至待发货');
+        return true;
+      }
+
+      function confirmDiff() {
+        const row = state.rows.find(r => r.id === state.pendingDiffId);
+        if (row) {
+          const committed = Number(row.promisedQty) || 0;
+          row.planQty = committed;
+          row.confirmQty = committed;
+          row.status = 'platform_pending';
+          row.updatedAt = formatNow();
+          savePlans();
+          toast('供应商已确认差异，计划数量已同步为承诺发货数量，待平台确认');
+        }
+        state.pendingDiffId = null;
+        closeModal('diffModal');
+        renderAll();
+      }
+
+      function openHistory(id) {
+        const row = state.rows.find(r => r.id === id);
+        if (!row) return;
+        const hist = row.promiseHistory || [];
+        let html = `<p><strong>物料编号：</strong>${escapeHtml(row.materialCode)}　<strong>采购凭证：</strong>${escapeHtml(row.voucher)}</p>`;
+        if (!hist.length) {
+          html += `<div class="empty">暂无承诺调整记录</div>`;
+        } else {
+          html += '<ul class="history-list">' + hist.slice().reverse().map(h => `
+            <li>
+              <div class="h-row"><span>${escapeHtml(h.time)}</span><span>${escapeHtml(h.by || '计划员')}</span></div>
+              <div class="h-change">${formatNumber(h.from)} → ${formatNumber(h.to)}</div>
+              <div class="h-reason">${escapeHtml(h.reason)}</div>
+            </li>`).join('') + '</ul>';
+        }
+        $('historyBody').innerHTML = html;
+        openModal('historyModal');
+      }
+
+      function requestCancel(ids) {
+        const valid = [...new Set(ids)].filter(id => state.rows.some(r => r.id === id));
+        if (!valid.length) return;
+        state.pendingCancelIds = valid;
+        const vouchers = state.rows.filter(r => valid.includes(r.id)).map(r => r.voucher);
+        $('cancelText').textContent = valid.length === 1
+          ? `确定作废采购凭证为「${vouchers[0]}」的计划吗？作废后可在「已作废」标签中查看。`
+          : `确定作废选中的 ${valid.length} 条计划吗？作废后可在「已作废」标签中查看。`;
+        openModal('cancelModal');
+      }
+
+      function doCancel() {
+        let count = 0;
+        state.pendingCancelIds.forEach(id => {
+          const row = state.rows.find(r => r.id === id);
+          if (row && row.status !== 'cancelled') {
+            row.status = 'cancelled';
+            row.updatedAt = formatNow();
+            count++;
+          }
+          state.checkedIds.delete(id);
+        });
+        state.pendingCancelIds = [];
+        savePlans();
+        closeModal('cancelModal');
+        renderAll();
+        toast(`已作废 ${count} 条计划`);
+      }
+
+      function splitCsvLine(line) {
+        const result = []; let cur = ''; let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const c = line[i], next = line[i + 1];
+          if (c === '"') {
+            if (inQuotes && next === '"') { cur += '"'; i++; }
+            else { inQuotes = !inQuotes; }
+          } else if (c === ',' && !inQuotes) { result.push(cur); cur = ''; }
+          else { cur += c; }
+        }
+        result.push(cur);
+        return result;
+      }
+
+      function parseCsv(text) {
+        // 去除 UTF-8 BOM，跳过空行与以 # 开头的说明注释行
+        text = String(text).replace(/^\uFEFF/, '');
+        const lines = text.trim().split(/\r?\n/).filter(l => {
+          const t = l.trim();
+          return t !== '' && !t.startsWith('#');
+        });
+        if (!lines.length) return [];
+        const headers = splitCsvLine(lines[0]).map(h => h.trim());
+        return lines.slice(1).map(line => {
+          const cells = splitCsvLine(line);
+          const obj = {};
+          headers.forEach((h, i) => obj[h] = (cells[i] || '').trim());
+          return obj;
+        });
+      }
+
+      function normalizePlanItem(raw) {
+        const get = (...keys) => {
+          for (const k of keys) {
+            if (raw[k] !== undefined && raw[k] !== '') return raw[k];
+          }
+          return '';
+        };
+        const materialCode = get('物料编号', 'materialCode', 'material');
+        const sapSupplierCode = get('SAP供应商编号', 'sapSupplierCode', 'supplierCode');
+        const supplierName = get('供应商名称', 'supplierName', 'supplier');
+        const planner = get('计划员', 'planner');
+        const voucher = get('采购凭证', 'voucher', 'purchaseOrder', 'po');
+        const shipDate = get('计划发货日期', 'shipDate', 'planShipDate');
+        const arrivalDate = get('计划到货日期', 'arrivalDate', 'planArrivalDate');
+        const planQty = Number(get('计划发货数量', 'planQty', 'planQuantity', 'qty'));
+        const promisedQtyRaw = get('承诺发货数量', 'promisedQty', 'committedQty');
+        const promisedQty = promisedQtyRaw === '' || promisedQtyRaw === '--' ? null : Number(promisedQtyRaw);
+        const confirmQtyRaw = get('确认发货数量', 'confirmQty');
+        const confirmQty = confirmQtyRaw === '' || confirmQtyRaw === '--' ? null : Number(confirmQtyRaw);
+        const actualArrivalQtyRaw = get('实际到货数量', 'actualArrivalQty', 'actualQty');
+        const actualArrivalQty = actualArrivalQtyRaw === '' || actualArrivalQtyRaw === '--' ? null : Number(actualArrivalQtyRaw);
+        const perBoxQtyRaw = get('标准装箱数量', '每箱数量', 'perBoxQty');
+        const perBoxQty = perBoxQtyRaw === '' || perBoxQtyRaw === '--' ? null : Number(perBoxQtyRaw);
+        const perPalletQtyRaw = get('标准装托数量', '每托数量', 'perPalletQty');
+        const perPalletQty = perPalletQtyRaw === '' || perPalletQtyRaw === '--' ? null : Number(perPalletQtyRaw);
+        const logistics = get('指定物流商', 'logistics', 'carrier');
+        const deliveryMode = get('配送方式', 'deliveryMode') || '直送';
+        const planCode = get('计划', 'planCode', 'planNo') || '202';
+        if (!materialCode || !voucher || !Number.isFinite(planQty)) return null;
+        return { materialCode, sapSupplierCode, supplierName, planner, voucher, shipDate, arrivalDate, planQty, promisedQty, confirmQty, actualArrivalQty, perBoxQty, perPalletQty, deliveryMode, logistics, planCode };
+      }
+
+      function normalizeAsnItem(raw) {
+        const get = (...keys) => {
+          for (const k of keys) { if (raw[k] !== undefined && raw[k] !== '') return raw[k]; }
+          return '';
+        };
+        const materialCode = get('物料编号', 'materialCode', 'material');
+        const voucher = get('采购凭证', 'voucher', 'purchaseOrder', 'po');
+        const qty = Number(get('ASN数量', 'asnQty', 'qty', 'quantity', '发货数量'));
+        if (!materialCode || !voucher || !Number.isFinite(qty)) return null;
+        return { materialCode, voucher, asnQty: qty };
+      }
+
+      function importPlans(items) {
+        const list = items.map(normalizePlanItem).filter(Boolean);
+        let added = 0, updated = 0;
+        const now = formatNow();
+        list.forEach(item => {
+          const key = makeKey(item.materialCode, item.voucher);
+          const idx = state.rows.findIndex(r => makeKey(r.materialCode, r.voucher) === key);
+          if (idx >= 0) {
+            const row = state.rows[idx];
+            Object.assign(row, item, { updatedAt: now });
+            updated++;
+          } else {
+            state.rows.unshift({ id: uuid(), ...item, status: 'supplier_pending', createdAt: now, updatedAt: now });
+            added++;
+          }
+        });
+        savePlans();
+        autoConfirm();
+        renderAll();
+        toast(`物料计划导入完成：新增 ${added} 条，更新 ${updated} 条`);
+      }
+
+      function importAsn(items) {
+        const list = items.map(normalizeAsnItem).filter(Boolean);
+        let added = 0, updated = 0, committed = 0;
+        list.forEach(item => {
+          const key = makeKey(item.materialCode, item.voucher);
+          const idx = state.asn.findIndex(a => makeKey(a.materialCode, a.voucher) === key);
+          if (idx >= 0) { state.asn[idx] = item; updated++; }
+          else { state.asn.push(item); added++; }
+          // ASN 数量即供应商承诺发货数量，回填到匹配的计划行（作为原始承诺）
+          const row = state.rows.find(r => makeKey(r.materialCode, r.voucher) === key);
+          if (row && Number.isFinite(item.asnQty)) {
+            row.promisedQty = item.asnQty;
+            row.updatedAt = formatNow();
+            committed++;
+          }
+        });
+        saveAsn();
+        savePlans();
+        autoConfirm();
+        renderAll();
+        toast(`SAP ASN 导入完成：新增 ${added} 条，更新 ${updated} 条，回填承诺 ${committed} 条`);
+      }
+
+      // 演示用示例数据（一键载入，便于 Demo）
+      const SAMPLE_PLAN = [
+        { materialCode:'108143-101', sapSupplierCode:'30015', supplierName:'博世汽车部件（苏州）有限公司', planner:'李伟', voucher:'2026-08-03-108143', shipDate:'2026-08-03', arrivalDate:'2026-08-07', planQty:800, promisedQty:800, confirmQty:0, perBoxQty:40, perPalletQty:200, deliveryMode:'直送', logistics:'顺丰速运', planCode:'203' },
+        { materialCode:'108143-102', sapSupplierCode:'30015', supplierName:'博世汽车部件（苏州）有限公司', planner:'李伟', voucher:'2026-08-04-108143', shipDate:'2026-08-04', arrivalDate:'2026-08-08', planQty:1200, promisedQty:1200, confirmQty:0, perBoxQty:60, perPalletQty:300, deliveryMode:'直送', logistics:'德邦物流', planCode:'203' },
+        { materialCode:'109955-201', sapSupplierCode:'42088', supplierName:'联合汽车电子有限公司', planner:'王芳', voucher:'2026-08-05-109955', shipDate:'2026-08-05', arrivalDate:'2026-08-09', planQty:500, promisedQty:500, confirmQty:0, perBoxQty:50, perPalletQty:250, deliveryMode:'中转', logistics:'中通快递', planCode:'203' },
+        { materialCode:'110233-301', sapSupplierCode:'51120', supplierName:'采埃孚传动系统（上海）有限公司', planner:'张强', voucher:'2026-08-06-110233', shipDate:'2026-08-06', arrivalDate:'2026-08-10', planQty:1500, promisedQty:1500, confirmQty:0, perBoxQty:50, perPalletQty:250, deliveryMode:'直送', logistics:'京东物流', planCode:'203' }
+      ];
+      const SAMPLE_ASN = [
+        { materialCode:'108143-101', voucher:'2026-08-03-108143', asnQty:800 },
+        { materialCode:'108143-102', voucher:'2026-08-04-108143', asnQty:1200 },
+        { materialCode:'109955-201', voucher:'2026-08-05-109955', asnQty:500 },
+        { materialCode:'110233-301', voucher:'2026-08-06-110233', asnQty:1500 }
+      ];
+
+      // 导入唯一键：物料计划按「物料编号 + 发货日期」，ASN 按「物料编号 + 采购凭证」
+      function getImportKey(type, it) {
+        return type === 'plan' ? `${it.materialCode}|${it.shipDate}` : `${it.materialCode}|${it.voucher}`;
+      }
+      function buildExistingKeys(type) {
+        if (type === 'plan') return new Set(state.rows.map(r => `${r.materialCode}|${r.shipDate}`));
+        return new Set(state.asn.map(a => `${a.materialCode}|${a.voucher}`));
+      }
+      // 校验导入数据：返回解析/有效/无效/文件内重复/覆盖/新增统计
+      function validateImport(type, items) {
+        if (!Array.isArray(items)) return { total: 0, valid: 0, invalid: 0, dup: 0, overwrite: 0, add: 0 };
+        const norm = items.map(type === 'plan' ? normalizePlanItem : normalizeAsnItem).filter(Boolean);
+        const invalid = items.length - norm.length;
+        const seen = new Set(); let dup = 0;
+        const existing = buildExistingKeys(type);
+        let overwrite = 0, add = 0;
+        norm.forEach(it => {
+          const k = getImportKey(type, it);
+          if (!k || k === '|') { invalid++; return; }
+          if (seen.has(k)) dup++; else seen.add(k);
+          if (existing.has(k)) overwrite++; else add++;
+        });
+        return { total: items.length, valid: norm.length, invalid, dup, overwrite, add };
+      }
+
+      function parseFileItems(text, isJson) {
+        if (isJson) {
+          const p = JSON.parse(text);
+          return Array.isArray(p) ? p : (p.data || []);
+        }
+        return parseCsv(text);
+      }
+
+      function parseXlsx(arrayBuffer, type) {
+        const data = new Uint8Array(arrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+        if (!rows.length) return [];
+
+        // 模板为单工作表，上半部分是字段说明与导入规则，需定位真正的数据表头行
+        const headerMarkers = type === 'plan'
+          ? ['物料编号', '采购凭证', '计划发货日期']
+          : ['物料编号', '采购凭证', 'ASN数量'];
+        let headerIdx = 0;
+        for (let i = 0; i < rows.length; i++) {
+          const cells = rows[i].map(c => String(c).trim());
+          if (headerMarkers.every(m => cells.includes(m))) { headerIdx = i; break; }
+        }
+
+        const headers = rows[headerIdx].map(h => String(h).trim());
+        return rows.slice(headerIdx + 1).map(cells => {
+          const obj = {};
+          let hasValue = false;
+          headers.forEach((h, i) => {
+            const v = cells[i] !== undefined ? String(cells[i]).trim() : '';
+            if (v) hasValue = true;
+            obj[h] = v;
+          });
+          return hasValue ? obj : null;
+        }).filter(Boolean);
+      }
+
+      // Excel 模板样式辅助函数
+      function applyHeaderStyle(ws, headerRow = 0, startCol = null, endCol = null) {
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        const sC = startCol === null ? range.s.c : startCol;
+        const eC = endCol === null ? range.e.c : endCol;
+        const headerFill = { fgColor: { rgb: '07868D' }, patternType: 'solid' };
+        const headerFont = { bold: true, color: { rgb: 'FFFFFF' }, name: 'Microsoft YaHei', sz: 11 };
+        const thinBorder = { style: 'thin', color: { rgb: 'D8DEE7' } };
+        for (let C = sC; C <= eC; ++C) {
+          const addr = XLSX.utils.encode_cell({ r: headerRow, c: C });
+          if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+          ws[addr].s = {
+            font: headerFont,
+            fill: headerFill,
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder }
+          };
+        }
+      }
+      function applyCellBorders(ws) {
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        const thinBorder = { style: 'thin', color: { rgb: 'D8DEE7' } };
+        const font = { name: 'Microsoft YaHei', sz: 10 };
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+          for (let C = range.s.c; C <= range.e.c; ++C) {
+            const addr = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+            const base = ws[addr].s || {};
+            ws[addr].s = Object.assign({}, base, {
+              font: Object.assign({}, font, base.font),
+              border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder },
+              alignment: Object.assign({ vertical: 'center', wrapText: true }, base.alignment)
+            });
+          }
+        }
+      }
+      function setColumnWidths(ws, widths) {
+        ws['!cols'] = widths.map(w => ({ wch: w }));
+      }
+
+      // 物料计划导出 / 模板统一结构：顶部合并说明块 + 数据表头 + 数据行
+      const PLAN_HEADERS = ['物料编号', 'SAP供应商编号', '供应商名称', '计划员', '采购凭证', '计划发货日期', '计划到货日期', '计划发货数量', '承诺发货数量', '计划与承诺差异', '实际到货数量', '实际到货缺口', '确认发货数量', '标准装箱数量', '标准装托数量', '箱数', '托数', '配送方式', '指定物流商', '计划'];
+      const PLAN_FIELD_MAP = { '物料编号': 'materialCode', 'SAP供应商编号': 'sapSupplierCode', '供应商名称': 'supplierName', '计划员': 'planner', '采购凭证': 'voucher', '计划发货日期': 'shipDate', '计划到货日期': 'arrivalDate', '计划发货数量': 'planQty', '承诺发货数量': 'promisedQty', '实际到货数量': 'actualArrivalQty', '确认发货数量': 'confirmQty', '标准装箱数量': 'perBoxQty', '标准装托数量': 'perPalletQty', '配送方式': 'deliveryMode', '指定物流商': 'logistics', '计划': 'planCode' };
+      const PLAN_HEADER_ROW = 25;
+      const PLAN_GUIDE_TEXT = [
+        '字段说明', '',
+        '物料编号：必填。物料唯一编码，如 108143-101。',
+        'SAP供应商编号：必填。供应商在 SAP 的编号。',
+        '供应商名称：选填。供应商全称。',
+        '计划员：选填。负责该计划的计划员。',
+        '采购凭证：必填。采购订单号，建议含日期前缀，如 2026-08-01-108143。',
+        '计划发货日期：必填。格式 YYYY-MM-DD，系统按「物料编号 + 发货日期」校验重复。',
+        '计划到货日期：选填。格式 YYYY-MM-DD。',
+        '计划发货数量：必填。数字。',
+        '承诺发货数量：选填。供应商承诺数量，不填则导入 SAP ASN 后自动回填（即 ASN 导入数量）。',
+        '实际到货数量：选填。实际到货数量，用于计算实际到货缺口（计划 − 实际到货）。',
+        '确认发货数量：选填。数字。',
+        '标准装箱数量：选填。每箱标准数量，用于计算箱数。',
+        '标准装托数量：选填。每托标准数量，用于计算托数。',
+        '配送方式：选填。如：直送 / 中转。',
+        '指定物流商：选填。承运商名称。',
+        '计划：选填。计划标识。', '',
+        '导入规则', '',
+        '必填项不能为空；日期格式须为 YYYY-MM-DD。',
+        '系统按「物料编号 + 计划发货日期」校验重复，重复将覆盖原记录。',
+        '请从下方表头行开始填写实际数据，可直接覆盖示例数据。'
+      ].join('\n');
+
+      function buildPlanSheet(records) {
+        const colCount = PLAN_HEADERS.length;
+        const rows = [];
+        for (let i = 0; i < PLAN_HEADER_ROW; i++) rows.push(new Array(colCount).fill(''));
+        rows[0][0] = PLAN_GUIDE_TEXT;
+        rows[PLAN_HEADER_ROW] = PLAN_HEADERS.slice();
+        const fmtCalc = (n) => (n === null || n === undefined) ? '' : n;
+        (records || []).forEach(rec => {
+          rows.push(PLAN_HEADERS.map(h => {
+            if (h === '计划与承诺差异') return fmtCalc(getDiff(rec));
+            if (h === '实际到货缺口') return fmtCalc(getActualGap(rec));
+            if (h === '箱数') return fmtCalc(calcBoxCount(rec));
+            if (h === '托数') return fmtCalc(calcPalletCount(rec));
+            const key = PLAN_FIELD_MAP[h];
+            let v = rec[key];
+            if (v === null || v === undefined) v = rec[h];
+            return (v === null || v === undefined) ? '' : v;
+          }));
+        });
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: PLAN_HEADER_ROW - 1, c: colCount - 1 } }];
+        const guideAddr = XLSX.utils.encode_cell({ r: 0, c: 0 });
+        ws[guideAddr].s = {
+          font: { name: 'Microsoft YaHei', sz: 10, color: { rgb: '1F2D3D' } },
+          fill: { fgColor: { rgb: 'F2F6F8' }, patternType: 'solid' },
+          alignment: { horizontal: 'left', vertical: 'top', wrapText: true }
+        };
+        applyCellBorders(ws);
+        applyHeaderStyle(ws, PLAN_HEADER_ROW, 0, colCount - 1);
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        for (let R = PLAN_HEADER_ROW + 1; R <= range.e.r; R++) {
+          for (let C = 7; C <= 18; C++) {
+            const addr = XLSX.utils.encode_cell({ r: R, c: C });
+            if (ws[addr]) ws[addr].s = Object.assign({}, ws[addr].s, { alignment: { horizontal: 'right', vertical: 'center' } });
+          }
+        }
+        ws['!cols'] = [
+          { wch: 16 }, { wch: 16 }, { wch: 32 }, { wch: 10 }, { wch: 26 },
+          { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+          { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+          { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 11 },
+          { wch: 14 }, { wch: 10 }
+        ];
+        ws['!rows'] = [{ hpt: 340 }];
+        ws['!freeze'] = { xSplit: 0, ySplit: PLAN_HEADER_ROW + 1, topLeftCell: XLSX.utils.encode_cell({ r: PLAN_HEADER_ROW + 1, c: 0 }) };
+        ws['!autofilter'] = { ref: `A${PLAN_HEADER_ROW + 1}:${XLSX.utils.encode_col(colCount - 1)}${range.e.r + 1}` };
+        return ws;
+      }
+
+      function downloadTemplate(type) {
+        const wb = XLSX.utils.book_new();
+        const headerFill = { fgColor: { rgb: '07868D' }, patternType: 'solid' };
+        const thinBorder = { style: 'thin', color: { rgb: 'D8DEE7' } };
+
+        function styleTitle(ws, row, endCol) {
+          for (let C = 0; C <= endCol; C++) {
+            const addr = XLSX.utils.encode_cell({ r: row, c: C });
+            ws[addr].s = Object.assign({}, ws[addr].s, {
+              font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' }, name: 'Microsoft YaHei' },
+              fill: headerFill,
+              alignment: { horizontal: 'center', vertical: 'center' }
+            });
+          }
+        }
+        function styleSection(ws, row, endCol) {
+          for (let C = 0; C <= endCol; C++) {
+            const addr = XLSX.utils.encode_cell({ r: row, c: C });
+            ws[addr].s = Object.assign({}, ws[addr].s, {
+              font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' }, name: 'Microsoft YaHei' },
+              fill: headerFill,
+              alignment: { horizontal: 'left', vertical: 'center' }
+            });
+          }
+        }
+
+        if (type === 'plan') {
+          const ws = buildPlanSheet(SAMPLE_PLAN);
+          XLSX.utils.book_append_sheet(wb, ws, '物料计划导入模板');
+          XLSX.writeFile(wb, '物料计划导入模板.xlsx', { bookType: 'xlsx', type: 'array', cellStyles: true });
+          toast('模板已下载：物料计划导入模板.xlsx');
+        } else {
+          const asnHeaders = ['物料编号', '采购凭证', 'ASN数量'];
+          const fieldGuide = [
+            ['字段名', '必填', '格式 / 说明'],
+            ['物料编号', '是', '须与物料计划中的编号一致'],
+            ['采购凭证', '是', '须与对应物料计划的采购凭证一致，用于匹配回填承诺'],
+            ['ASN数量', '是', '供应商在 SAP 中承诺的发货数量（数字）']
+          ];
+          const rules = [
+            ['导入规则'],
+            ['1. 必填项不能为空。'],
+            ['2. 导入后按「物料编号 + 采购凭证」回填到对应计划的「承诺发货数量」。'],
+            ['3. 系统按「物料编号 + 采购凭证」校验重复，重复将覆盖原 ASN 记录。'],
+            ['4. 请从下方表头行开始填写实际数据，可直接覆盖示例数据。']
+          ];
+          const sampleAsnData = SAMPLE_ASN.map(r => [r.materialCode, r.voucher, r.asnQty]);
+
+          const rows = [
+            ['SAP ASN 导入模板'],
+            [],
+            ['字段说明'],
+            ...fieldGuide,
+            [],
+            ['导入规则'],
+            ...rules.slice(1),
+            [],
+            asnHeaders,
+            ...sampleAsnData
+          ];
+          const ws = XLSX.utils.aoa_to_sheet(rows);
+          const headerCols = asnHeaders.length;
+          const fieldHeaderRow = 3;
+          const ruleHeaderRow = fieldHeaderRow + fieldGuide.length + 1;
+          const dataHeaderRow = ruleHeaderRow + rules.length + 1;
+
+          ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: headerCols - 1 } },
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 2 } },
+            { s: { r: ruleHeaderRow, c: 0 }, e: { r: ruleHeaderRow, c: 2 } }
+          ];
+          ws['!cols'] = [{ wch: 18 }, { wch: 28 }, { wch: 14 }];
+          ws['!rows'] = [{ hpt: 32 }];
+
+          applyCellBorders(ws);
+          styleTitle(ws, 0, headerCols - 1);
+          styleSection(ws, 2, 2);
+          styleSection(ws, ruleHeaderRow, 2);
+          applyHeaderStyle(ws, fieldHeaderRow, 0, 2);
+          applyHeaderStyle(ws, dataHeaderRow, 0, headerCols - 1);
+
+          const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+          for (let R = dataHeaderRow + 1; R <= range.e.r; R++) {
+            const addr = XLSX.utils.encode_cell({ r: R, c: 2 });
+            if (ws[addr]) ws[addr].s = Object.assign({}, ws[addr].s, { alignment: { horizontal: 'right', vertical: 'center' } });
+          }
+
+          ws['!freeze'] = { xSplit: 0, ySplit: dataHeaderRow + 1, topLeftCell: XLSX.utils.encode_cell({ r: dataHeaderRow + 1, c: 0 }) };
+          ws['!autofilter'] = { ref: `A${dataHeaderRow + 1}:${XLSX.utils.encode_col(headerCols - 1)}${dataHeaderRow + 1}` };
+
+          XLSX.utils.book_append_sheet(wb, ws, 'SAP ASN 导入模板');
+          XLSX.writeFile(wb, 'SAP_ASN导入模板.xlsx', { bookType: 'xlsx', type: 'array', cellStyles: true });
+          toast('模板已下载：SAP_ASN导入模板.xlsx');
+        }
+      }
+
+      // 导出当前物料计划（沿用导入模板结构：说明块 + 表头 + 数据）
+      function exportPlans() {
+        const records = getFilteredRows();
+        if (!records.length) { toast('当前没有可导出的物料计划数据', 'error'); return; }
+        const wb = XLSX.utils.book_new();
+        const ws = buildPlanSheet(records);
+        XLSX.utils.book_append_sheet(wb, ws, '物料计划数据');
+        XLSX.writeFile(wb, '物料计划数据.xlsx', { bookType: 'xlsx', type: 'array', cellStyles: true });
+        toast(`已导出 ${records.length} 条物料计划数据`);
+      }
+
+      // 事件绑定
+      $('searchForm').addEventListener('submit', e => {
+        e.preventDefault();
+        state.filters.materialCode = $('fMaterialCode').value.trim();
+        state.filters.supplier = $('fSupplier').value.trim();
+        state.filters.voucher = $('fVoucher').value.trim();
+        state.filters.planner = $('fPlanner').value.trim();
+        state.filters.shipDate = $('fShipDate').value;
+        state.page = 1;
+        renderAll();
+      });
+      $('resetBtn').addEventListener('click', () => {
+        state.filters = { materialCode: '', supplier: '', voucher: '', planner: '', shipDate: '' };
+        $('fMaterialCode').value = ''; $('fSupplier').value = ''; $('fVoucher').value = '';
+        $('fPlanner').value = ''; $('fShipDate').value = '';
+        state.page = 1; renderAll();
+      });
+
+      els.statusTabs.addEventListener('click', e => {
+        const btn = e.target.closest('[data-tab]');
+        if (btn) { state.activeTab = btn.dataset.tab; state.page = 1; state.checkedIds.clear(); renderAll(); }
+      });
+
+      // 导入弹窗
+      let pendingOverwrite = null; // { type, summary }
+      const importState = {
+        plan: { file: null, items: null, zoneId: 'planDropZone', nameId: 'planFileName', summaryId: 'planImportSummary', confirmId: 'importPlanConfirm', modalId: 'importPlanModal' },
+        asn:  { file: null, items: null, zoneId: 'asnDropZone',  nameId: 'asnFileName',  summaryId: 'asnImportSummary',  confirmId: 'importAsnConfirm',  modalId: 'importAsnModal' }
+      };
+
+      function clearSummary(type) {
+        const el = $(importState[type].summaryId);
+        if (el) { el.className = 'import-summary'; el.innerHTML = ''; }
+      }
+
+      function renderImportSummary(type, s) {
+        const el = $(importState[type].summaryId);
+        if (!el) return;
+        if (!s || s.valid === 0) {
+          el.className = 'import-summary err show';
+          el.innerHTML = `<div class="is-title">没有可导入的有效数据</div><div class="is-note">请检查文件是否包含必填列（物料编号 / 采购凭证 / 计划发货日期或数量）。</div>`;
+          $(importState[type].confirmId).disabled = true;
+          return;
+        }
+        const warn = s.overwrite > 0;
+        el.className = 'import-summary ' + (warn ? 'warn' : 'ok') + ' show';
+        const cells = [
+          `<div class="is-cell"><span class="is-num">${s.total}</span><span class="is-lab">解析</span></div>`,
+          `<div class="is-cell"><span class="is-num">${s.valid}</span><span class="is-lab">有效</span></div>`
+        ];
+        if (s.invalid > 0) cells.push(`<div class="is-cell danger"><span class="is-num">${s.invalid}</span><span class="is-lab">无效(缺必填)</span></div>`);
+        if (s.dup > 0) cells.push(`<div class="is-cell danger"><span class="is-num">${s.dup}</span><span class="is-lab">文件内重复</span></div>`);
+        cells.push(`<div class="is-cell"><span class="is-num">${s.add}</span><span class="is-lab">新增</span></div>`);
+        if (warn) cells.push(`<div class="is-cell danger"><span class="is-num">${s.overwrite}</span><span class="is-lab">覆盖更新</span></div>`);
+        let note = '';
+        if (s.invalid > 0 || s.dup > 0) note = '无效与重复行将在导入时跳过。';
+        if (warn) note += (note ? ' ' : '') + '重复数据将覆盖系统中原有记录，请确认后继续。';
+        el.innerHTML = `<div class="is-title">${warn ? '⚠ 检测到与已有数据重复' : '✓ 校验通过，可以导入'}</div><div class="is-grid">${cells.join('')}</div>${note ? `<div class="is-note">${note}</div>` : ''}`;
+        $(importState[type].confirmId).disabled = false;
+      }
+
+      function openImportModal(type) {
+        const s = importState[type];
+        s.file = null; s.items = null;
+        $(s.nameId).style.display = 'none';
+        $(s.nameId).innerHTML = '';
+        $(s.confirmId).disabled = true;
+        clearSummary(type);
+        openModal(s.modalId);
+      }
+
+      function setImportFile(type, file) {
+        if (!file) return;
+        if (!/\.(csv|json|xlsx)$/i.test(file.name)) { toast('仅支持 CSV / JSON / Excel 格式', 'error'); return; }
+        if (file.size > 10 * 1024 * 1024) { toast('文件大小不能超过 10MB', 'error'); return; }
+        const s = importState[type];
+        s.file = file; s.items = null;
+        const nameEl = $(s.nameId);
+        nameEl.style.display = 'inline-flex';
+        nameEl.innerHTML = `${escapeHtml(file.name)} <button class="remove" data-remove="${type}" type="button" aria-label="移除文件">&times;</button>`;
+
+        const isXlsx = file.name.toLowerCase().endsWith('.xlsx');
+        const isJson = file.name.toLowerCase().endsWith('.json');
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            let items;
+            if (isXlsx) items = parseXlsx(reader.result, type);
+            else items = parseFileItems(String(reader.result), isJson);
+            if (!Array.isArray(items)) { toast('文件格式不正确', 'error'); return; }
+            importState[type].items = items;
+            const summary = validateImport(type, items);
+            renderImportSummary(type, summary);
+          } catch (e) {
+            toast('文件解析失败：' + e.message, 'error');
+            importState[type].items = null;
+            clearSummary(type);
+            $(s.confirmId).disabled = true;
+          }
+        };
+        if (isXlsx) reader.readAsArrayBuffer(file);
+        else reader.readAsText(file, 'utf-8');
+      }
+
+      function clearImportFile(type) {
+        const s = importState[type];
+        s.file = null; s.items = null;
+        $(s.nameId).style.display = 'none';
+        $(s.nameId).innerHTML = '';
+        $(s.confirmId).disabled = true;
+        clearSummary(type);
+      }
+
+      function doImport(type) {
+        const s = importState[type];
+        if (!s.items || !s.items.length) { toast('没有可导入的数据', 'error'); return; }
+        if (type === 'plan') importPlans(s.items); else importAsn(s.items);
+        s.items = null; s.file = null;
+        $(s.nameId).style.display = 'none';
+        $(s.nameId).innerHTML = '';
+        $(s.confirmId).disabled = true;
+        clearSummary(type);
+        closeModal(s.modalId);
+      }
+
+      function confirmImport(type) {
+        const s = importState[type];
+        if (!s.items || !s.items.length) { toast('请先选择文件', 'error'); return; }
+        const summary = validateImport(type, s.items);
+        if (summary.valid === 0) { toast('没有可导入的有效数据', 'error'); return; }
+        if (summary.overwrite > 0) {
+          pendingOverwrite = { type, summary };
+          $('owAdd').textContent = summary.add;
+          $('owOverwrite').textContent = summary.overwrite;
+          $('owHint').textContent = type === 'plan'
+            ? '校验规则：按「物料编号 + 发货日期」匹配，重复即覆盖原记录。'
+            : '校验规则：按「物料编号 + 采购凭证」匹配，重复即覆盖原记录。';
+          openModal('overwriteModal');
+          return;
+        }
+        doImport(type);
+      }
+
+      function setupDropZone(type) {
+        const s = importState[type];
+        const zone = $(s.zoneId);
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.csv,.json,.xlsx';
+        fileInput.style.display = 'none';
+        zone.appendChild(fileInput);
+
+        zone.addEventListener('click', e => {
+          const removeBtn = e.target.closest('[data-remove]');
+          if (removeBtn) { e.stopPropagation(); clearImportFile(removeBtn.dataset.remove); return; }
+          fileInput.click();
+        });
+        zone.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+        });
+        fileInput.addEventListener('change', e => { setImportFile(type, e.target.files[0]); e.target.value = ''; });
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('drop', e => {
+          e.preventDefault();
+          zone.classList.remove('dragover');
+          if (e.dataTransfer.files[0]) setImportFile(type, e.dataTransfer.files[0]);
+        });
+      }
+
+      $('importPlanBtn').addEventListener('click', () => openImportModal('plan'));
+      $('importAsnBtn').addEventListener('click', () => openImportModal('asn'));
+      $('importPlanTpl').addEventListener('click', () => downloadTemplate('plan'));
+      $('exportPlanBtn').addEventListener('click', exportPlans);
+      $('importAsnTpl').addEventListener('click', () => downloadTemplate('asn'));
+      $('importPlanConfirm').addEventListener('click', () => confirmImport('plan'));
+      $('importAsnConfirm').addEventListener('click', () => confirmImport('asn'));
+      $('overwriteConfirm').addEventListener('click', () => {
+        const pw = pendingOverwrite; pendingOverwrite = null;
+        closeModal('overwriteModal');
+        if (pw) doImport(pw.type);
+      });
+      setupDropZone('plan');
+      setupDropZone('asn');
+
+      // 变更物流商
+      let editingLogisticsId = null;
+      const PRESET_LOGISTICS = ['顺丰速运', '德邦物流', '中通快递', 'ZTO快递', '圆通速递', '京东物流', '韵达快递', '申通快递', '百世快递', 'EMS'];
+
+      function openLogisticsModal(rowId) {
+        editingLogisticsId = rowId;
+        const row = state.rows.find(r => r.id === rowId);
+        if (!row) return;
+        const select = $('mLogisticsSelect');
+        const customWrap = $('customLogisticsWrap');
+        const customInput = $('mLogisticsCustom');
+        if (PRESET_LOGISTICS.includes(row.logistics)) {
+          select.value = row.logistics;
+          customWrap.style.display = 'none';
+          customInput.value = '';
+        } else {
+          select.value = '__custom';
+          customWrap.style.display = '';
+          customInput.value = row.logistics || '';
+        }
+        openModal('logisticsModal');
+      }
+
+      $('mLogisticsSelect').addEventListener('change', e => {
+        $('customLogisticsWrap').style.display = e.target.value === '__custom' ? '' : 'none';
+      });
+
+      $('saveLogisticsBtn').addEventListener('click', () => {
+        if (!editingLogisticsId) return;
+        const row = state.rows.find(r => r.id === editingLogisticsId);
+        if (!row) return;
+        const select = $('mLogisticsSelect');
+        let newLogistics;
+        if (select.value === '__custom') {
+          newLogistics = $('mLogisticsCustom').value.trim();
+          if (!newLogistics) { toast('请输入物流商名称', 'error'); return; }
+        } else {
+          newLogistics = select.value;
+        }
+        row.logistics = newLogistics;
+        row.updatedAt = formatNow();
+        savePlans();
+        renderAll();
+        closeModal('logisticsModal');
+        toast('物流商已变更');
+      });
+
+      els.onlyDiff.addEventListener('change', e => { state.onlyDiff = e.target.checked; state.page = 1; renderAll(); });
+      $('onlyGap').addEventListener('change', e => { state.onlyGap = e.target.checked; state.page = 1; renderAll(); });
+
+      els.selectAll.addEventListener('change', e => {
+        const pageRows = getFilteredRows().slice((state.page - 1) * state.pageSize, (state.page - 1) * state.pageSize + state.pageSize);
+        pageRows.forEach(r => e.target.checked ? state.checkedIds.add(r.id) : state.checkedIds.delete(r.id));
+        renderAll();
+      });
+
+      els.batchConfirmBtn.addEventListener('click', () => {
+        let ok = 0, fail = 0;
+        [...state.checkedIds].forEach(id => { if (advanceConfirm(id, true)) { ok++; state.checkedIds.delete(id); } else { fail++; } });
+        savePlans(); renderAll();
+        toast(`批量确认：成功 ${ok} 条${fail ? `，${fail} 条存在差异或未导入ASN` : ''}`, fail ? 'error' : 'success');
+      });
+      els.batchCancelBtn.addEventListener('click', () => requestCancel([...state.checkedIds]));
+
+      els.tableBody.addEventListener('click', e => {
+        const edit = e.target.closest('[data-edit]');
+        if (edit) { openForm(edit.dataset.edit); return; }
+        const confirm = e.target.closest('[data-confirm]');
+        if (confirm) { const id = confirm.dataset.confirm; if (advanceConfirm(id)) { savePlans(); renderAll(); } return; }
+        const confirmPlatform = e.target.closest('[data-confirm-platform]');
+        if (confirmPlatform) { const id = confirmPlatform.dataset.confirmPlatform; if (advanceConfirm(id)) { savePlans(); renderAll(); } return; }
+        const cancel = e.target.closest('[data-cancel]');
+        if (cancel) { requestCancel([cancel.dataset.cancel]); return; }
+        const logistics = e.target.closest('[data-logistics]');
+        if (logistics) { openLogisticsModal(logistics.dataset.logistics); return; }
+        const history = e.target.closest('[data-history]');
+        if (history) { openHistory(history.dataset.history); return; }
+        const check = e.target.closest('.row-check');
+        if (check) { check.checked ? state.checkedIds.add(check.dataset.id) : state.checkedIds.delete(check.dataset.id); renderAll(); }
+      });
+
+      els.planForm.addEventListener('submit', submitForm);
+      els.diffConfirmBtn.addEventListener('click', confirmDiff);
+      els.doCancelBtn.addEventListener('click', doCancel);
+
+      els.pageSize.addEventListener('change', () => { state.pageSize = Number(els.pageSize.value); state.page = 1; renderAll(); });
+      els.prevPage.addEventListener('click', () => { if (state.page > 1) { state.page--; renderAll(); } });
+      els.nextPage.addEventListener('click', () => { const total = getFilteredRows().length; if (state.page < Math.ceil(total / state.pageSize)) { state.page++; renderAll(); } });
+      els.pageNumbers.addEventListener('click', e => { const btn = e.target.closest('[data-page]'); if (btn) { state.page = Number(btn.dataset.page); renderAll(); } });
+      els.goPageInput.addEventListener('change', () => {
+        const total = getFilteredRows().length;
+        const max = Math.max(1, Math.ceil(total / state.pageSize));
+        const val = Math.min(max, Math.max(1, Number(els.goPageInput.value) || 1));
+        state.page = val; els.goPageInput.value = val; renderAll();
+      });
+
+      // 视图切换：计划视图 / 物料视图
+      $('viewSwitch').addEventListener('click', e => {
+        const btn = e.target.closest('[data-view]');
+        if (!btn) return;
+        state.viewMode = btn.dataset.view;
+        document.querySelectorAll('.view-tab').forEach(b => {
+          const on = b.dataset.view === state.viewMode;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', String(on));
+        });
+        $('planView').hidden = state.viewMode !== 'plan';
+        $('materialView').hidden = state.viewMode !== 'material';
+        if (state.viewMode === 'material') {
+          if (!state.selectedMaterial) {
+            const g = buildMaterials();
+            if (g.length) state.selectedMaterial = g[0][0];
+          }
+          state.matMonth = null;
+          state.matSelectedDay = null;
+          renderMaterialView();
+        } else {
+          renderTable();
+          syncStickyOffsets();
+        }
+      });
+
+      // 物料视图：选择物料
+      $('materialList').addEventListener('click', e => {
+        const card = e.target.closest('[data-material]');
+        if (!card) return;
+        state.selectedMaterial = card.dataset.material;
+        state.matMonth = null;
+        state.matSelectedDay = null;
+        renderMaterialView();
+      });
+
+      // 物料视图：搜索与过滤
+      $('fMaterialKeyword').addEventListener('input', e => {
+        state.materialKeyword = e.target.value;
+        renderMaterialView();
+      });
+      $('materialOnlyGap').addEventListener('change', e => {
+        state.materialOnlyGap = e.target.checked;
+        renderMaterialView();
+      });
+
+      // 物料视图：行内操作（翻月 / 选日期 / 修改 / 确认 / 作废）
+      $('materialDetail').addEventListener('click', e => {
+        const cal = e.target.closest('[data-cal]');
+        if (cal) {
+          const dir = cal.dataset.cal === 'prev' ? -1 : 1;
+          const [yy, mm] = state.matMonth.split('-').map(Number);
+          const nd = new Date(yy, mm - 1 + dir, 1);
+          state.matMonth = `${nd.getFullYear()}-${String(nd.getMonth() + 1).padStart(2, '0')}`;
+          state.matSelectedDay = null;
+          renderMaterialDetail(state.selectedMaterial);
+          return;
+        }
+        const day = e.target.closest('[data-day]');
+        if (day) {
+          state.matSelectedDay = (state.matSelectedDay === day.dataset.day) ? null : day.dataset.day;
+          renderMaterialDetail(state.selectedMaterial);
+          return;
+        }
+        const edit = e.target.closest('[data-edit]');
+        if (edit) { openForm(edit.dataset.edit); return; }
+        const confirm = e.target.closest('[data-confirm]');
+        if (confirm) {
+          const id = confirm.dataset.confirm;
+          const ok = advanceConfirm(id);
+          if (ok) { savePlans(); renderAll(); }
+          return;
+        }
+        const cancel = e.target.closest('[data-cancel]');
+        if (cancel) { requestCancel([cancel.dataset.cancel]); return; }
+        const history = e.target.closest('[data-history]');
+        if (history) { openHistory(history.dataset.history); return; }
+      });
+
+      document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => {
+        const id = btn.dataset.close;
+        closeModal(id);
+      }));
+      document.querySelectorAll('.modal-layer').forEach(layer => layer.addEventListener('mousedown', e => {
+        if (e.target === layer) {
+          const id = layer.id;
+          closeModal(id);
+        }
+      }));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') { const open = [...document.querySelectorAll('.modal-layer.show')].pop(); if (open) { const id = open.id; closeModal(id); } } });
+
+      renderAll();
+      window.addEventListener('resize', () => { syncStickyOffsets(); });
+    })();
+  </script>
+</body>
+</html>
