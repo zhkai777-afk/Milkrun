@@ -311,6 +311,8 @@
         <span class="dot"></span>
         <strong id="pendingStrong">待收货 0 笔</strong>
       </div>
+      <button onclick="document.getElementById('receiptImport').click()" style="margin-top:12px;border:0;border-radius:8px;background:#0f766e;color:#fff;padding:10px 16px;font-weight:600;cursor:pointer;min-height:44px">导入收货记录</button>
+      <input id="receiptImport" type="file" accept=".csv" hidden>
     </div>
 
     <!-- Stats -->
@@ -400,6 +402,22 @@
       } catch (e) {}
     }
 
+    function syncPlanReceipt(items){
+      try {
+        const rows = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]');
+        // 收货回写使用 ASN + 物料号精确匹配，避免同一采购凭证下多物料串数。
+        const map = new Map(items.map(it => [`${it.asnNo || ''}|${it.materialCode || ''}`, it]));
+        rows.forEach(r => {
+          const it = map.get(`${r.asnNo || ''}|${r.materialCode || ''}`); if(!it) return;
+          r.actualArrivalQty = Number(it.actualQty || 0);
+          const expected = Number(r.actualShipQty ?? r.promisedQty ?? r.planQty ?? 0);
+          r.status = r.actualArrivalQty >= expected ? 'received' : 'in_transit';
+          r.receivedTime = nowStr();
+        });
+        localStorage.setItem(PLAN_KEY, JSON.stringify(rows));
+      } catch(e) {}
+    }
+
     function seedIfEmpty(){
       if(localStorage.getItem(SUP_KEY)===null && localStorage.getItem(CAR_KEY)===null){
         localStorage.setItem(SUP_KEY, JSON.stringify(SEED_SUP));
@@ -464,8 +482,8 @@
             <span class="rc-kind ${r.kind}">${kindLabel}</span>
             <span class="recent-status ${sk}">${statusLabel(r)}</span>
           </div>
-          <div class="rc-code">${esc(r.no)}</div>
-          <div class="rc-sub">${esc(party)} · 物料 ${r.items.length} 项 · 共 ${fmt(total)} 件</div>
+          <div class="rc-code">ASN ${esc(r.asnNo || r.no)}</div>
+          <div class="rc-sub">${esc(party)} · 物料 ${r.items.length} 项 · 计划 ${fmt(total)} 件 · 实收 ${fmt(r.items.reduce((s,i)=>s+(Number(i.actualQty)||0),0))} 件</div>
           <div class="rc-meta">${isSup ? '预计到货' : '预计取货'} ${esc(r.eta||'-')} · 登记 ${esc(r.time||'')}</div>
         </div>`;
       }).join('');
@@ -716,7 +734,7 @@
         <thead><tr><th>物料编号</th><th>供应商</th><th style="text-align:right">计划</th><th>实际到货</th><th>凭证</th></tr></thead>
         <tbody>${rec.items.map((it,i)=>{
           const plan = Number(it.planQty)||0;
-          const act = it.actualQty!=null ? it.actualQty : plan;
+          const act = it.actualQty!=null ? it.actualQty : Number(it.actualShipQty ?? it.promisedQty ?? plan);
           const diff = plan - act;
           const diffCls = diff===0 ? 'zero' : 'neg';
           const diffTxt = diff===0 ? '持平' : ('缺 '+fmt(Math.abs(diff)));
@@ -781,12 +799,13 @@
         it.actualQty = act;
         it.diff = (Number(it.planQty)||0) - act;
       });
-      cur.status = 'ok';
+      const receiptComplete = cur.items.every(it=>Number(it.actualQty||0)>=Number(it.actualShipQty??it.promisedQty??it.planQty??0));
+      cur.status = receiptComplete ? 'ok' : 'shipped';
       cur.receivedTime = nowStr();
       saveByKind(cur.kind, cur);
-      markPlanStatus((cur.items || []).map(it => it.voucher), 'received');
+      syncPlanReceipt(cur.items || []);
       closeDetail();
-      toast('已确认收货，计划状态已更新为已收货');
+      toast(receiptComplete ? '已完成收货，计划状态已更新为已收货' : '已记录实收数量，尚未足量，保持待收货');
       renderAll();
     }
 
@@ -797,6 +816,31 @@
       curFilter = btn.dataset.filter;
       document.querySelectorAll('.filter-tab').forEach(t=>t.classList.toggle('active', t===btn));
       renderAll();
+    });
+
+    // CSV 字段：ASN号,物料编号,实际收货数量。导入后按 ASN+物料回写，部分收货保持“待收货”。
+    document.getElementById('receiptImport').addEventListener('change', e=>{
+      const file=e.target.files[0]; if(!file) return;
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const lines=String(reader.result||'').replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);
+        const headers=(lines.shift()||'').split(',').map(x=>x.trim());
+        const ai=headers.findIndex(x=>['ASN号','asnNo','ASN'].includes(x));
+        const mi=headers.findIndex(x=>['物料编号','materialCode'].includes(x));
+        const qi=headers.findIndex(x=>['实际收货数量','actualArrivalQty','actualQty'].includes(x));
+        if(ai<0||mi<0||qi<0){ toast('导入失败：需要 ASN号、物料编号、实际收货数量'); return; }
+        const imported=lines.map(line=>{const c=line.split(',');return{asnNo:(c[ai]||'').trim(),materialCode:(c[mi]||'').trim(),qty:Number(c[qi]||0)}});
+        let matched=0;
+        mergeReceipts().forEach(rec=>{
+          if(!imported.some(x=>x.asnNo===(rec.asnNo||rec.no))) return;
+          rec.items.forEach(it=>{const hit=imported.find(x=>x.asnNo===(rec.asnNo||rec.no)&&x.materialCode===it.materialCode);if(hit){it.actualQty=hit.qty;matched++;}});
+          const complete=rec.items.every(it=>Number(it.actualQty||0)>=Number(it.actualShipQty??it.promisedQty??it.planQty??0));
+          rec.status=complete?'ok':'shipped'; rec.receivedTime=nowStr();
+          saveByKind(rec.kind,rec); syncPlanReceipt(rec.items);
+        });
+        toast('收货记录已导入：匹配 '+matched+' 条物料明细'); renderAll(); e.target.value='';
+      };
+      reader.readAsText(file,'utf-8');
     });
 
     seedIfEmpty();

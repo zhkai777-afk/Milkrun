@@ -84,8 +84,7 @@
     /* ── Pending List ── */
     .pend-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 2px; }
     .section-title { font-size: 15px; font-weight: 600; color: var(--text); }
-    .pend-select-all { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); }
-    .pend-select-all input { width: 18px; height: 18px; accent-color: var(--primary); }
+    .pend-hint { font-size: 12px; color: var(--text-3); }
     .pend-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
     .pend-item {
       display: flex; align-items: flex-start; gap: 12px;
@@ -98,7 +97,7 @@
     .pend-body { flex: 1; min-width: 0; }
     .pend-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .pend-code { font-size: 15px; font-weight: 600; color: var(--text); }
-    .pend-qty { font-size: 13px; color: var(--primary); font-weight: 600; white-space: nowrap; }
+    .pend-status { font-size: 12px; color: var(--primary); background: var(--primary-soft); padding: 3px 8px; border-radius: 10px; white-space: nowrap; }
     .pend-sub { font-size: 13px; color: var(--text-2); margin-top: 3px; }
     .pend-meta { font-size: 11px; color: var(--text-3); margin-top: 5px; }
     .pend-tag { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 11px; background: var(--muted); color: var(--text-3); margin-left: 6px; }
@@ -165,14 +164,31 @@
     .sheet.show { transform: translateY(0); }
     .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
     .sheet-title { font-size: 17px; font-weight: 700; }
-    .sheet-close { width: 32px; height: 32px; border-radius: 50%; background: var(--muted); display: grid; place-items: center; color: var(--text-2); }
+    .sheet-close { width: 44px; height: 44px; border-radius: 50%; background: var(--muted); display: grid; place-items: center; color: var(--text-2); flex-shrink: 0; }
     .sheet-body { padding: 16px; overflow-y: auto; }
     .sheet-foot { padding: 12px 16px calc(12px + var(--safe-bottom)); border-top: 1px solid var(--border); }
-    .sel-summary { background: var(--muted); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; }
-    .sel-summary .ss-head { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-2); font-weight: 500; }
-    .sel-summary .ss-list { margin-top: 8px; max-height: 130px; overflow-y: auto; }
-    .sel-summary .ss-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); padding: 4px 0; border-top: 1px dashed var(--border); }
-    .sel-summary .ss-item:first-child { border-top: none; }
+    .asn-summary { background: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; }
+    .asn-summary-code { color: var(--primary-dark); font-size: 15px; font-weight: 700; }
+    .asn-summary-supplier { color: var(--text-2); font-size: 13px; margin-top: 3px; }
+    .asn-summary-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .asn-summary-meta span { color: var(--text-3); font-size: 11px; }
+    .asn-summary-meta b { display: block; color: var(--text); font-size: 13px; font-weight: 600; margin-top: 2px; }
+    .material-section { margin-bottom: 16px; }
+    .material-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .material-head h3 { font-size: 14px; font-weight: 650; }
+    .material-head span { color: var(--text-3); font-size: 12px; }
+    .material-list { display: flex; flex-direction: column; gap: 10px; }
+    .material-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; background: var(--surface); }
+    .material-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .material-code { font-size: 14px; font-weight: 650; color: var(--text); overflow-wrap: anywhere; }
+    .material-name { color: var(--text-2); font-size: 12px; margin-top: 2px; }
+    .material-index { flex-shrink: 0; color: var(--text-3); font-size: 11px; background: var(--muted); padding: 2px 7px; border-radius: 8px; }
+    .material-voucher { color: var(--text-3); font-size: 11px; margin-top: 8px; overflow-wrap: anywhere; }
+    .material-qty-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .qty-readonly span, .qty-input label { display: block; color: var(--text-3); font-size: 11px; margin-bottom: 4px; }
+    .qty-readonly strong { display: block; min-height: 44px; line-height: 44px; color: var(--text); font-size: 15px; }
+    .qty-input input { width: 100%; min-height: 44px; padding: 9px 10px; border: 1px solid var(--border-strong); border-radius: 7px; color: var(--text); font-size: 15px; text-align: right; background: var(--surface); outline: none; }
+    .qty-input input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); }
 
     .field { margin-bottom: 14px; }
     .field:last-child { margin-bottom: 0; }
@@ -227,7 +243,7 @@
 
     <div class="page-intro">
       <h1>供应商直送发货登记</h1>
-      <p>从下方待发货列表勾选计划到货的物料（如计划 15 日到货的 A、B、C），确认后即生成发货登记并同步至工厂仓库。</p>
+      <p>直送预约成功后按 ASN 主单登记发货；一个 ASN 包含当日全部物料明细，提交后同步工厂收货端。</p>
     </div>
 
     <!-- Tabs -->
@@ -240,7 +256,7 @@
     <div class="tab-panel active" id="tabPending">
       <div class="pend-toolbar">
         <div class="section-title">待发货 <span id="pendCount" style="color:var(--text-3);font-weight:400;"></span></div>
-        <label class="pend-select-all"><input type="checkbox" id="selectAll"> 全选</label>
+        <span class="pend-hint">请选择一个 ASN</span>
       </div>
       <div class="pend-list" id="pendList"></div>
     </div>
@@ -254,7 +270,7 @@
 
   <!-- Bottom action bar -->
   <div class="action-bar">
-    <div class="action-info">已选 <b id="selCount">0</b> 项物料</div>
+    <div class="action-info">已选 <b id="selCount">0</b> 个 ASN</div>
     <button class="action-btn" id="confirmBtn" disabled onclick="openSheet()">确认发货</button>
   </div>
 
@@ -262,19 +278,20 @@
   <div class="sheet-mask" id="sheetMask" onclick="closeSheet()"></div>
   <div class="sheet" id="sheet">
     <div class="sheet-head">
-      <div class="sheet-title">确认发货</div>
+      <div class="sheet-title" id="sheetTitle">确认发货</div>
       <button class="sheet-close" onclick="closeSheet()" aria-label="关闭">
         <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="sheet-body">
-      <div class="sel-summary">
-        <div class="ss-head"><span>已选物料</span><span id="ssCount"></span></div>
-        <div class="ss-list" id="ssList"></div>
+      <div class="asn-summary" id="asnSummary"></div>
+      <div class="material-section">
+        <div class="material-head"><h3>ASN 物料清单</h3><span id="ssCount"></span></div>
+        <div class="material-list" id="ssList"></div>
       </div>
       <div class="field">
-        <label>发货单号<span class="req">*</span></label>
-        <input type="text" id="shipNo" placeholder="留空将自动生成">
+        <label>发货单号</label>
+        <input type="text" id="shipmentNo" readonly>
       </div>
       <div class="field-row">
         <div class="field">
@@ -305,18 +322,21 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="./logistics-flow.js"></script>
   <script>
     const SUP_KEY = 'bw_supplier_deliveries';
     const PLAN_KEY = 'material-plan-v5';
 
     const SAMPLE_PENDING = [
-      { materialCode:'108143-101', sapSupplierCode:'30015', supplierName:'博世汽车部件（苏州）有限公司', voucher:'2026-08-03-108143', shipDate:'2026-08-03', arrivalDate:'2026-08-15', planQty:800, deliveryMode:'直送', status:'pending_shipment' },
-      { materialCode:'108143-102', sapSupplierCode:'30015', supplierName:'博世汽车部件（苏州）有限公司', voucher:'2026-08-04-108143', shipDate:'2026-08-04', arrivalDate:'2026-08-15', planQty:1200, deliveryMode:'直送', status:'pending_shipment' },
-      { materialCode:'110233-301', sapSupplierCode:'51120', supplierName:'采埃孚传动系统（上海）有限公司', voucher:'2026-08-06-110233', shipDate:'2026-08-06', arrivalDate:'2026-08-15', planQty:1500, deliveryMode:'直送', status:'pending_shipment' }
+      { id:'DEMO-D01', materialCode:'108143-101', materialName:'壳体总成', sapSupplierCode:'30015', supplierName:'博世汽车部件（苏州）有限公司', voucher:'5500575741-10', shipDate:'2026-08-13', arrivalDate:'2026-08-15', appointmentDate:'2026-08-15', planQty:800, promisedQty:800, deliveryMode:'直送', appointmentStatus:'scheduled', status:'pending_shipment' },
+      { id:'DEMO-D02', materialCode:'108143-102', materialName:'端盖组件', sapSupplierCode:'30015', supplierName:'博世汽车部件（苏州）有限公司', voucher:'5500575741-20', shipDate:'2026-08-13', arrivalDate:'2026-08-15', appointmentDate:'2026-08-15', planQty:1200, promisedQty:1180, deliveryMode:'直送', appointmentStatus:'scheduled', status:'pending_shipment' },
+      { id:'DEMO-D03', materialCode:'110233-301', materialName:'输入轴组件', sapSupplierCode:'51120', supplierName:'采埃孚传动系统（上海）有限公司', voucher:'5500650001-10', shipDate:'2026-08-14', arrivalDate:'2026-08-16', appointmentDate:'2026-08-16', planQty:1500, promisedQty:1500, deliveryMode:'直送', appointmentStatus:'scheduled', status:'pending_shipment' }
     ];
 
     let selected = new Set();
     let activeTab = 'pending';
+    let activeSheetGroup = null;
+    let activeShipmentNo = '';
 
     function switchTab(tab) {
       activeTab = tab;
@@ -331,30 +351,38 @@
       try { const r = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]'); return Array.isArray(r) ? r : []; }
       catch (e) { return []; }
     }
-    function getRegisteredVouchers() {
-      const arr = JSON.parse(localStorage.getItem(SUP_KEY) || '[]');
-      const s = new Set();
-      arr.forEach(rec => (rec.items || []).forEach(it => s.add(it.voucher)));
-      return s;
+    function getRegisteredAsns() {
+      let arr = [];
+      try { arr = JSON.parse(localStorage.getItem(SUP_KEY) || '[]'); } catch (e) {}
+      if (!Array.isArray(arr)) arr = [];
+      return new Set(arr.map(rec => rec.asnNo || rec.no));
     }
     function getPending() {
       const rows = loadPlanRows();
       const base = rows.length ? rows : SAMPLE_PENDING;
-      const reg = getRegisteredVouchers();
-      return base.filter(r => (r.deliveryMode || '直送') === '直送' && r.status === 'pending_shipment' && !reg.has(r.voucher));
+      const reg = getRegisteredAsns();
+      const directRows = base.filter(r => LogisticsFlow.deliveryText(r.deliveryMode) === '直送');
+      return LogisticsFlow.byAsn(directRows).filter(g => g.items.every(r => r.status === 'pending_shipment' && r.appointmentStatus === 'scheduled') && !reg.has(g.asnNo));
     }
     function getSelectedItems() {
       const pending = getPending();
-      return pending.filter(r => selected.has(r.voucher));
+      return pending.filter(r => selected.has(r.asnNo));
     }
-    // 发货登记后，将上游物料计划行的状态回溯为「运输中」
-    function markPlanShipped(vouchers) {
+    // 发货登记后，按 ASN 回溯全部物料明细。
+    function markPlanShipped(asnNo, quantities) {
       try {
         const rows = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]');
         if (!Array.isArray(rows) || !rows.length) return;
-        const set = new Set(vouchers);
         let changed = false;
-        rows.forEach(r => { if (set.has(r.voucher) && r.status !== 'in_transit') { r.status = 'in_transit'; changed = true; } });
+        let itemIndex = 0;
+        rows.forEach(r => {
+          if (r.asnNo !== asnNo || LogisticsFlow.deliveryText(r.deliveryMode) !== '直送') return;
+          r.status = 'in_transit';
+          r.actualShipQty = Number(quantities[itemIndex] || 0);
+          r.shipmentRegDate = new Date().toISOString().slice(0,10);
+          itemIndex += 1;
+          changed = true;
+        });
         if (changed) localStorage.setItem(PLAN_KEY, JSON.stringify(rows));
       } catch (e) {}
     }
@@ -382,23 +410,22 @@
       const list = document.getElementById('pendList');
       document.getElementById('pendCount').textContent = pending.length ? '(' + pending.length + ')' : '';
       if (!pending.length) {
-        list.innerHTML = `<div class="empty-state">暂无待发货物料，全部已登记</div>`;
+        list.innerHTML = `<div class="empty-state">暂无已预约待发货 ASN</div>`;
       } else {
-        list.innerHTML = pending.map(r => `
+        list.innerHTML = pending.map(g => `
           <label class="pend-item">
-            <input type="checkbox" class="pend-check" value="${escapeHtml(r.voucher)}" ${selected.has(r.voucher) ? 'checked' : ''}>
+            <input type="radio" name="pendingAsn" class="pend-check" value="${escapeHtml(g.asnNo)}" ${selected.has(g.asnNo) ? 'checked' : ''}>
             <div class="pend-body">
               <div class="pend-top">
-                <span class="pend-code">${escapeHtml(r.materialCode)}</span>
-                <span class="pend-qty">计划 ${escapeHtml(formatNum(r.planQty))}</span>
+                <span class="pend-code">${escapeHtml(g.asnNo)}</span>
+                <span class="pend-status">待发货</span>
               </div>
-              <div class="pend-sub">${escapeHtml(r.supplierName)}</div>
-              <div class="pend-meta">计划到货 ${escapeHtml(r.arrivalDate || '-')} · 凭证 ${escapeHtml(r.voucher)}<span class="pend-tag direct">直送</span></div>
+              <div class="pend-sub">${escapeHtml(g.supplierName)} · ${g.items.length} 种物料</div>
+              <div class="pend-meta">预约送货 ${escapeHtml(g.items[0].appointmentDate || '-')} · 计划到货 ${escapeHtml(g.arrivalDate || '-')}<span class="pend-tag direct">直送</span></div>
             </div>
           </label>`).join('');
       }
       updateBar();
-      updateSelectAll();
     }
 
     function formatNum(n) { return Number(n).toLocaleString('en-US'); }
@@ -408,23 +435,12 @@
       document.getElementById('selCount').textContent = n;
       document.getElementById('confirmBtn').disabled = n === 0;
     }
-    function updateSelectAll() {
-      const pending = getPending();
-      const sa = document.getElementById('selectAll');
-      sa.checked = pending.length > 0 && pending.every(r => selected.has(r.voucher));
-    }
-
     document.getElementById('pendList').addEventListener('change', e => {
       if (e.target.classList.contains('pend-check')) {
-        if (e.target.checked) selected.add(e.target.value); else selected.delete(e.target.value);
-        updateBar(); updateSelectAll();
+        selected.clear();
+        if (e.target.checked) selected.add(e.target.value);
+        renderPending();
       }
-    });
-    document.getElementById('selectAll').addEventListener('change', e => {
-      const pending = getPending();
-      if (e.target.checked) pending.forEach(r => selected.add(r.voucher));
-      else pending.forEach(r => selected.delete(r.voucher));
-      renderPending();
     });
 
     document.getElementById('tabBar').addEventListener('click', e => {
@@ -433,17 +449,37 @@
     });
 
     function openSheet() {
-      const items = getSelectedItems();
-      if (!items.length) { toast('请先勾选待发货物料'); return; }
-      const arrivalDates = [...new Set(items.map(i => i.arrivalDate).filter(Boolean))];
-      document.getElementById('shipNo').value = genNo('SHP');
-      document.getElementById('etaDate').value = arrivalDates.length === 1 ? arrivalDates[0] : '';
+      const group = getSelectedItems()[0];
+      if (!group) { toast('请先选择待发货 ASN'); return; }
+      const items = group.items;
+      activeSheetGroup = group;
+      activeShipmentNo = genNo('SHP');
+      document.getElementById('sheetTitle').textContent = '确认发货 · ' + group.asnNo;
+      document.getElementById('shipmentNo').value = activeShipmentNo;
+      document.getElementById('etaDate').value = group.arrivalDate || '';
       document.getElementById('etaTime').value = '';
       document.getElementById('shipMode').value = '供应商直送';
       document.getElementById('remark').value = '';
-      document.getElementById('ssCount').textContent = items.length + ' 项 · 共 ' + formatNum(items.reduce((s,i)=>s+(Number(i.planQty)||0),0)) + ' 件';
-      document.getElementById('ssList').innerHTML = items.map(i => `
-        <div class="ss-item"><span>${escapeHtml(i.materialCode)} · ${escapeHtml(i.supplierName)}</span><span>计划 ${escapeHtml(formatNum(i.planQty))}</span></div>`).join('');
+      document.getElementById('ssCount').textContent = items.length + ' 种物料';
+      document.getElementById('asnSummary').innerHTML = `
+        <div class="asn-summary-code">${escapeHtml(group.asnNo)}</div>
+        <div class="asn-summary-supplier">${escapeHtml(group.supplierName || '-')}</div>
+        <div class="asn-summary-meta">
+          <span>预约送货日期<b>${escapeHtml(items[0].appointmentDate || '-')}</b></span>
+          <span>计划到货日期<b>${escapeHtml(group.arrivalDate || '-')}</b></span>
+        </div>`;
+      document.getElementById('ssList').innerHTML = items.map((i, index) => `
+        <div class="material-card">
+          <div class="material-card-head">
+            <div><div class="material-code">${escapeHtml(i.materialCode || '-')}</div><div class="material-name">${escapeHtml(i.materialName || i.materialCode || '-')}</div></div>
+            <span class="material-index">${index + 1}/${items.length}</span>
+          </div>
+          <div class="material-voucher">采购凭证：${escapeHtml(i.voucher || '-')}</div>
+          <div class="material-qty-row">
+            <div class="qty-readonly"><span>承诺发货数量</span><strong>${escapeHtml(formatNum(i.promisedQty))}</strong></div>
+            <div class="qty-input"><label for="actual_${index}">实际发货数量</label><input id="actual_${index}" data-item-index="${index}" type="number" min="0" step="any" inputmode="decimal" value="${Number(i.promisedQty) || 0}" aria-label="${escapeHtml(i.materialCode)} 实际发货数量"></div>
+          </div>
+        </div>`).join('');
       document.getElementById('sheetMask').classList.add('show');
       document.getElementById('sheet').classList.add('show');
     }
@@ -453,14 +489,26 @@
     }
 
     function submitShip() {
-      const items = getSelectedItems();
-      if (!items.length) return;
+      const group = activeSheetGroup;
+      if (!group) return;
+      const items = group.items;
+      const quantities = [];
+      for (let index = 0; index < items.length; index++) {
+        const input = document.getElementById('actual_' + index);
+        const value = Number(input.value);
+        if (input.value === '' || !Number.isFinite(value) || value < 0) {
+          input.focus();
+          toast('请填写有效的实际发货数量');
+          return;
+        }
+        quantities[index] = value;
+      }
       const etaDate = document.getElementById('etaDate').value;
       const etaTime = document.getElementById('etaTime').value;
       const rec = {
-        no: document.getElementById('shipNo').value.trim() || genNo('SHP'),
+        no: group.asnNo, asnNo: group.asnNo, shipmentNo: activeShipmentNo,
         supplier: items[0].supplierName,
-        items: items.map(i => ({ materialCode: i.materialCode, voucher: i.voucher, planQty: i.planQty, arrivalDate: i.arrivalDate })),
+        items: items.map((i, index) => ({ id:i.id, asnNo:i.asnNo, materialCode: i.materialCode, materialName:i.materialName || i.materialCode, voucher: i.voucher, planQty: i.planQty, promisedQty:i.promisedQty, actualShipQty:quantities[index], arrivalDate: i.arrivalDate, supplierName:i.supplierName })),
         eta: (etaDate || '') + (etaTime ? (' ' + etaTime) : ''),
         mode: document.getElementById('shipMode').value,
         remark: document.getElementById('remark').value.trim(),
@@ -470,8 +518,9 @@
       const arr = JSON.parse(localStorage.getItem(SUP_KEY) || '[]');
       arr.unshift(rec);
       localStorage.setItem(SUP_KEY, JSON.stringify(arr));
-      markPlanShipped(items.map(i => i.voucher));
+      markPlanShipped(group.asnNo, quantities);
       closeSheet();
+      activeSheetGroup = null;
       selected.clear();
       toast('发货登记已保存，计划状态已更新为运输中');
       renderPending();
@@ -495,13 +544,14 @@
       return '已发货';
     }
     function recordRowHtml(r) {
+      const items = Array.isArray(r.items) ? r.items : [];
       return `
         <div class="recent-item">
           <div class="recent-dot"></div>
           <div class="recent-info">
             <div class="recent-type">供应商直送 · ${escapeHtml(r.supplier)}</div>
-            <div class="recent-code">${escapeHtml(r.no)}</div>
-            <div class="recent-meta">物料 ${r.items.length} 项 · 计划到货 ${escapeHtml(r.eta || '-')} · 登记 ${escapeHtml(r.time)}</div>
+            <div class="recent-code">ASN ${escapeHtml(r.asnNo || r.no)}</div>
+            <div class="recent-meta">物料 ${items.length} 项 · 发货单 ${escapeHtml(r.shipmentNo || '-')} · 登记 ${escapeHtml(r.time)}</div>
           </div>
           <span class="recent-status ${statusClass(r.status)}">${statusText(r.status)}</span>
         </div>`;
@@ -530,6 +580,19 @@
     renderPending();
     renderShipped();
     switchTab('pending');
+    window.addEventListener('storage', e => {
+      if (e.key !== PLAN_KEY && e.key !== SUP_KEY) return;
+      const pendingAsns = new Set(getPending().map(g => g.asnNo));
+      selected = new Set([...selected].filter(asnNo => pendingAsns.has(asnNo)));
+      renderPending();
+      renderShipped();
+    });
+    window.addEventListener('focus', () => {
+      const pendingAsns = new Set(getPending().map(g => g.asnNo));
+      selected = new Set([...selected].filter(asnNo => pendingAsns.has(asnNo)));
+      renderPending();
+      if (activeTab === 'shipped') renderShipped();
+    });
   </script>
 
 </body>

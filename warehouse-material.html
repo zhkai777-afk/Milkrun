@@ -80,13 +80,15 @@
     tbody tr { transition: background .15s; }
     tbody tr:hover { background: var(--primary-soft); }
     .col-check { width: 44px; text-align: center; }
-    .col-operate { width: 150px; white-space: nowrap; }
+    .col-operate { width: 198px; white-space: nowrap; }
     .col-time { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-2); }
     .check { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; }
     .row-actions { display: flex; flex-wrap: nowrap; gap: 4px; }
     .link-btn { border: 0; background: transparent; padding: 5px 9px; border-radius: 4px; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex: 0 0 auto; }
     .link-btn.edit { color: var(--primary); }
     .link-btn.edit:hover { background: rgba(7,134,141,.1); }
+    .link-btn.standards { color: #2b6cb0; }
+    .link-btn.standards:hover { background: #eaf2fb; }
     .link-btn.delete { color: var(--danger); }
     .link-btn.delete:hover { background: var(--danger-soft); }
 
@@ -146,7 +148,7 @@
     .num-cell { font-variant-numeric: tabular-nums; text-align: right; }
     .standards-empty { padding: 26px 16px; text-align: center; color: var(--text-3); font-size: 13px; }
     .standards-empty .icon { width: 26px; height: 26px; margin-bottom: 6px; color: #b8c0ca; }
-    .std-count { display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: 999px; background: #fff; color: var(--text-2); font-size: 13px; }
+    .std-count { display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: 999px; background: #fff; color: var(--text-2); font-size: 13px; white-space: nowrap; }
     .std-count:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
     .std-count.zero { color: var(--text-3); border-style: dashed; }
 
@@ -221,6 +223,7 @@
               <th>物料描述</th>
               <th>库区编号</th>
               <th>库区名称</th>
+              <th>物料负责人</th>
               <th>创建时间</th>
               <th>修改时间</th>
               <th>检验标准</th>
@@ -249,7 +252,7 @@
 
   <!-- 新增/编辑弹窗 -->
   <div class="modal-layer" id="formModal" role="presentation">
-    <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
       <div class="modal-head">
         <h3 id="formModalTitle">新增物料</h3>
         <button class="close-btn" type="button" data-close="formModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
@@ -284,38 +287,10 @@
               <div class="field-error" id="zoneNameError" role="alert"></div>
             </div>
           </div>
-
-          <!-- 检验标准 -->
-          <div class="standards-section">
-            <div class="standards-head">
-              <div>
-                <div class="standards-title">检验标准</div>
-                <div class="standards-sub">维护该物料的检验项目、检验方法、技术要求与公差等</div>
-              </div>
-              <button class="btn btn-primary" id="addStandardBtn" type="button">
-                <svg class="icon" aria-hidden="true"><path d="M9 3v12M3 9h12"/></svg>添加检验项目
-              </button>
-            </div>
-            <div class="table-wrap standards-wrap">
-              <table class="standards-table">
-                <thead>
-                  <tr>
-                    <th>检验项目</th>
-                    <th>检验方法</th>
-                    <th>技术要求</th>
-                    <th class="num-cell">检验数量</th>
-                    <th class="num-cell">标准值</th>
-                    <th class="num-cell">上公差</th>
-                    <th class="num-cell">下公差</th>
-                    <th class="col-operate">操作</th>
-                  </tr>
-                </thead>
-                <tbody id="standardsBody"></tbody>
-              </table>
-            </div>
-            <div class="standards-empty" id="standardsEmpty" hidden>
-              <svg class="icon" aria-hidden="true"><path d="M4 5h12v10H4zM4 9h12M8 5v10"/></svg>
-              <div>暂无检验标准，点击「添加检验项目」开始维护</div>
+          <div class="form-row">
+            <label class="form-label" for="mOwner">物料负责人</label>
+            <div>
+              <input id="mOwner" type="text" maxlength="30" placeholder="请输入物料负责人" autocomplete="off">
             </div>
           </div>
         </div>
@@ -324,6 +299,51 @@
           <button class="btn btn-primary" type="submit">确认</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- 检验标准维护弹窗 -->
+  <div class="modal-layer" id="standardsManageModal" role="presentation">
+    <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="standardsManageTitle">
+      <div class="modal-head">
+        <h3 id="standardsManageTitle">检验标准维护</h3>
+        <button class="close-btn" type="button" data-close="standardsManageModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="standards-head">
+          <div>
+            <div class="standards-title">检验标准</div>
+            <div class="standards-sub">维护该物料的检验项目、检验方法、技术要求与公差等</div>
+          </div>
+          <button class="btn btn-primary" id="addStandardBtn" type="button">
+            <svg class="icon" aria-hidden="true"><path d="M9 3v12M3 9h12"/></svg>添加检验项目
+          </button>
+        </div>
+        <div class="table-wrap standards-wrap">
+          <table class="standards-table">
+            <thead>
+              <tr>
+                <th>检验项目</th>
+                <th>检验方法</th>
+                <th>技术要求</th>
+                <th class="num-cell">检验数量</th>
+                <th class="num-cell">标准值</th>
+                <th class="num-cell">上公差</th>
+                <th class="num-cell">下公差</th>
+                <th class="col-operate">操作</th>
+              </tr>
+            </thead>
+            <tbody id="standardsBody"></tbody>
+          </table>
+        </div>
+        <div class="standards-empty" id="standardsEmpty" hidden>
+          <svg class="icon" aria-hidden="true"><path d="M4 5h12v10H4zM4 9h12M8 5v10"/></svg>
+          <div>暂无检验标准，点击「添加检验项目」开始维护</div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-primary" id="standardsDoneBtn" type="button">完成</button>
+      </div>
     </div>
   </div>
 
@@ -417,16 +437,16 @@
       };
 
       const seedData = [
-        { id: crypto.randomUUID(), materialCode: 'M0001', materialDesc: '涡轮增压器总成', zoneCode: 'A01', zoneName: '1号库区', createdAt: '2026-01-29 15:03:52', updatedAt: '2026-03-17 11:10:10' },
-        { id: crypto.randomUUID(), materialCode: 'M0002', materialDesc: '排气歧管', zoneCode: 'A02', zoneName: '2号库区', createdAt: '2026-01-29 15:04:36', updatedAt: '2026-01-29 15:04:36' },
-        { id: crypto.randomUUID(), materialCode: 'M0003', materialDesc: '中冷器', zoneCode: 'A03', zoneName: '3号库区', createdAt: '2026-03-17 09:21:08', updatedAt: '2026-05-02 16:44:53' },
-        { id: crypto.randomUUID(), materialCode: 'M0004', materialDesc: '增压器叶轮', zoneCode: 'A01', zoneName: '1号库区', createdAt: '2026-03-18 10:11:22', updatedAt: '2026-03-18 10:11:22' },
-        { id: crypto.randomUUID(), materialCode: 'M0005', materialDesc: '电子节气门', zoneCode: 'B01', zoneName: '4号库区', createdAt: '2026-03-20 14:02:45', updatedAt: '2026-04-11 08:30:19' },
-        { id: crypto.randomUUID(), materialCode: 'M0006', materialDesc: '进气歧管', zoneCode: 'B02', zoneName: '5号库区', createdAt: '2026-04-01 11:55:00', updatedAt: '2026-04-01 11:55:00' },
-        { id: crypto.randomUUID(), materialCode: 'M0007', materialDesc: '废气旁通阀', zoneCode: 'A02', zoneName: '2号库区', createdAt: '2026-04-05 13:20:31', updatedAt: '2026-06-09 17:12:44' },
-        { id: crypto.randomUUID(), materialCode: 'M0008', materialDesc: '燃油分配管', zoneCode: 'B01', zoneName: '4号库区', createdAt: '2026-04-12 09:08:17', updatedAt: '2026-04-12 09:08:17' },
-        { id: crypto.randomUUID(), materialCode: 'M0009', materialDesc: '水泵总成', zoneCode: 'C01', zoneName: '6号库区', createdAt: '2026-05-03 15:41:09', updatedAt: '2026-05-20 10:05:51' },
-        { id: crypto.randomUUID(), materialCode: 'M0010', materialDesc: '节温器', zoneCode: 'C02', zoneName: '7号库区', createdAt: '2026-05-11 18:33:26', updatedAt: '2026-05-11 18:33:26' }
+        { id: crypto.randomUUID(), materialCode: 'M0001', materialDesc: '涡轮增压器总成', zoneCode: 'A01', zoneName: '1号库区', owner: '王磊', createdAt: '2026-01-29 15:03:52', updatedAt: '2026-03-17 11:10:10' },
+        { id: crypto.randomUUID(), materialCode: 'M0002', materialDesc: '排气歧管', zoneCode: 'A02', zoneName: '2号库区', owner: '李娜', createdAt: '2026-01-29 15:04:36', updatedAt: '2026-01-29 15:04:36' },
+        { id: crypto.randomUUID(), materialCode: 'M0003', materialDesc: '中冷器', zoneCode: 'A03', zoneName: '3号库区', owner: '张伟', createdAt: '2026-03-17 09:21:08', updatedAt: '2026-05-02 16:44:53' },
+        { id: crypto.randomUUID(), materialCode: 'M0004', materialDesc: '增压器叶轮', zoneCode: 'A01', zoneName: '1号库区', owner: '刘洋', createdAt: '2026-03-18 10:11:22', updatedAt: '2026-03-18 10:11:22' },
+        { id: crypto.randomUUID(), materialCode: 'M0005', materialDesc: '电子节气门', zoneCode: 'B01', zoneName: '4号库区', owner: '陈静', createdAt: '2026-03-20 14:02:45', updatedAt: '2026-04-11 08:30:19' },
+        { id: crypto.randomUUID(), materialCode: 'M0006', materialDesc: '进气歧管', zoneCode: 'B02', zoneName: '5号库区', owner: '赵强', createdAt: '2026-04-01 11:55:00', updatedAt: '2026-04-01 11:55:00' },
+        { id: crypto.randomUUID(), materialCode: 'M0007', materialDesc: '废气旁通阀', zoneCode: 'A02', zoneName: '2号库区', owner: '孙莉', createdAt: '2026-04-05 13:20:31', updatedAt: '2026-06-09 17:12:44' },
+        { id: crypto.randomUUID(), materialCode: 'M0008', materialDesc: '燃油分配管', zoneCode: 'B01', zoneName: '4号库区', owner: '周涛', createdAt: '2026-04-12 09:08:17', updatedAt: '2026-04-12 09:08:17' },
+        { id: crypto.randomUUID(), materialCode: 'M0009', materialDesc: '水泵总成', zoneCode: 'C01', zoneName: '6号库区', owner: '吴敏', createdAt: '2026-05-03 15:41:09', updatedAt: '2026-05-20 10:05:51' },
+        { id: crypto.randomUUID(), materialCode: 'M0010', materialDesc: '节温器', zoneCode: 'C02', zoneName: '7号库区', owner: '郑浩', createdAt: '2026-05-11 18:33:26', updatedAt: '2026-05-11 18:33:26' }
       ];
 
       // 出厂默认检验标准（来源于出货质量数据设置与输入模板）
@@ -448,7 +468,8 @@
         editingId: null,
         pendingDelete: [],
         workingStandards: [],
-        editingStandardIndex: null
+        editingStandardIndex: null,
+        standardsTargetId: null
       };
 
       const $ = id => document.getElementById(id);
@@ -457,8 +478,9 @@
         totalText: $('totalText'), pageNumbers: $('pageNumbers'), prevPage: $('prevPage'), nextPage: $('nextPage'),
         pageSize: $('pageSize'), goPageInput: $('goPageInput'),
         formModal: $('formModal'), formModalTitle: $('formModalTitle'), materialForm: $('materialForm'),
-        mMaterialCode: $('mMaterialCode'), mMaterialDesc: $('mMaterialDesc'), mZoneCode: $('mZoneCode'), mZoneName: $('mZoneName'),
+        mMaterialCode: $('mMaterialCode'), mMaterialDesc: $('mMaterialDesc'), mZoneCode: $('mZoneCode'), mZoneName: $('mZoneName'), mOwner: $('mOwner'),
         confirmModal: $('confirmModal'), confirmText: $('confirmText'),
+        standardsManageModal: $('standardsManageModal'), standardsManageTitle: $('standardsManageTitle'), standardsDoneBtn: $('standardsDoneBtn'),
         standardsBody: $('standardsBody'), standardsEmpty: $('standardsEmpty'),
         addStandardBtn: $('addStandardBtn'),
         standardModal: $('standardModal'), standardModalTitle: $('standardModalTitle'), standardForm: $('standardForm'),
@@ -495,7 +517,7 @@
         const pageRows = filtered.slice(start, start + state.pageSize);
 
         if (!pageRows.length) {
-          els.tableBody.innerHTML = `<tr><td colspan="9"><div class="empty">${svg.search}<div>未找到符合条件的物料记录</div></div></td></tr>`;
+          els.tableBody.innerHTML = `<tr><td colspan="10"><div class="empty">${svg.search}<div>未找到符合条件的物料记录</div></div></td></tr>`;
         } else {
           els.tableBody.innerHTML = pageRows.map(r => {
             const standards = Array.isArray(r.inspectionStandards) ? r.inspectionStandards : [];
@@ -507,12 +529,14 @@
               <td>${escapeHtml(r.materialDesc)}</td>
               <td>${escapeHtml(r.zoneCode)}</td>
               <td>${escapeHtml(r.zoneName)}</td>
+              <td>${escapeHtml(r.owner || '—')}</td>
               <td class="col-time">${escapeHtml(r.createdAt)}</td>
               <td class="col-time">${escapeHtml(r.updatedAt)}</td>
-              <td><button class="std-count${count ? '' : ' zero'}" data-standards="${r.id}" type="button">${count ? count + ' 项' : '未维护'}</button></td>
+              <td><button class="std-count${count ? '' : ' zero'}" data-standards-manage="${r.id}" type="button">${count ? count + ' 项' : '未维护'}</button></td>
               <td class="col-operate">
                 <div class="row-actions">
                   <button class="link-btn edit" data-edit="${r.id}" type="button">${svg.edit}编辑</button>
+                  <button class="link-btn standards" data-standards-manage="${r.id}" type="button">标准维护</button>
                   <button class="link-btn delete" data-delete="${r.id}" type="button">${svg.trash}删除</button>
                 </div>
               </td>
@@ -626,6 +650,32 @@
         renderStandards();
       }
 
+      function loadWorkingStandards(row) {
+        if (Array.isArray(row?.inspectionStandards)) return cloneStandards(row.inspectionStandards);
+        // 新增物料，或已有物料尚未设置过检验标准：默认展示内置的 5 项
+        return cloneStandards(DEFAULT_STANDARDS);
+      }
+
+      function openStandardsManage(id) {
+        const row = state.rows.find(r => r.id === id);
+        if (!row) return;
+        state.standardsTargetId = id;
+        state.workingStandards = loadWorkingStandards(row);
+        els.standardsManageTitle.textContent = `检验标准维护 · ${row.materialCode}`;
+        renderStandards();
+        openModal('standardsManageModal');
+      }
+
+      function commitStandards() {
+        const row = state.rows.find(r => r.id === state.standardsTargetId);
+        if (row) {
+          row.inspectionStandards = [...state.workingStandards];
+          row.updatedAt = formatNow();
+        }
+        saveRows();
+        renderAll();
+      }
+
       function openForm(id = null) {
         state.editingId = id;
         clearErrors();
@@ -635,13 +685,7 @@
         els.mMaterialDesc.value = row?.materialDesc || '';
         els.mZoneCode.value = row?.zoneCode || '';
         els.mZoneName.value = row?.zoneName || '';
-        if (Array.isArray(row?.inspectionStandards)) {
-          state.workingStandards = cloneStandards(row.inspectionStandards);
-        } else {
-          // 新增物料，或已有物料尚未设置过检验标准：默认展示内置的 5 项
-          state.workingStandards = cloneStandards(DEFAULT_STANDARDS);
-        }
-        renderStandards();
+        els.mOwner.value = row?.owner || '';
         openModal('formModal');
       }
 
@@ -652,6 +696,7 @@
         const materialDesc = els.mMaterialDesc.value.trim();
         const zoneCode = els.mZoneCode.value.trim();
         const zoneName = els.mZoneName.value.trim();
+        const owner = els.mOwner.value.trim();
         let valid = true;
         if (!materialCode) { $('materialCodeError').textContent = '请输入物料编码'; valid = false; }
         else if (state.rows.some(r => r.materialCode.toLowerCase() === materialCode.toLowerCase() && r.id !== state.editingId)) { $('materialCodeError').textContent = '物料编码已存在'; valid = false; }
@@ -662,10 +707,11 @@
 
         if (state.editingId) {
           const row = state.rows.find(r => r.id === state.editingId);
-          Object.assign(row, { materialCode, materialDesc, zoneCode, zoneName, inspectionStandards: [...state.workingStandards], updatedAt: formatNow() });
+          // 物料基础信息编辑不改动检验标准，保持原有值
+          Object.assign(row, { materialCode, materialDesc, zoneCode, zoneName, owner, updatedAt: formatNow() });
           toast('物料信息已更新');
         } else {
-          state.rows.unshift({ id: crypto.randomUUID(), materialCode, materialDesc, zoneCode, zoneName, inspectionStandards: [...state.workingStandards], createdAt: formatNow(), updatedAt: formatNow() });
+          state.rows.unshift({ id: crypto.randomUUID(), materialCode, materialDesc, zoneCode, zoneName, owner, inspectionStandards: cloneStandards(DEFAULT_STANDARDS), createdAt: formatNow(), updatedAt: formatNow() });
           toast('物料新增成功');
         }
         saveRows();
@@ -721,9 +767,10 @@
           const materialDesc = (item.materialDesc || '').trim();
           const zoneCode = (item.zoneCode || '').trim();
           const zoneName = (item.zoneName || '').trim();
+          const owner = (item.owner || '').trim();
           if (!materialCode || !materialDesc || !zoneCode || !zoneName) return;
           if (state.rows.some(r => r.materialCode.toLowerCase() === materialCode.toLowerCase())) return;
-          state.rows.unshift({ id: crypto.randomUUID(), materialCode, materialDesc, zoneCode, zoneName, inspectionStandards: [], createdAt: now, updatedAt: now });
+          state.rows.unshift({ id: crypto.randomUUID(), materialCode, materialDesc, zoneCode, zoneName, owner, inspectionStandards: [], createdAt: now, updatedAt: now });
           count++;
         });
         saveRows();
@@ -749,9 +796,10 @@
       els.materialForm.addEventListener('submit', submitForm);
       $('confirmDeleteBtn').addEventListener('click', confirmDelete);
 
-      // 检验标准
+      // 检验标准维护
       els.addStandardBtn.addEventListener('click', () => openStandardModal());
       els.standardForm.addEventListener('submit', submitStandard);
+      els.standardsDoneBtn.addEventListener('click', () => { commitStandards(); closeModal('standardsManageModal'); });
       els.standardsBody.addEventListener('click', e => {
         const edit = e.target.closest('[data-edit-standard]');
         if (edit) { openStandardModal(Number(edit.dataset.editStandard)); return; }
@@ -767,8 +815,8 @@
       });
 
       els.tableBody.addEventListener('click', e => {
-        const std = e.target.closest('[data-standards]');
-        if (std) { openForm(std.dataset.standards); return; }
+        const std = e.target.closest('[data-standards-manage]');
+        if (std) { openStandardsManage(std.dataset.standardsManage); return; }
         const edit = e.target.closest('[data-edit]');
         if (edit) { openForm(edit.dataset.edit); return; }
         const del = e.target.closest('[data-delete]');

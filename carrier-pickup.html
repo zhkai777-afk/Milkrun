@@ -227,7 +227,7 @@
 
     <div class="page-intro">
       <h1>物流商取货登记</h1>
-      <p>从下方待取货列表勾选需提货的物料（如计划 15 日到货的 A、B、C），确认后生成取货登记并同步至工厂仓库待取货队列。</p>
+      <p>自提计划按 ASN 同步至物流商：根据计划到货日期预约送货，根据计划发货时间登记取货，取货数量即实际发货数量。</p>
     </div>
 
     <!-- Tabs -->
@@ -254,7 +254,7 @@
 
   <!-- Bottom action bar -->
   <div class="action-bar">
-    <div class="action-info">已选 <b id="selCount">0</b> 项物料</div>
+    <div class="action-info">已选 <b id="selCount">0</b> 个 ASN</div>
     <button class="action-btn" id="confirmBtn" disabled onclick="openSheet()">确认取货</button>
   </div>
 
@@ -269,12 +269,12 @@
     </div>
     <div class="sheet-body">
       <div class="sel-summary">
-        <div class="ss-head"><span>已选物料</span><span id="ssCount"></span></div>
+        <div class="ss-head"><span>ASN 物料明细（取货数量）</span><span id="ssCount"></span></div>
         <div class="ss-list" id="ssList"></div>
       </div>
       <div class="field">
-        <label>取货单号<span class="req">*</span></label>
-        <input type="text" id="pickNo" placeholder="留空将自动生成">
+        <label>ASN号<span class="req">*</span></label>
+        <input type="text" id="pickNo" readonly>
       </div>
       <div class="field-row">
         <div class="field">
@@ -288,7 +288,7 @@
       </div>
       <div class="field-row">
         <div class="field">
-          <label>提货车辆（车牌）</label>
+          <label>提货车辆（车牌）<span class="req">*</span></label>
           <input type="text" id="plate" placeholder="如 浙B·12345">
         </div>
         <div class="field">
@@ -302,7 +302,11 @@
       </div>
       <div class="field-row">
         <div class="field">
-          <label>预计取货日期</label>
+          <label>预约送货日期<span class="req">*</span></label>
+          <input type="date" id="deliveryDate">
+        </div>
+        <div class="field">
+          <label>实际取货日期<span class="req">*</span></label>
           <input type="date" id="pickDate">
         </div>
         <div class="field">
@@ -322,6 +326,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="./logistics-flow.js"></script>
   <script>
     const CAR_KEY = 'bw_carrier_pickups';
     const PLAN_KEY = 'material-plan-v5';
@@ -347,31 +352,44 @@
       try { const r = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]'); return Array.isArray(r) ? r : []; }
       catch (e) { return []; }
     }
-    function getRegisteredVouchers() {
+    function getRegisteredAsns() {
       const arr = JSON.parse(localStorage.getItem(CAR_KEY) || '[]');
-      const s = new Set();
-      arr.forEach(rec => (rec.items || []).forEach(it => s.add(it.voucher)));
-      return s;
+      return new Set(arr.map(rec => rec.asnNo || rec.no));
     }
     function getPending() {
       const rows = loadPlanRows();
       const base = rows.length ? rows : SAMPLE_PENDING;
-      const reg = getRegisteredVouchers();
-      // 仅“自提/需物流商提货”且已到待发货状态的物料进入待取货；直送由供应商自行发货
-      return base.filter(r => (r.deliveryMode || '直送') !== '直送' && r.status === 'pending_shipment' && !reg.has(r.voucher));
+      const reg = getRegisteredAsns();
+      const pickupRows = base.filter(r => LogisticsFlow.deliveryText(r.deliveryMode) === '自提');
+      return LogisticsFlow.byAsn(pickupRows).filter(g =>
+        g.items.every(r => r.status === 'pending_shipment' && r.stockReadyTime && r.deliveryAppointmentDate) && !reg.has(g.asnNo)
+      );
     }
     function getSelectedItems() {
       const pending = getPending();
-      return pending.filter(r => selected.has(r.voucher));
+      return pending.filter(r => selected.has(r.asnNo));
     }
     // 取货登记后，将上游物料计划行的状态回溯为「运输中」
-    function markPlanShipped(vouchers) {
+    function markPlanShipped(asnNo, quantities, deliveryDate, pickupInfo) {
       try {
         const rows = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]');
         if (!Array.isArray(rows) || !rows.length) return;
-        const set = new Set(vouchers);
         let changed = false;
-        rows.forEach(r => { if (set.has(r.voucher) && r.status !== 'in_transit') { r.status = 'in_transit'; changed = true; } });
+        let itemIndex = 0;
+        rows.forEach(r => {
+          if (r.asnNo !== asnNo || LogisticsFlow.deliveryText(r.deliveryMode) !== '自提') return;
+          r.status = 'in_transit';
+          r.actualShipQty = Number(quantities[itemIndex] || 0);
+          r.shipmentRegDate = pickupInfo.pickupDate;
+          r.pickupRegisteredAt = nowStr();
+          r.deliveryAppointmentDate = deliveryDate;
+          r.logisticsProvider = pickupInfo.carrier;
+          r.vehiclePlate = pickupInfo.plate;
+          r.pickupPerson = r.pickupPerson || pickupInfo.driver;
+          r.logisticsTrackNo = pickupInfo.trackNo;
+          itemIndex += 1;
+          changed = true;
+        });
         if (changed) localStorage.setItem(PLAN_KEY, JSON.stringify(rows));
       } catch (e) {}
     }
@@ -397,21 +415,23 @@
 
     function renderPending() {
       const pending = getPending();
+      const validAsns = new Set(pending.map(g => g.asnNo));
+      [...selected].forEach(asnNo => { if (!validAsns.has(asnNo)) selected.delete(asnNo); });
       const list = document.getElementById('pendList');
       document.getElementById('pendCount').textContent = pending.length ? '(' + pending.length + ')' : '';
       if (!pending.length) {
-        list.innerHTML = `<div class="empty-state">暂无待取货物料，全部已登记</div>`;
+        list.innerHTML = `<div class="empty-state">暂无可取货 ASN<br><span style="display:block;margin-top:6px;font-size:12px;">需先由物流商完成自提送货预约，并由供应商完成备货。</span></div>`;
       } else {
-        list.innerHTML = pending.map(r => `
+        list.innerHTML = pending.map(g => `
           <label class="pend-item">
-            <input type="checkbox" class="pend-check" value="${escapeHtml(r.voucher)}" ${selected.has(r.voucher) ? 'checked' : ''}>
+            <input type="checkbox" class="pend-check" value="${escapeHtml(g.asnNo)}" ${selected.has(g.asnNo) ? 'checked' : ''}>
             <div class="pend-body">
               <div class="pend-top">
-                <span class="pend-code">${escapeHtml(r.materialCode)}</span>
-                <span class="pend-qty">计划 ${escapeHtml(formatNum(r.planQty))}</span>
+                <span class="pend-code">${escapeHtml(g.asnNo)}</span>
+                <span class="pend-qty">承诺 ${escapeHtml(formatNum(g.promisedQty))}</span>
               </div>
-              <div class="pend-sub">${escapeHtml(r.supplierName)}</div>
-              <div class="pend-meta">计划到货 ${escapeHtml(r.arrivalDate || '-')} · 凭证 ${escapeHtml(r.voucher)}<span class="pend-tag transfer">${escapeHtml(r.deliveryMode || '中转')}</span></div>
+              <div class="pend-sub">${escapeHtml(g.supplierName)} · ${g.items.length} 种物料</div>
+              <div class="pend-meta">计划发货 ${escapeHtml(g.shipDate || '-')} · 计划到货 ${escapeHtml(g.arrivalDate || '-')}<span class="pend-tag transfer">自提</span></div>
             </div>
           </label>`).join('');
       }
@@ -427,19 +447,17 @@
     function updateSelectAll() {
       const pending = getPending();
       const sa = document.getElementById('selectAll');
-      sa.checked = pending.length > 0 && pending.every(r => selected.has(r.voucher));
+      sa.checked = pending.length > 0 && selected.has(pending[0].asnNo);
     }
 
     document.getElementById('pendList').addEventListener('change', e => {
       if (e.target.classList.contains('pend-check')) {
-        if (e.target.checked) selected.add(e.target.value); else selected.delete(e.target.value);
-        updateBar(); updateSelectAll();
+        selected.clear(); if (e.target.checked) selected.add(e.target.value); renderPending();
       }
     });
     document.getElementById('selectAll').addEventListener('change', e => {
       const pending = getPending();
-      if (e.target.checked) pending.forEach(r => selected.add(r.voucher));
-      else pending.forEach(r => selected.delete(r.voucher));
+      selected.clear(); if (e.target.checked && pending[0]) selected.add(pending[0].asnNo);
       renderPending();
     });
 
@@ -449,22 +467,23 @@
     });
 
     function openSheet() {
-      const items = getSelectedItems();
-      if (!items.length) { toast('请先勾选待取货物料'); return; }
-      const arrivalDates = [...new Set(items.map(i => i.arrivalDate).filter(Boolean))];
+      const group = getSelectedItems()[0];
+      if (!group) { toast('请先选择待取货 ASN'); return; }
+      const items = group.items;
       const logistics = [...new Set(items.map(i => i.logistics).filter(Boolean))];
-      document.getElementById('pickNo').value = genNo('PUP');
+      document.getElementById('pickNo').value = group.asnNo;
       document.getElementById('carrier').value = logistics.length === 1 ? logistics[0] : '';
       document.getElementById('relSupplier').value = items[0].supplierName || '';
-      document.getElementById('plate').value = '';
-      document.getElementById('driver').value = '';
+      document.getElementById('plate').value = group.vehiclePlate || '';
+      document.getElementById('driver').value = [group.pickupPerson, group.pickupPhone].filter(Boolean).join(' ');
       document.getElementById('trackNo').value = '';
-      document.getElementById('pickDate').value = arrivalDates.length === 1 ? arrivalDates[0] : '';
+      document.getElementById('deliveryDate').value = group.deliveryAppointmentDate || group.arrivalDate || '';
+      document.getElementById('pickDate').value = group.shipDate || '';
       document.getElementById('pickTime').value = '';
       document.getElementById('remark').value = '';
-      document.getElementById('ssCount').textContent = items.length + ' 项 · 共 ' + formatNum(items.reduce((s,i)=>s+(Number(i.planQty)||0),0)) + ' 件';
-      document.getElementById('ssList').innerHTML = items.map(i => `
-        <div class="ss-item"><span>${escapeHtml(i.materialCode)} · ${escapeHtml(i.supplierName)}</span><span>计划 ${escapeHtml(formatNum(i.planQty))}</span></div>`).join('');
+      document.getElementById('ssCount').textContent = items.length + ' 种物料';
+      document.getElementById('ssList').innerHTML = items.map((i, index) => `
+        <div class="ss-item"><span>${escapeHtml(i.materialCode)} · 承诺 ${escapeHtml(formatNum(i.promisedQty))}</span><input id="actual_${index}" type="number" min="0" value="${Number(i.promisedQty)||0}" aria-label="${escapeHtml(i.materialCode)} 取货数量" style="width:110px;padding:7px;border:1px solid #d9e2dc;border-radius:6px;text-align:right"></div>`).join('');
       document.getElementById('sheetMask').classList.add('show');
       document.getElementById('sheet').classList.add('show');
     }
@@ -474,21 +493,28 @@
     }
 
     function submitPick() {
-      const items = getSelectedItems();
+      const group = getSelectedItems()[0];
+      const items = group ? group.items : [];
       const carrier = document.getElementById('carrier').value.trim();
+      const plate = document.getElementById('plate').value.trim();
       if (!items.length) return;
       if (!carrier) { toast('请填写物流商名称'); return; }
+      if (!plate) { toast('请填写提货车辆车牌号'); return; }
+      const deliveryDate = document.getElementById('deliveryDate').value;
       const pickDate = document.getElementById('pickDate').value;
+      if (!deliveryDate) { toast('请选择预约送货日期'); return; }
+      if (!pickDate) { toast('请选择实际取货日期'); return; }
       const pickTime = document.getElementById('pickTime').value;
+      const quantities = items.map((i, index) => Number(document.getElementById('actual_' + index).value || 0));
       const rec = {
-        no: document.getElementById('pickNo').value.trim() || genNo('PUP'),
+        no: group.asnNo, asnNo: group.asnNo, pickupNo: genNo('PUP'),
         carrier,
         relSupplier: document.getElementById('relSupplier').value.trim(),
-        items: items.map(i => ({ materialCode: i.materialCode, voucher: i.voucher, planQty: i.planQty, arrivalDate: i.arrivalDate })),
-        plate: document.getElementById('plate').value.trim(),
+        items: items.map((i, index) => ({ id:i.id, asnNo:i.asnNo, materialCode: i.materialCode, voucher: i.voucher, planQty: i.planQty, promisedQty:i.promisedQty, actualShipQty:quantities[index], arrivalDate: i.arrivalDate, supplierName:i.supplierName })),
+        plate,
         driver: document.getElementById('driver').value.trim(),
         trackNo: document.getElementById('trackNo').value.trim(),
-        eta: (pickDate || '') + (pickTime ? (' ' + pickTime) : ''),
+        eta: deliveryDate, pickupAt: (pickDate || '') + (pickTime ? (' ' + pickTime) : ''),
         remark: document.getElementById('remark').value.trim(),
         time: nowStr(),
         status: 'shipped'
@@ -496,10 +522,12 @@
       const arr = JSON.parse(localStorage.getItem(CAR_KEY) || '[]');
       arr.unshift(rec);
       localStorage.setItem(CAR_KEY, JSON.stringify(arr));
-      markPlanShipped(items.map(i => i.voucher));
+      markPlanShipped(group.asnNo, quantities, deliveryDate, {
+        carrier, plate, driver: rec.driver, trackNo: rec.trackNo, pickupDate: pickDate
+      });
       closeSheet();
       selected.clear();
-      toast('取货登记已保存，计划状态已更新为运输中');
+      toast('取货登记已保存，供应商端状态已更新为已取货');
       renderPending();
       renderShipped();
       switchTab('shipped');
@@ -526,8 +554,8 @@
           <div class="recent-dot"></div>
           <div class="recent-info">
             <div class="recent-type">物流商取货 · ${escapeHtml(r.carrier)}</div>
-            <div class="recent-code">${escapeHtml(r.no)}</div>
-            <div class="recent-meta">物料 ${r.items.length} 项 · 关联 ${escapeHtml(r.relSupplier || '-')} · 登记 ${escapeHtml(r.time)}</div>
+            <div class="recent-code">ASN ${escapeHtml(r.asnNo || r.no)}</div>
+            <div class="recent-meta">物料 ${r.items.length} 项 · 车牌 ${escapeHtml(r.plate || '未登记')} · 取货单 ${escapeHtml(r.pickupNo || '-')} · 送货预约 ${escapeHtml(r.eta || '-')}</div>
           </div>
           <span class="recent-status ${statusClass(r.status)}">${statusText(r.status)}</span>
         </div>`;
@@ -556,6 +584,9 @@
     renderPending();
     renderShipped();
     switchTab('pending');
+    window.addEventListener('storage', e => { if (e.key === PLAN_KEY || e.key === CAR_KEY) { renderPending(); renderShipped(); } });
+    window.addEventListener('focus', () => { renderPending(); renderShipped(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderPending(); renderShipped(); } });
   </script>
 
 </body>

@@ -123,43 +123,30 @@
     }
     .history-filter .spacer { flex: 1; }
 
-    /* 图表 */
-    .chart-area { height: 240px; margin: 4px 0 8px; }
-    .chart-bar-wrap { display: flex; align-items: flex-end; gap: 18px; height: 190px; padding: 0 10px; border-bottom: 1px solid var(--border); }
-    .chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 40px; }
-    .chart-bar { width: 100%; max-width: 60px; border-radius: 6px 6px 0 0; transition: height .3s ease; position: relative; }
-    .chart-bar.ok { background: var(--success); }
-    .chart-bar.ng { background: var(--danger); }
-    .chart-bar .bar-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; white-space: nowrap; }
-    .chart-axis { display: flex; gap: 18px; padding: 8px 10px 0; }
-    .chart-axis span { flex: 1; text-align: center; font-size: 11px; color: var(--text-2); min-width: 40px; }
-
-    /* 报告卡片 */
-    .report-card {
-      border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 18px;
-      margin-bottom: 12px; background: var(--surface); transition: box-shadow .15s;
-    }
-    .report-card:hover { box-shadow: var(--shadow-sm); }
-    .rc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
-    .rc-title { font-size: 15px; font-weight: 600; }
-    .rc-meta { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-3); flex-wrap: wrap; }
-    .rc-meta span { display: inline-flex; align-items: center; gap: 4px; }
-    .rc-body { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 16px; margin: 12px 0; }
-    .rc-item { display: flex; flex-direction: column; gap: 2px; }
-    .rc-item .label { font-size: 11px; color: var(--text-2); }
-    .rc-item .value { font-size: 13px; font-weight: 500; color: var(--text); }
-    .rc-stats { display: flex; gap: 10px; margin-top: 4px; align-items: center; flex-wrap: wrap; }
-    .rc-stat { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 500; }
-    .rc-stat.ok { background: var(--success-soft); color: #277645; }
-    .rc-stat.ng { background: var(--danger-soft); color: #b73238; }
-    .rc-stat.total { background: var(--muted); color: var(--text-2); }
-    .rc-actions { display: flex; gap: 8px; margin-left: auto; }
+    /* 物料计划明细 */
+    .list-title { margin-top: 2px; }
+    .list-title::before { margin-right: -2px; }
+    .list-title-main { display: inline-flex; align-items: center; gap: 8px; }
+    .list-count { margin-left: auto; color: var(--text-3); font-size: 12px; font-weight: 400; }
+    .plan-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    .plan-table { width: 100%; min-width: 1240px; border-collapse: collapse; }
+    .plan-table th, .plan-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; font-size: 13px; white-space: nowrap; }
+    .plan-table th { background: #f8fafb; color: var(--text-2); font-size: 12px; font-weight: 600; }
+    .plan-table tbody tr:hover { background: #fbfdfd; }
+    .plan-table tbody tr:last-child td { border-bottom: 0; }
+    .plan-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .material-cell strong { display: block; color: var(--text); font-weight: 600; }
+    .material-cell span { display: block; margin-top: 2px; color: var(--text-3); font-size: 11px; }
+    .table-actions { display: flex; align-items: center; gap: 7px; }
+    .empty-list { padding: 40px 20px; text-align: center; color: var(--text-3); background: var(--muted); }
     .status-badge {
       display: inline-flex; align-items: center; gap: 5px;
       padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap;
     }
     .status-badge.draft { background: var(--warning-soft); color: #8a5e16; }
     .status-badge.submitted { background: var(--success-soft); color: #277645; }
+    .status-badge.pending { background: var(--muted); color: var(--text-2); }
+    .status-badge.ng { background: var(--danger-soft); color: #b73238; }
 
     /* 详情弹窗 */
     .modal-layer {
@@ -199,15 +186,16 @@
 
     @media (max-width: 1100px) {
       .stat-cards { grid-template-columns: repeat(2, 1fr); }
-      .rc-body, .detail-meta { grid-template-columns: repeat(2, 1fr); }
+      .detail-meta { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 720px) {
       .page-body { padding: 16px; }
       .stat-cards { grid-template-columns: 1fr; }
       .top-bar { padding: 0 16px; }
       .top-bar .company { display: none; }
-      .rc-body, .detail-meta { grid-template-columns: 1fr; }
-      .rc-actions { margin-left: 0; }
+      .detail-meta { grid-template-columns: 1fr; }
+      .history-filter .form-field { width: 100%; min-width: 0; }
+      .history-filter .spacer { display: none; }
     }
   </style>
 </head>
@@ -233,17 +221,13 @@
             <span>供应商名称: <strong>苏州瑞玛精密工业集团股份有限公司</strong></span>
           </div>
         </div>
-        <a class="btn btn-primary" href="supplier-inspection-create.html">
-          <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          新增出货检验
-        </a>
       </div>
 
       <div class="stat-cards">
         <div class="stat-card">
           <div class="stat-card-top"><span class="stat-card-label">待检查</span><div class="stat-card-icon amber"><svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></div></div>
           <div class="stat-card-value" style="color:var(--warning);" id="statPending">0</div>
-          <div class="stat-card-sub">待创建出货检查</div>
+          <div class="stat-card-sub">待录入检验结果的物料计划</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-top"><span class="stat-card-label">今日提交</span><div class="stat-card-icon teal"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div></div>
@@ -269,6 +253,10 @@
             <input type="text" id="hMaterialCode" placeholder="请输入零件号">
           </div>
           <div class="form-field">
+            <label>ASN号</label>
+            <input type="text" id="hAsnNo" placeholder="请输入ASN号">
+          </div>
+          <div class="form-field">
             <label>检验项目</label>
             <input type="text" id="hItemName" placeholder="请输入检验项目">
           </div>
@@ -284,6 +272,7 @@
             <label>结果</label>
             <select id="hResult" class="cell-input">
               <option value="">全部</option>
+              <option value="pending">待检验</option>
               <option value="ok">全部合格</option>
               <option value="ng">存在不合格</option>
             </select>
@@ -296,13 +285,7 @@
           <div class="spacer"></div>
         </div>
 
-        <div class="section-title-bar">近7天合格率趋势</div>
-        <div class="chart-area" id="chartArea">
-          <div class="chart-bar-wrap" id="chartBars"></div>
-          <div class="chart-axis" id="chartAxis"></div>
-        </div>
-
-        <div class="section-title-bar">出货检查报告列表</div>
+        <div class="section-title-bar list-title"><span class="list-title-main">物料计划明细</span><span class="list-count" id="planCount">共 0 条</span></div>
         <div id="historyList"></div>
       </div>
     </div>
@@ -384,8 +367,8 @@
       document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
       document.querySelectorAll('.modal-layer').forEach(layer => layer.addEventListener('click', e => { if (e.target === layer) closeModal(layer.id); }));
 
-      function getSelectablePlans() {
-        let plans = state.plans.filter(r => ['pending_shipment', 'in_transit', 'received'].includes(r.status));
+      function getAllPlans() {
+        let plans = state.plans.slice();
         if (!plans.length) {
           plans = [
             { id: 'demo-1', materialCode: '108143-101', materialName: '阀体组件 A', supplierName: '苏州瑞玛精密工业集团股份有限公司', voucher: '2026-08-03-108143', shipDate: '2026-08-03', arrivalDate: '2026-08-15', planQty: 800, promisedQty: 800, deliveryMode: '直送', logistics: '顺丰速运', status: 'pending_shipment', asnNo: 'ASN20260803001', customerPartNo: 'CP-108143-101' },
@@ -398,85 +381,102 @@
 
       // 统计
       function updateStats() {
-        const plans = getSelectablePlans();
+        const plans = getAllPlans();
         const todayStr = new Date().toISOString().slice(0, 10);
         const todayCount = state.inspections.filter(r => String(r.createdAt).startsWith(todayStr) && r.status === 'submitted').length;
         const failCount = state.inspections.reduce((sum, r) => sum + (r.items || []).filter(i => i.result === '不合格').length, 0);
-        document.getElementById('statPending').textContent = plans.length;
+        const pendingCount = plans.filter(plan => {
+          if (plan.status === 'cancelled') return false;
+          const rec = getInspectionForPlan(plan);
+          return !rec || rec.status === 'draft';
+        }).length;
+        document.getElementById('statPending').textContent = pendingCount;
         document.getElementById('statToday').textContent = todayCount;
         document.getElementById('statTotal').textContent = state.inspections.length;
         document.getElementById('statFail').textContent = failCount;
       }
 
-      function getFilteredHistory() {
+      function getInspectionForPlan(plan) {
+        return state.inspections.find(rec =>
+          (plan.voucher && rec.voucher === plan.voucher) ||
+          ((plan.asnNo || plan.asnNumber) && rec.asnNo === (plan.asnNo || plan.asnNumber))
+        ) || null;
+      }
+
+      function getFilteredPlans() {
         const fCode = document.getElementById('hMaterialCode').value.trim().toLowerCase();
+        const fAsn = document.getElementById('hAsnNo').value.trim().toLowerCase();
         const fItem = document.getElementById('hItemName').value.trim().toLowerCase();
         const fStart = document.getElementById('hDateStart').value;
         const fEnd = document.getElementById('hDateEnd').value;
         const fResult = document.getElementById('hResult').value;
-        return state.inspections.filter(r => {
-          if (fCode && !String(r.materialCode).toLowerCase().includes(fCode)) return false;
-          if (fStart && r.arrivalDate && r.arrivalDate < fStart) return false;
-          if (fEnd && r.arrivalDate && r.arrivalDate > fEnd) return false;
-          const hasNg = (r.items || []).some(i => i.result === '不合格');
-          if (fResult === 'ok' && hasNg) return false;
+        return getAllPlans().filter(plan => {
+          const rec = getInspectionForPlan(plan);
+          const asn = plan.asnNo || plan.asnNumber || '';
+          if (fCode && !`${plan.materialCode || ''} ${plan.materialName || ''}`.toLowerCase().includes(fCode)) return false;
+          if (fAsn && !String(asn).toLowerCase().includes(fAsn)) return false;
+          if (fStart && plan.arrivalDate && plan.arrivalDate < fStart) return false;
+          if (fEnd && plan.arrivalDate && plan.arrivalDate > fEnd) return false;
+          const hasNg = !!rec && (rec.items || []).some(i => i.result === '不合格');
+          const isPending = !rec || rec.status === 'draft';
+          if (fResult === 'pending' && !isPending) return false;
+          if (fResult === 'ok' && (!rec || rec.status !== 'submitted' || hasNg)) return false;
           if (fResult === 'ng' && !hasNg) return false;
           if (fItem) {
-            const names = (r.items || []).map(i => String(i.name).toLowerCase()).join(' ');
+            const names = (rec?.items || []).map(i => String(i.name).toLowerCase()).join(' ');
             if (!names.includes(fItem)) return false;
           }
           return true;
-        });
+        }).sort((a, b) => String(a.arrivalDate || '').localeCompare(String(b.arrivalDate || '')));
+      }
+
+      function planStatusText(status) {
+        return ({awaiting_asn:'待ASN',supplier_pending:'待供应商确认',platform_pending:'待工厂确认',pending_shipment:'待发货',in_transit:'运输中',received:'已收货',completed:'已完成',cancelled:'已取消'})[status] || status || '—';
       }
 
       function renderList() {
-        const list = getFilteredHistory();
+        const list = getFilteredPlans();
         const wrap = document.getElementById('historyList');
+        document.getElementById('planCount').textContent = `共 ${list.length} 条`;
         if (!list.length) {
-          wrap.innerHTML = `<div style="background:var(--muted);border-radius:8px;padding:28px;text-align:center;color:var(--text-3);">暂无出货检查报告</div>`;
-          renderChart([]);
+          wrap.innerHTML = `<div class="empty-list">没有符合条件的物料计划，请调整筛选条件</div>`;
           return;
         }
-        wrap.innerHTML = list.map(r => {
-          const items = r.items || [];
-          const okCount = items.filter(i => i.result === '合格').length;
-          const ngCount = items.filter(i => i.result === '不合格').length;
-          const isDraft = r.status === 'draft';
-          const actions = isDraft
-            ? `<a class="btn btn-outline btn-sm" href="supplier-inspection-create.html?id=${encodeURIComponent(r.id)}">继续编辑</a>
-               <button class="btn btn-primary btn-sm" type="button" data-action="detail" data-id="${r.id}">查看详情</button>`
-            : `<button class="btn btn-outline btn-sm" type="button" data-action="detail" data-id="${r.id}">查看详情</button>
-               <button class="btn btn-outline btn-sm" type="button" data-action="preview" data-id="${r.id}">预览报告</button>
-               <button class="btn btn-success btn-sm" type="button" data-action="export" data-id="${r.id}">导出报告</button>`;
-          return `
-            <div class="report-card">
-              <div class="rc-head">
-                <div>
-                  <div class="rc-title">${escapeHtml(r.materialCode)} · ${escapeHtml(r.materialName || '未命名零件')}</div>
-                  <div class="rc-meta">
-                    <span>采购凭证: ${escapeHtml(r.voucher)}</span>
-                    <span>到料日期: ${escapeHtml(r.arrivalDate)}</span>
-                    <span>提交时间: ${escapeHtml(r.createdAt)}</span>
-                  </div>
-                </div>
-                <span class="status-badge ${r.status}">${isDraft ? '草稿' : '已提交'}</span>
-              </div>
-              <div class="rc-body">
-                <div class="rc-item"><span class="label">零件名称</span><span class="value">${escapeHtml(r.materialName || '—')}</span></div>
-                <div class="rc-item"><span class="label">供应商名称</span><span class="value">${escapeHtml(r.supplierName || '—')}</span></div>
-                <div class="rc-item"><span class="label">ASN号</span><span class="value">${escapeHtml(r.asnNo || '—')}</span></div>
-                <div class="rc-item"><span class="label">客户零件号</span><span class="value">${escapeHtml(r.customerPartNo || '—')}</span></div>
-              </div>
-              <div class="rc-stats">
-                <span class="rc-stat total">检验项 ${items.length}</span>
-                <span class="rc-stat ok">合格 ${okCount}</span>
-                ${ngCount ? `<span class="rc-stat ng">不合格 ${ngCount}</span>` : ''}
-                <div class="rc-actions">${actions}</div>
-              </div>
-            </div>
-          `;
+        const rows = list.map(plan => {
+          const rec = getInspectionForPlan(plan);
+          const hasNg = !!rec && (rec.items || []).some(i => i.result === '不合格');
+          const result = !rec || rec.status === 'draft' ? '—' : (hasNg ? '不合格' : '合格');
+          const statusClass = !rec ? 'pending' : rec.status;
+          const statusText = !rec ? '待检验' : (rec.status === 'draft' ? '录入中' : '已提交');
+          const planKey = plan.id || plan.voucher || plan.asnNo || plan.asnNumber || '';
+          const actions = !rec
+            ? (plan.status === 'cancelled'
+                ? `<button class="btn btn-sm" type="button" disabled>不可检验</button>`
+                : `<a class="btn btn-primary btn-sm" href="supplier-inspection-create.html?planId=${encodeURIComponent(planKey)}">录入检验结果</a>`)
+            : rec.status === 'draft'
+              ? `<a class="btn btn-primary btn-sm" href="supplier-inspection-create.html?id=${encodeURIComponent(rec.id)}">继续录入</a>`
+              : `<button class="btn btn-outline btn-sm" type="button" data-action="detail" data-id="${escapeHtml(rec.id)}">查看结果</button>
+                 <button class="btn btn-outline btn-sm" type="button" data-action="preview" data-id="${escapeHtml(rec.id)}">预览</button>
+                 <button class="btn btn-success btn-sm" type="button" data-action="export" data-id="${escapeHtml(rec.id)}">导出</button>`;
+          return `<tr>
+            <td>${escapeHtml(plan.asnNo || plan.asnNumber || '—')}</td>
+            <td class="material-cell"><strong>${escapeHtml(plan.materialCode || '—')}</strong><span>${escapeHtml(plan.materialName || '—')}</span></td>
+            <td>${escapeHtml(plan.customerPartNo || plan.customerPartNumber || '—')}</td>
+            <td>${escapeHtml(plan.voucher || '—')}</td>
+            <td>${escapeHtml(plan.shipDate || '—')}</td>
+            <td>${escapeHtml(plan.arrivalDate || '—')}</td>
+            <td class="num">${empty(plan.planQty) ? '—' : Number(plan.planQty).toLocaleString('zh-CN')}</td>
+            <td>${escapeHtml(plan.deliveryMode || '—')}</td>
+            <td><span class="status-badge pending">${escapeHtml(planStatusText(plan.status))}</span></td>
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td class="${result === '不合格' ? 'result-fail' : (result === '合格' ? 'result-pass' : '')}">${result}</td>
+            <td><div class="table-actions">${actions}</div></td>
+          </tr>`;
         }).join('');
-        renderChart(list);
+        wrap.innerHTML = `<div class="plan-table-wrap"><table class="plan-table">
+          <thead><tr><th>ASN号</th><th>物料</th><th>客户零件号</th><th>采购凭证</th><th>发货日期</th><th>到料日期</th><th class="num">计划数量</th><th>交付方式</th><th>计划状态</th><th>检验状态</th><th>检验结果</th><th>操作</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>`;
         bindListActions();
       }
 
@@ -492,27 +492,6 @@
             else if (action === 'export') exportReport(rec);
           });
         });
-      }
-
-      function renderChart(list) {
-        const days = [];
-        const today = new Date();
-        for (let i = 6; i >= 0; i--) { const d = new Date(today); d.setDate(d.getDate() - i); days.push(d.toISOString().slice(0, 10)); }
-        const map = {}; days.forEach(d => map[d] = { ok: 0, ng: 0 });
-        list.forEach(r => {
-          const d = String(r.createdAt).slice(0, 10);
-          if (!map[d]) return;
-          (r.items || []).forEach(i => { if (i.result === '合格') map[d].ok++; else if (i.result === '不合格') map[d].ng++; });
-        });
-        const max = Math.max(1, ...Object.values(map).map(v => Math.max(v.ok, v.ng)));
-        document.getElementById('chartBars').innerHTML = days.map(d => `
-          <div class="chart-bar-group">
-            <div style="display:flex;align-items:flex-end;gap:3px;height:100%;width:100%;justify-content:center;">
-              <div class="chart-bar ok" style="height:${(map[d].ok / max) * 100}%;">${map[d].ok ? `<span class="bar-label">${map[d].ok}</span>` : ''}</div>
-              <div class="chart-bar ng" style="height:${(map[d].ng / max) * 100}%;">${map[d].ng ? `<span class="bar-label">${map[d].ng}</span>` : ''}</div>
-            </div>
-          </div>`).join('');
-        document.getElementById('chartAxis').innerHTML = days.map(d => `<span>${d.slice(5)}</span>`).join('');
       }
 
       // 详情
@@ -650,6 +629,7 @@
       document.getElementById('hSearch').addEventListener('click', renderList);
       document.getElementById('hReset').addEventListener('click', () => {
         document.getElementById('hMaterialCode').value = '';
+        document.getElementById('hAsnNo').value = '';
         document.getElementById('hItemName').value = '';
         document.getElementById('hDateStart').value = '';
         document.getElementById('hDateEnd').value = '';
