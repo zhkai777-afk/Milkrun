@@ -256,6 +256,7 @@
         </button>
         <button class="btn btn-outline" id="btnClearPlan" type="button" disabled>清除</button>
       </div>
+<div style="margin:12px 24px"><label for="batchNo">批次号（供应商备注）</label> <input id="batchNo" maxlength="80" placeholder="填写批次号，随报告同步至工厂"></div>
       <div id="linkedPlanCard" class="linked-plan-card" style="display:none;">
         <div class="lp-item"><span class="lp-label">零件号</span><span class="lp-value" id="lpMaterialCode">—</span></div>
         <div class="lp-item"><span class="lp-label">零件名称</span><span class="lp-value" id="lpMaterialName">—</span></div>
@@ -299,7 +300,7 @@
       <div class="modal-body">
         <div class="plan-filter-bar">
           <div class="form-field"><label>物料编号</label><input type="text" id="pmMaterialCode" placeholder="请输入物料编号"></div>
-          <div class="form-field"><label>采购凭证</label><input type="text" id="pmVoucher" placeholder="请输入采购凭证"></div>
+          <div class="form-field"><label>图纸编号</label><input type="text" id="pmVoucher" placeholder="请输入图纸编号"> <label>工厂</label><input id="pmFactory" placeholder="请输入工厂"></div>
           <div class="form-field"><label>发货日期 起</label><input type="date" id="pmDateStart"></div>
           <div class="form-field"><label>发货日期 止</label><input type="date" id="pmDateEnd"></div>
           <button class="btn btn-primary" id="pmSearch" type="button">查询</button>
@@ -324,6 +325,7 @@
 
   <div class="toast-region" id="toastRegion"></div>
 
+
   <script>
     (() => {
       'use strict';
@@ -336,9 +338,9 @@
       const DEFAULT_TEMPLATE = [
         { name: '包装', method: '目测', type: 'text', requirement: '防潮、防尘、无破损、无脏污', checkCount: 1, standardValue: '', upperTolerance: '', lowerTolerance: '' },
         { name: '孔径', method: '卡尺', type: 'number', requirement: '5.3+/-0.12 mm', checkCount: 5, standardValue: 5.3, upperTolerance: 0.12, lowerTolerance: -0.12 },
-        { name: '轮廓度', method: 'CMM', type: 'number', requirement: '0.16 Max', checkCount: 3, standardValue: 0.16, upperTolerance: 0, lowerTolerance: 0 },
-        { name: '清洁度', method: '清洁度设备', type: 'number', requirement: '1000um Max', checkCount: 5, standardValue: 1000, upperTolerance: 0, lowerTolerance: 0 },
-        { name: '清洁度', method: '清洁度设备', type: 'number', requirement: '5mg/pcs', checkCount: 2, standardValue: 5, upperTolerance: 0, lowerTolerance: 0 }
+        { name: '轮廓度', method: 'CMM', type: 'number', requirement: '0.16 Max', checkCount: 3, standardValue: 5.3, upperTolerance: 0.12, lowerTolerance: -0.12 },
+        { name: '清洁度', method: '清洁度设备', type: 'number', requirement: '1000um Max', checkCount: 5, standardValue: 5.3, upperTolerance: 0.12, lowerTolerance: -0.12 },
+        { name: '清洁度', method: '清洁度设备', type: 'number', requirement: '5mg/pcs', checkCount: 2, standardValue: 5.3, upperTolerance: 0.12, lowerTolerance: -0.12 }
       ];
 
       function uuid() {
@@ -348,8 +350,12 @@
       function pad(n) { return String(n).padStart(2, '0'); }
       function formatNow() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
       function escapeHtml(v) { return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
-      function toNum(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+      function toNum(v) { if(v==null||String(v).trim()==='')return null;const n = Number(v); return Number.isFinite(n) ? n : null; }
       function empty(v) { return v === null || v === undefined || String(v).trim() === ''; }
+      function drawingText(item, fallback = '') {
+        const values = Array.isArray(item?.drawingNumbers) ? item.drawingNumbers : [];
+        return values.map(value => String(value).trim()).filter(Boolean).join('、') || item?.drawingNumber || fallback || '';
+      }
 
       function loadPlans() { try { const p = JSON.parse(localStorage.getItem(PLAN_KEY)); return Array.isArray(p) ? p : []; } catch { return []; } }
       function loadInspections() { try { const p = JSON.parse(localStorage.getItem(INSP_KEY)); return Array.isArray(p) ? p : []; } catch { return []; } }
@@ -385,6 +391,7 @@
 
       function renderLinkedPlan() {
         const p = state.selectedPlan;
+        document.getElementById('batchNo').value=p?.batchNo||'';
         const card = document.getElementById('linkedPlanCard');
         const input = document.getElementById('linkedPlanDisplay');
         const clearBtn = document.getElementById('btnClearPlan');
@@ -413,7 +420,9 @@
         const fEnd = document.getElementById('pmDateEnd').value;
         const plans = getSelectablePlans().filter(p => {
           if (fCode && !String(p.materialCode).toLowerCase().includes(fCode)) return false;
-          if (fVoucher && !String(p.voucher).toLowerCase().includes(fVoucher)) return false;
+          const materials=JSON.parse(localStorage.getItem('warehouse-material-v1')||'[]');const m=materials.find(m=>m.materialCode===p.materialCode);
+          if(fVoucher&&!(m?.inspectionStandards||[]).some(s=>drawingText(s,m.drawingNumber).toLowerCase().includes(fVoucher)))return false;
+          if(document.getElementById('pmFactory').value&&!String(p.factory||'').includes(document.getElementById('pmFactory').value))return false;
           if (fStart && p.shipDate && p.shipDate < fStart) return false;
           if (fEnd && p.shipDate && p.shipDate > fEnd) return false;
           return true;
@@ -438,22 +447,22 @@
       }
       document.getElementById('pmSearch').addEventListener('click', renderPlanModalList);
       document.getElementById('pmReset').addEventListener('click', () => {
-        document.getElementById('pmMaterialCode').value = ''; document.getElementById('pmVoucher').value = '';
+        document.getElementById('pmFactory').value='';document.getElementById('pmMaterialCode').value = ''; document.getElementById('pmVoucher').value = '';
         document.getElementById('pmDateStart').value = ''; document.getElementById('pmDateEnd').value = ''; renderPlanModalList();
       });
       document.getElementById('pmConfirm').addEventListener('click', () => {
         if (!state.planModalSelected) return;
-        state.selectedPlan = state.planModalSelected; renderLinkedPlan(); closeModal('planModal');
+        state.selectedPlan = state.planModalSelected; useMaterialStandards();renderLinkedPlan(); closeModal('planModal');
       });
 
       /* ---------- 检验项目 ---------- */
       function createItem(data) {
         return {
           id: uuid(), seq: state.items.length + 1,
-          name: data?.name || '', method: data?.method || '', type: data?.type || 'number',
+          drawingNumbers:Array.isArray(data?.drawingNumbers)?[...data.drawingNumbers]:[], drawingNumber:drawingText(data), name: data?.name || '', method: data?.method || '', type: data?.type || 'number',
           requirement: data?.requirement || '', checkCount: toNum(data?.checkCount) ?? 1,
           standardValue: toNum(data?.standardValue) ?? '', upperTolerance: toNum(data?.upperTolerance) ?? '', lowerTolerance: toNum(data?.lowerTolerance) ?? '',
-          result: data?.result || '', measurements: Array.isArray(data?.measurements) ? data.measurements.slice(0, MAX_MEASUREMENTS) : [],
+          result: data?.result || '', isDemoTemplate: Boolean(data?.isDemoTemplate), measurements: Array.isArray(data?.measurements) ? data.measurements.slice(0, MAX_MEASUREMENTS) : [],
           inspectedQty: toNum(data?.inspectedQty) ?? '', bwLabQty: toNum(data?.bwLabQty) ?? ''
         };
       }
@@ -473,22 +482,28 @@
       }
 
       function evaluateItem(item) {
-        if (item.type !== 'number') return item.result || '';
-        const vals = (item.measurements || []).map(v => toNum(v)).filter(v => v !== null);
-        if (!vals.length) return '';
-        for (const v of vals) {
-          const r = evaluateMeasurement(item, v);
-          if (r === '不合格') return '不合格';
-        }
-        return '合格';
+        const values=(item.measurements||[]).filter(v=>!empty(v));
+        if(!values.length||item.type!=='number'||toNum(item.standardValue)===null)return '无法判定';
+        const results=values.map(v=>evaluateMeasurement(item,v));
+        return results.includes('不合格')?'不合格':results.every(v=>v==='合格')?'合格':'无法判定';
       }
-
+      function useMaterialStandards() {
+        if(state.editingId||!state.selectedPlan)return;
+        let materials=[];try{materials=JSON.parse(localStorage.getItem('warehouse-material-v1')||'[]')}catch(e){}
+        const p=state.selectedPlan,material=materials.find(m=>m.materialCode===p.materialCode&&(!m.supplierCode||m.supplierCode===p.sapSupplierCode));
+        const standards = material?.inspectionStandards || [];
+        state.items = standards.length
+          ? standards.map(t => createItem({name:t.inspectionItem,method:t.inspectionMethod,requirement:t.technicalRequirement,drawingNumbers:t.drawingNumbers,drawingNumber:drawingText(t,material.drawingNumber),type:toNum(t.standardValue)===null?'text':'number',checkCount:t.inspectionQty,standardValue:t.standardValue,upperTolerance:t.upperTolerance,lowerTolerance:t.lowerTolerance}))
+          : DEFAULT_TEMPLATE.map(t => createItem({ ...t, isDemoTemplate: true }));
+        state.selectedItemId=state.items[0]?.id||null;renderSidebar();renderFormPanel();
+        if (!standards.length) toast('该物料未维护检验标准，已载入 5 项演示检验项目');
+      }
       function renderSidebar() {
         const list = document.getElementById('itemList');
         if (!state.items.length) { list.innerHTML = `<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px 0;">暂无检验项目</div>`; return; }
         list.innerHTML = state.items.map(it => {
           const cnt = (it.measurements || []).filter(v => !empty(v)).length;
-          const result = it.result || evaluateItem(it);
+          const result = ''; 
           const badge = result === '合格' ? '<span class="mini-badge ok">合格</span>' : result === '不合格' ? '<span class="mini-badge ng">不合格</span>' : '<span class="mini-badge none">未判定</span>';
           return `
             <div class="item-node ${state.selectedItemId === it.id ? 'selected' : ''}" data-id="${it.id}">
@@ -537,7 +552,7 @@
         ensureMeasureRows(item);
         const tbody = document.getElementById('measureTbody');
         tbody.innerHTML = item.measurements.map((v, i) => {
-          const rowResult = evaluateMeasurement(item, v);
+          const rowResult = '';
           const fail = rowResult === '不合格';
           const inputType = item.type === 'number' ? 'number' : 'text';
           return `<tr data-index="${i}">
@@ -553,15 +568,6 @@
           input.addEventListener('input', () => {
             const idx = Number(input.closest('tr').dataset.index);
             item.measurements[idx] = input.value;
-            const rr = evaluateMeasurement(item, input.value);
-            const fail = rr === '不合格';
-            input.classList.toggle('fail', fail);
-            const badgeCell = input.closest('tr').cells[2];
-            badgeCell.innerHTML = rr ? `<span class="row-result ${fail ? 'ng' : 'ok'}">${rr}</span>` : '—';
-            if (item.type === 'number' && !item.manualResult) {
-              item.result = evaluateItem(item);
-              setResultBanner(item);
-            }
             updateMeasureCount(item);
             renderSidebar();
           });
@@ -596,16 +602,7 @@
             <div class="fih-title">${escapeHtml(it.name || '未命名项目')}</div>
             <div class="fih-seq">第 ${it.seq} 项</div>
           </div>
-          <div class="result-banner" id="resultBanner" data-state="none">
-            <div class="rb-left">
-              <div class="rb-title">检验判定结果</div>
-              <div class="rb-sub">数字类已按「标准值 ± 公差」预判定，可手动覆盖；请确认本项目是否合格</div>
-            </div>
-            <div class="rb-right">
-              <span class="rb-pill" id="rbPill">未判定</span>
-              ${renderOverallResult(it)}
-            </div>
-          </div>
+          <p style="padding:12px;color:#697582">${it.isDemoTemplate ? '当前物料未维护检验标准，以下为演示检验项目；' : ''}提交时自动判定；无数值标准或文字项目标记为无法判定。</p>
           <div class="form-scroll">
             <div class="standards-section">
               <div class="ss-title">检验标准</div>
@@ -615,6 +612,7 @@
                 <div class="info-item"><span class="info-label">类别</span><span class="info-value">${it.type === 'text' ? '文字' : '数字'}</span></div>
                 <div class="info-item"><span class="info-label">检验数</span><span class="info-value ${empty(it.checkCount)?'empty':''}">${empty(it.checkCount)?'—':escapeHtml(it.checkCount)}</span></div>
                 <div class="info-item wide"><span class="info-label">技术要求</span><span class="info-value ${empty(it.requirement)?'empty':''}">${empty(it.requirement)?'—':escapeHtml(it.requirement)}</span></div>
+                <div class="info-item"><span class="info-label">图纸编号</span><span class="info-value">${escapeHtml(it.drawingNumber||'—')}</span></div>
                 <div class="info-item"><span class="info-label">标准值</span><span class="info-value ${empty(it.standardValue)?'empty':''}">${empty(it.standardValue)?'—':escapeHtml(it.standardValue)}</span></div>
                 <div class="info-item"><span class="info-label">上公差</span><span class="info-value ${empty(it.upperTolerance)?'empty':''}">${empty(it.upperTolerance)?'—':escapeHtml(it.upperTolerance)}</span></div>
                 <div class="info-item"><span class="info-label">下公差</span><span class="info-value ${empty(it.lowerTolerance)?'empty':''}">${empty(it.lowerTolerance)?'—':escapeHtml(it.lowerTolerance)}</span></div>
@@ -629,7 +627,7 @@
               </div>
               <div style="overflow-x:auto;">
                 <table class="measure-table">
-                  <thead><tr><th style="width:50px;">序号</th><th>实测值</th><th style="width:80px;">判定</th><th style="width:60px;">操作</th></tr></thead>
+                  <thead><tr><th style="width:50px;">序号</th><th>实测值</th><th style="width:80px;">提交后判定</th><th style="width:60px;">操作</th></tr></thead>
                   <tbody id="measureTbody"></tbody>
                 </table>
               </div>
@@ -677,17 +675,17 @@
         if (!state.items.length) { toast('请至少存在一条检验项目', true); return null; }
         const items = state.items.map(it => {
           const m = (it.measurements || []).filter(v => !empty(v));
-          const result = it.type === 'text' ? (it.result || '') : (it.result || evaluateItem(it));
+          const result = status==='submitted'?evaluateItem(it):'';
           return { ...it, measurements: m.slice(0, MAX_MEASUREMENTS), result, inspectedQty: toNum(it.inspectedQty) ?? '', bwLabQty: toNum(it.bwLabQty) ?? '' };
         });
         for (const it of items) { if (!String(it.name).trim()) { toast('存在未填写「检验项目」的记录，请检查', true); return null; } }
         const p = state.selectedPlan;
         return {
           id: state.editingId || uuid(),
-          materialCode: p.materialCode || '', materialName: p.materialName || '', supplierName: p.supplierName || '',
+          planId:p.id||'',supplierCode:p.sapSupplierCode||p.supplierCode||'',factory:p.factory||'',batchNo:document.getElementById('batchNo').value.trim(), materialCode: p.materialCode || '', materialName: p.materialName || '', supplierName: p.supplierName || '',
           arrivalDate: p.arrivalDate || '', asnNo: p.asnNo || p.asnNumber || '', customerPartNo: p.customerPartNo || p.customerPartNumber || '',
           voucher: p.voucher || '', planQty: toNum(p.planQty) ?? '', shipDate: p.shipDate || '',
-          status, items, createdAt: formatNow(), updatedAt: formatNow()
+          status, items, createdAt: state.inspections.find(r=>r.id===state.editingId)?.createdAt||formatNow(), updatedAt: formatNow()
         };
       }
       function saveForm(status) {
@@ -710,7 +708,7 @@
         if (!rec) return;
         state.editingId = id;
         state.selectedPlan = {
-          materialCode: rec.materialCode, materialName: rec.materialName, supplierName: rec.supplierName,
+          id:rec.planId,supplierCode:rec.supplierCode,factory:rec.factory,batchNo:rec.batchNo,materialCode: rec.materialCode, materialName: rec.materialName, supplierName: rec.supplierName,
           arrivalDate: rec.arrivalDate, asnNo: rec.asnNo, customerPartNo: rec.customerPartNo,
           voucher: rec.voucher, planQty: rec.planQty, shipDate: rec.shipDate
         };
@@ -725,7 +723,7 @@
         const plan = state.plans.find(p => String(p.id || p.voucher || p.asnNo || p.asnNumber || '') === planId)
           || getSelectablePlans().find(p => String(p.id || p.voucher || p.asnNo || p.asnNumber || '') === planId);
         if (!plan) { toast('未找到对应的物料计划，请重新选择', true); return; }
-        state.selectedPlan = plan;
+        state.selectedPlan = plan;useMaterialStandards();
         renderLinkedPlan();
       }
 
@@ -735,7 +733,7 @@
       const planId = params.get('planId');
       if (editId) loadEditing(editId);
       else {
-        state.items = DEFAULT_TEMPLATE.map(t => createItem(t));
+        state.items = [];
         state.selectedItemId = state.items.length ? state.items[0].id : null;
         renderLinkedPlan(); renderSidebar(); renderFormPanel();
         if (planId) loadPlanFromList(planId);

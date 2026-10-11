@@ -275,7 +275,8 @@
       font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 100;
     }
     .toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-  </style>
+  .page-body{max-width:none;width:auto;padding:24px}.receipt-workspace{display:grid;grid-template-columns:minmax(460px,42%) minmax(0,1fr);gap:20px;align-items:start}.receipt-view{background:white;padding:24px;border:1px solid var(--border);border-radius:8px;min-height:480px}.receipt-list{overflow:auto}.receipt-list table{width:100%;border-collapse:collapse;background:white}.receipt-list th,.receipt-list td{padding:14px 10px;text-align:left;border-bottom:1px solid var(--border)}.receipt-list tr[data-asn]{cursor:pointer}.receipt-list tr[data-asn]:hover{background:#eef9f9}.receipt-view input{padding:7px;border:1px solid var(--border);border-radius:4px}.receipt-view h2,.receipt-view p{margin:0 0 16px}.rate-row{padding:12px 0}.rate-track{height:9px;background:#eef2f5;border-radius:8px;margin:8px 0}.rate-fill{height:9px;background:#07868d;border-radius:8px}.receipt-view .btn-confirm{background:#07868d;color:white;padding:12px 20px;border-radius:4px;margin-top:16px}@media(max-width:1000px){.receipt-workspace{grid-template-columns:1fr}.page-body{padding:16px}}
+</style>
 </head>
 <body>
 
@@ -335,7 +336,7 @@
     </div>
 
     <!-- Receipt List -->
-    <div class="receipt-list" id="receiptList"></div>
+    <div class="receipt-workspace"><div class="receipt-list" id="receiptList"></div><section id="receiptView" class="receipt-view"><h2>交付统计</h2><div id="deliveryMetrics"></div><p>选择左侧ASN查看明细并确认收货。</p></section></div>
 
   </div>
 
@@ -452,41 +453,36 @@
     }
 
     /* ── Render ── */
+    let receiptDraft={},selectedAsn='';
+    function asnReceipts(){
+      const groups=new Map(),plans=JSON.parse(localStorage.getItem(PLAN_KEY)||'[]');
+      mergeReceipts().forEach(rec=>{const asn=rec.asnNo||rec.no;if(!groups.has(asn))groups.set(asn,{asnNo:asn,records:[],items:[]});const g=groups.get(asn);g.records.push(rec);rec.items.forEach(it=>g.items.push({...it,asnNo:asn}));});
+      return [...groups.values()].map(g=>{const linked=plans.filter(p=>p.asnNo===g.asnNo&&p.status!=='cancelled');g.items=g.items.map(it=>{const matches=linked.filter(p=>p.materialCode===it.materialCode);return {...it,expected:matches.length===1?Number(matches[0].actualShipQty??matches[0].promisedQty??matches[0].planQty):Number(it.actualShipQty??it.promisedQty??it.planQty),plan:matches[0]};});g.complete=g.records.every(r=>r.status==='ok')&&(!linked.length||linked.every(p=>p.status==='received'));return g;});
+    }
+    function metricsHtml(groups){
+      const date=v=>{const text=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(text)?Date.parse(text+'T00:00:00Z'):NaN};
+      const rates=[['准时发货率','shipDate','shipmentRegDate'],['准时到货率','arrivalDate','receivedTime']];
+      return rates.map(([label,planned,actual])=>{const eligible=groups.map(g=>g.items.map(i=>[date(i.plan?.[planned]),date(i.plan?.[actual])])).filter(a=>a.length&&a.every(([p,t])=>Number.isFinite(p)&&Number.isFinite(t)));const ok=eligible.filter(a=>a.every(([p,t])=>Math.abs(t-p)<=86400000)).length;const percent=eligible.length?Math.round(ok/eligible.length*100):null;return '<div class="rate-row">'+label+' <strong>'+(percent===null?'—':percent+'%')+'</strong><div class="rate-track"><div class="rate-fill" style="width:'+(percent||0)+'%"></div></div><small>准时 '+ok+' / 有效ASN '+eligible.length+'；缺少日期 '+(groups.length-eligible.length)+'</small></div>';}).join('')+'<p style="color:#8b95a1;margin-top:16px">计划日期±1天（含边界）。暂按ASN等权、全部明细准时统计；缺少实际日期不计入分母。图表为临时展示，待客户样式。</p>';
+    }
     function renderAll(){
-      const list = mergeReceipts();
-      const counts = { all:list.length, pending:0, ok:0 };
-      list.forEach(r=> counts[statusKey(r)]++);
-      document.getElementById('cAll').textContent = counts.all;
-      document.getElementById('cPending').textContent = counts.pending;
-      document.getElementById('cOk').textContent = counts.ok;
-      document.getElementById('statPending').textContent = counts.pending;
-      document.getElementById('statOk').textContent = counts.ok;
-      document.getElementById('pendingStrong').textContent = '待收货 ' + counts.pending + ' 笔';
-
-      const wrap = document.getElementById('receiptList');
-      const shown = curFilter==='all' ? list : list.filter(r=>statusKey(r)===curFilter);
-      if(!shown.length){
-        const label = { all:'暂无收货记录', pending:'暂无待收货', ok:'暂无已收货' }[curFilter];
-        wrap.innerHTML = `<div class="empty-state">${label}</div>`;
-        return;
-      }
-      wrap.innerHTML = shown.map(r=>{
-        const isSup = r.kind==='supplier';
-        const kindLabel = isSup ? '供应商直送' : '物流商取货';
-        const party = isSup ? (r.supplier||'-') : (r.carrier||'-');
-        const total = r.items.reduce((s,i)=>s+(Number(i.planQty)||0),0);
-        const sk = statusKey(r);
-        return `
-        <div class="receipt-card ${r.kind}" onclick="openDetail('${r.kind}|${esc(r.no)}')">
-          <div class="rc-top">
-            <span class="rc-kind ${r.kind}">${kindLabel}</span>
-            <span class="recent-status ${sk}">${statusLabel(r)}</span>
-          </div>
-          <div class="rc-code">ASN ${esc(r.asnNo || r.no)}</div>
-          <div class="rc-sub">${esc(party)} · 物料 ${r.items.length} 项 · 计划 ${fmt(total)} 件 · 实收 ${fmt(r.items.reduce((s,i)=>s+(Number(i.actualQty)||0),0))} 件</div>
-          <div class="rc-meta">${isSup ? '预计到货' : '预计取货'} ${esc(r.eta||'-')} · 登记 ${esc(r.time||'')}</div>
-        </div>`;
-      }).join('');
+      const groups=asnReceipts(),ok=groups.filter(g=>g.complete).length,pending=groups.length-ok;
+      [['cAll',groups.length],['cPending',pending],['cOk',ok],['statPending',pending],['statOk',ok]].forEach(([id,v])=>document.getElementById(id).textContent=v);
+      document.getElementById('pendingStrong').textContent='待收货 '+pending+' 笔';
+      const shown=groups.filter(g=>curFilter==='all'||(curFilter==='ok')===g.complete);
+      const wrap=document.getElementById('receiptList');wrap.innerHTML='<table><thead><tr><th>ASN / 供应商</th><th>物料项数</th><th>状态</th></tr></thead><tbody>'+shown.map(g=>'<tr data-asn="'+esc(g.asnNo)+'"><td><strong>'+esc(g.asnNo)+'</strong><br>'+esc(g.records[0].supplier||g.records[0].relSupplier||'—')+'</td><td>'+g.items.length+'</td><td>'+(g.complete?'已收货':'待收货')+'</td></tr>').join('')+'</tbody></table>'+(shown.length?'':'<p class="empty-state">暂无记录</p>');
+      wrap.querySelectorAll('[data-asn]').forEach(tr=>tr.onclick=()=>showAsn(tr.dataset.asn));
+      if(selectedAsn)showAsn(selectedAsn);else document.getElementById('deliveryMetrics').innerHTML=metricsHtml(groups);
+    }
+    function showAsn(asn){
+      selectedAsn=asn;const g=asnReceipts().find(g=>g.asnNo===asn);if(!g)return;
+      const draft=receiptDraft[asn]||{};
+      document.getElementById('receiptView').innerHTML='<h2>'+esc(asn)+'</h2>'+metricsHtml(asnReceipts())+'<table class="mat-table"><thead><tr><th>物料</th><th>系统数量</th><th>导入实收</th><th>比对</th></tr></thead><tbody>'+g.items.map(i=>{const q=draft[i.materialCode];return '<tr><td>'+esc(i.materialCode)+'</td><td>'+fmt(i.expected)+'</td><td>'+(q===undefined?(g.complete?fmt(i.actualQty):'未导入'):fmt(q))+'</td><td>'+(q===undefined?'—':q===i.expected?'一致':'不一致')+'</td></tr>';}).join('')+'</tbody></table><p>导入CSV：ASN号、物料编号、实际收货数量。全部物料比对一致后确认。</p><button id="confirmAsnReceipt" class="btn-confirm" '+(g.complete?'disabled':'')+'>'+(g.complete?'已收货':'确认收货')+'</button>';
+      document.getElementById('confirmAsnReceipt').onclick=()=>{
+        const plans=JSON.parse(localStorage.getItem(PLAN_KEY)||'[]').filter(p=>p.asnNo===asn&&p.status!=='cancelled');
+        if(new Set(g.items.map(i=>i.materialCode)).size!==g.items.length||plans.some(p=>!g.items.some(i=>i.materialCode===p.materialCode))||plans.some(p=>plans.filter(x=>x.materialCode===p.materialCode).length>1)){toast('ASN明细存在重复或缺失，无法确认，请核对数据');return;}
+        if(!g.items.length||g.items.some(i=>draft[i.materialCode]===undefined||draft[i.materialCode]!==i.expected)){toast('所有物料需先导入且与系统数量一致');return;}
+        g.records.forEach(rec=>{rec.items.forEach(it=>{it.actualQty=draft[it.materialCode];it.asnNo=asn;});rec.status='ok';rec.receivedTime=nowStr();saveByKind(rec.kind,rec);syncPlanReceipt(rec.items);});delete receiptDraft[asn];renderAll();toast('ASN全部物料已确认收货');
+      };
     }
 
     /* ── Detail ── */
@@ -829,16 +825,11 @@
         const mi=headers.findIndex(x=>['物料编号','materialCode'].includes(x));
         const qi=headers.findIndex(x=>['实际收货数量','actualArrivalQty','actualQty'].includes(x));
         if(ai<0||mi<0||qi<0){ toast('导入失败：需要 ASN号、物料编号、实际收货数量'); return; }
-        const imported=lines.map(line=>{const c=line.split(',');return{asnNo:(c[ai]||'').trim(),materialCode:(c[mi]||'').trim(),qty:Number(c[qi]||0)}});
-        let matched=0;
-        mergeReceipts().forEach(rec=>{
-          if(!imported.some(x=>x.asnNo===(rec.asnNo||rec.no))) return;
-          rec.items.forEach(it=>{const hit=imported.find(x=>x.asnNo===(rec.asnNo||rec.no)&&x.materialCode===it.materialCode);if(hit){it.actualQty=hit.qty;matched++;}});
-          const complete=rec.items.every(it=>Number(it.actualQty||0)>=Number(it.actualShipQty??it.promisedQty??it.planQty??0));
-          rec.status=complete?'ok':'shipped'; rec.receivedTime=nowStr();
-          saveByKind(rec.kind,rec); syncPlanReceipt(rec.items);
-        });
-        toast('收货记录已导入：匹配 '+matched+' 条物料明细'); renderAll(); e.target.value='';
+        const imported=lines.map(line=>{const c=line.split(',');return{asnNo:(c[ai]||'').trim(),materialCode:(c[mi]||'').trim(),qty:c[qi]?.trim()?Number(c[qi]):NaN}});
+        const groups=asnReceipts(),keys=new Set();
+        for(const item of imported){const key=item.asnNo+'|'+item.materialCode;const g=groups.find(g=>g.asnNo===item.asnNo);if(keys.has(key)||!Number.isFinite(item.qty)||item.qty<0||!g||g.items.filter(i=>i.materialCode===item.materialCode).length!==1){toast('导入失败：存在重复、未知物料或非法数量，未写入数据');e.target.value='';return;}keys.add(key);}
+        imported.forEach(it=>{(receiptDraft[it.asnNo]??={})[it.materialCode]=it.qty;});
+        selectedAsn=imported[0]?.asnNo||selectedAsn;renderAll();toast('导入比对完成，请核对后点击确认收货');e.target.value='';
       };
       reader.readAsText(file,'utf-8');
     });

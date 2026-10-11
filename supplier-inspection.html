@@ -129,7 +129,7 @@
     .list-title-main { display: inline-flex; align-items: center; gap: 8px; }
     .list-count { margin-left: auto; color: var(--text-3); font-size: 12px; font-weight: 400; }
     .plan-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
-    .plan-table { width: 100%; min-width: 1240px; border-collapse: collapse; }
+    .plan-table { width: 100%; min-width: 1340px; border-collapse: collapse; }
     .plan-table th, .plan-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; font-size: 13px; white-space: nowrap; }
     .plan-table th { background: #f8fafb; color: var(--text-2); font-size: 12px; font-weight: 600; }
     .plan-table tbody tr:hover { background: #fbfdfd; }
@@ -178,6 +178,29 @@
     .result-pass { color: var(--success); font-weight: 600; }
     .result-fail { color: var(--danger); font-weight: 600; }
 
+    /* 录入检验结果：与工厂实验室检测共用的表格化弹窗结构 */
+    .entry-modal { max-width: 1080px; }
+    .entry-helper { margin: 0 0 14px; padding: 10px 12px; border-left: 3px solid var(--primary); background: var(--primary-soft); color: var(--text-2); font-size: 12px; }
+    .entry-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 16px; margin-bottom: 18px; padding: 14px; border-radius: 8px; background: var(--muted); }
+    .entry-meta-item span { display: block; color: var(--text-3); font-size: 11px; }
+    .entry-meta-item strong { display: block; margin-top: 2px; font-size: 13px; }
+    .entry-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    .entry-table { width: 100%; min-width: 1020px; border-collapse: collapse; }
+    .entry-table th, .entry-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; font-size: 13px; }
+    .entry-table th { background: #fbfcfd; color: var(--text-2); font-weight: 600; white-space: nowrap; }
+    .entry-table tr:last-child td { border-bottom: 0; }
+    .entry-value-editor { min-width: 230px; }
+    .entry-value-meta { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; color: var(--text-3); font-size: 11px; }
+    .entry-value-meta span:first-child { color: var(--primary-dark); font-weight: 600; }
+    .entry-value-list { display: grid; gap: 6px; max-height: 220px; overflow: auto; padding-right: 3px; }
+    .entry-value-row { display: grid; grid-template-columns: 28px minmax(110px, 1fr) 34px; gap: 6px; align-items: center; }
+    .entry-value-index { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 50%; background: var(--muted); color: var(--text-3); font-size: 11px; }
+    .entry-input { width: 100%; min-width: 110px; height: 34px; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: 5px; }
+    .entry-remove { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 5px; background: #fff; color: var(--text-3); font-size: 18px; }
+    .entry-remove:hover { border-color: #efb7ba; background: var(--danger-soft); color: var(--danger); }
+    .entry-add { width: 100%; min-height: 34px; margin-top: 7px; border: 1px dashed #9bcfd1; border-radius: 6px; background: #f5fbfb; color: var(--primary-dark); font-size: 12px; }
+    .entry-add:hover { border-color: var(--primary); background: var(--primary-soft); }
+
     .toast-region { position: fixed; top: 20px; left: 50%; z-index: 1200; transform: translateX(-50%); display: grid; gap: 8px; pointer-events: none; }
     .toast { min-width: 260px; max-width: calc(100vw - 32px); padding: 11px 15px; border: 1px solid #b8e0ca; border-radius: 7px; background: #f2fbf5; color: #277645; box-shadow: var(--shadow); animation: toastIn .2s ease-out; text-align: center; font-size: 13px; }
     .toast.error { border-color: #f1bfc1; background: #fff3f3; color: #b63a40; }
@@ -187,6 +210,7 @@
     @media (max-width: 1100px) {
       .stat-cards { grid-template-columns: repeat(2, 1fr); }
       .detail-meta { grid-template-columns: repeat(2, 1fr); }
+      .entry-meta { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 720px) {
       .page-body { padding: 16px; }
@@ -194,6 +218,7 @@
       .top-bar { padding: 0 16px; }
       .top-bar .company { display: none; }
       .detail-meta { grid-template-columns: 1fr; }
+      .entry-meta { grid-template-columns: 1fr; }
       .history-filter .form-field { width: 100%; min-width: 0; }
       .history-filter .spacer { display: none; }
     }
@@ -253,12 +278,12 @@
             <input type="text" id="hMaterialCode" placeholder="请输入零件号">
           </div>
           <div class="form-field">
-            <label>ASN号</label>
-            <input type="text" id="hAsnNo" placeholder="请输入ASN号">
+            <label>工厂</label>
+            <input type="text" id="hAsnNo" placeholder="请输入工厂">
           </div>
           <div class="form-field">
-            <label>检验项目</label>
-            <input type="text" id="hItemName" placeholder="请输入检验项目">
+            <label>图纸编号</label>
+            <input type="text" id="hItemName" placeholder="请输入图纸编号">
           </div>
           <div class="form-field">
             <label>到料日期 起</label>
@@ -305,6 +330,30 @@
     </div>
   </div>
 
+  <div class="modal-layer" id="entryModal" aria-hidden="true">
+    <div class="modal entry-modal">
+      <div class="modal-head">
+        <h3 id="entryTitle">录入出货检验数据</h3>
+        <button class="close-btn" type="button" data-close="entryModal" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="entry-helper">检验标准不可修改。请按实际抽样数量录入实测值；每个检验项目可录入多个数据，系统仅在提交时依据标准值及上下公差自动判定。</p>
+        <div class="entry-meta" id="entryMeta"></div>
+        <div class="entry-table-wrap">
+          <table class="entry-table">
+            <thead><tr><th>检验项目</th><th>检验方法</th><th>技术要求 / 图纸编号</th><th>标准值</th><th>上公差</th><th>下公差</th><th>实测值</th></tr></thead>
+            <tbody id="entryBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" type="button" data-close="entryModal">取消</button>
+        <button class="btn" id="saveEntryDraft" type="button">保存草稿</button>
+        <button class="btn btn-primary" id="submitEntry" type="button">提交出货检查</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-region" id="toastRegion"></div>
 
   <script>
@@ -324,7 +373,7 @@
       function pad(n) { return String(n).padStart(2, '0'); }
       function escapeHtml(v) { return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
       function empty(v) { return v === null || v === undefined || String(v).trim() === ''; }
-      function toNum(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+      function toNum(v) { if (empty(v)) return null; const n = Number(v); return Number.isFinite(n) ? n : null; }
       function evaluateItem(it) {
         if (!it || it.type !== 'number') return it && it.result ? it.result : '';
         const vals = (it.measurements || []).map(v => toNum(v)).filter(v => v !== null);
@@ -342,6 +391,13 @@
         return '合格';
       }
 
+      function reportResult(rec) {
+        if (!rec || rec.status !== 'submitted') return '—';
+        const items = rec.items || [];
+        if (items.some(i => i.result === '不合格')) return '不合格';
+        return items.length && items.every(i => i.result === '合格') ? '合格' : '无法判定';
+      }
+
       function loadPlans() {
         try { const p = JSON.parse(localStorage.getItem(PLAN_KEY)); return Array.isArray(p) ? p : []; } catch { return []; }
       }
@@ -350,7 +406,15 @@
       }
       function saveInspections(list) { localStorage.setItem(INSP_KEY, JSON.stringify(list)); }
 
-      const state = { plans: loadPlans(), inspections: loadInspections() };
+      const state = { plans: loadPlans(), inspections: loadInspections(), entry: null };
+      const MAX_MEASUREMENTS = 32;
+      const DEFAULT_TEMPLATE = [
+        { name: '包装', method: '目测', type: 'text', requirement: '防潮、防尘、无破损、无脏污', checkCount: 1 },
+        { name: '孔径', method: '卡尺', type: 'number', requirement: '5.30 ± 0.12 mm', checkCount: 5, standardValue: 5.3, upperTolerance: 0.12, lowerTolerance: -0.12 },
+        { name: '轮廓度', method: 'CMM', type: 'number', requirement: '0.16 Max', checkCount: 3, standardValue: 0.16, upperTolerance: 0, lowerTolerance: -0.16 },
+        { name: '清洁度', method: '清洁度设备', type: 'number', requirement: '清洁度不大于 5 mg/pcs', checkCount: 2, standardValue: 5, upperTolerance: 0, lowerTolerance: -5 },
+        { name: '清洁度', method: '清洁度设备', type: 'text', requirement: '无可见异物', checkCount: 1 }
+      ];
 
       function toast(msg, error) {
         const region = document.getElementById('toastRegion');
@@ -398,8 +462,8 @@
 
       function getInspectionForPlan(plan) {
         return state.inspections.find(rec =>
-          (plan.voucher && rec.voucher === plan.voucher) ||
-          ((plan.asnNo || plan.asnNumber) && rec.asnNo === (plan.asnNo || plan.asnNumber))
+          (plan.voucher && rec.voucher === plan.voucher && rec.materialCode===plan.materialCode) ||
+          ((plan.asnNo || plan.asnNumber) && rec.asnNo === (plan.asnNo || plan.asnNumber)&&rec.materialCode===plan.materialCode)
         ) || null;
       }
 
@@ -414,16 +478,16 @@
           const rec = getInspectionForPlan(plan);
           const asn = plan.asnNo || plan.asnNumber || '';
           if (fCode && !`${plan.materialCode || ''} ${plan.materialName || ''}`.toLowerCase().includes(fCode)) return false;
-          if (fAsn && !String(asn).toLowerCase().includes(fAsn)) return false;
+          if (fAsn && !String(plan.factory||rec?.factory||'').toLowerCase().includes(fAsn)) return false;
           if (fStart && plan.arrivalDate && plan.arrivalDate < fStart) return false;
           if (fEnd && plan.arrivalDate && plan.arrivalDate > fEnd) return false;
           const hasNg = !!rec && (rec.items || []).some(i => i.result === '不合格');
           const isPending = !rec || rec.status === 'draft';
           if (fResult === 'pending' && !isPending) return false;
-          if (fResult === 'ok' && (!rec || rec.status !== 'submitted' || hasNg)) return false;
+          if (fResult === 'ok' && reportResult(rec) !== '合格') return false;
           if (fResult === 'ng' && !hasNg) return false;
           if (fItem) {
-            const names = (rec?.items || []).map(i => String(i.name).toLowerCase()).join(' ');
+            const names = (rec?.items || []).map(i => String(i.drawingNumber||'').toLowerCase()).join(' ');
             if (!names.includes(fItem)) return false;
           }
           return true;
@@ -445,23 +509,23 @@
         const rows = list.map(plan => {
           const rec = getInspectionForPlan(plan);
           const hasNg = !!rec && (rec.items || []).some(i => i.result === '不合格');
-          const result = !rec || rec.status === 'draft' ? '—' : (hasNg ? '不合格' : '合格');
+          const result = reportResult(rec);
           const statusClass = !rec ? 'pending' : rec.status;
           const statusText = !rec ? '待检验' : (rec.status === 'draft' ? '录入中' : '已提交');
           const planKey = plan.id || plan.voucher || plan.asnNo || plan.asnNumber || '';
           const actions = !rec
             ? (plan.status === 'cancelled'
                 ? `<button class="btn btn-sm" type="button" disabled>不可检验</button>`
-                : `<a class="btn btn-primary btn-sm" href="supplier-inspection-create.html?planId=${encodeURIComponent(planKey)}">录入检验结果</a>`)
+                : `<button class="btn btn-primary btn-sm" type="button" data-entry-plan="${escapeHtml(planKey)}">录入检验结果</button>`)
             : rec.status === 'draft'
-              ? `<a class="btn btn-primary btn-sm" href="supplier-inspection-create.html?id=${encodeURIComponent(rec.id)}">继续录入</a>`
+              ? `<button class="btn btn-primary btn-sm" type="button" data-entry-report="${escapeHtml(rec.id)}">继续录入</button>`
               : `<button class="btn btn-outline btn-sm" type="button" data-action="detail" data-id="${escapeHtml(rec.id)}">查看结果</button>
                  <button class="btn btn-outline btn-sm" type="button" data-action="preview" data-id="${escapeHtml(rec.id)}">预览</button>
                  <button class="btn btn-success btn-sm" type="button" data-action="export" data-id="${escapeHtml(rec.id)}">导出</button>`;
           return `<tr>
             <td>${escapeHtml(plan.asnNo || plan.asnNumber || '—')}</td>
             <td class="material-cell"><strong>${escapeHtml(plan.materialCode || '—')}</strong><span>${escapeHtml(plan.materialName || '—')}</span></td>
-            <td>${escapeHtml(plan.customerPartNo || plan.customerPartNumber || '—')}</td>
+            <td>${escapeHtml(rec?.batchNo || '—')}</td>
             <td>${escapeHtml(plan.voucher || '—')}</td>
             <td>${escapeHtml(plan.shipDate || '—')}</td>
             <td>${escapeHtml(plan.arrivalDate || '—')}</td>
@@ -474,13 +538,21 @@
           </tr>`;
         }).join('');
         wrap.innerHTML = `<div class="plan-table-wrap"><table class="plan-table">
-          <thead><tr><th>ASN号</th><th>物料</th><th>客户零件号</th><th>采购凭证</th><th>发货日期</th><th>到料日期</th><th class="num">计划数量</th><th>交付方式</th><th>计划状态</th><th>检验状态</th><th>检验结果</th><th>操作</th></tr></thead>
+          <thead><tr><th>ASN号</th><th>物料</th><th>批次号</th><th>采购凭证</th><th>发货日期</th><th>到料日期</th><th class="num">计划数量</th><th>交付方式</th><th>计划状态</th><th>检验状态</th><th>检验结果</th><th>操作</th></tr></thead>
           <tbody>${rows}</tbody>
         </table></div>`;
         bindListActions();
       }
 
       function bindListActions() {
+        document.querySelectorAll('#historyList [data-entry-plan]').forEach(btn => btn.addEventListener('click', () => {
+          const plan = getAllPlans().find(p => String(p.id || p.voucher || p.asnNo || p.asnNumber || '') === btn.dataset.entryPlan);
+          if (plan) openEntry(plan);
+        }));
+        document.querySelectorAll('#historyList [data-entry-report]').forEach(btn => btn.addEventListener('click', () => {
+          const rec = state.inspections.find(r => r.id === btn.dataset.entryReport);
+          if (rec) openEntry(null, rec);
+        }));
         document.querySelectorAll('#historyList [data-action]').forEach(btn => {
           btn.addEventListener('click', () => {
             const id = btn.dataset.id;
@@ -492,6 +564,53 @@
             else if (action === 'export') exportReport(rec);
           });
         });
+      }
+
+      function drawingText(item, fallback = '') {
+        const values = Array.isArray(item?.drawingNumbers) ? item.drawingNumbers : [];
+        return values.map(value => String(value).trim()).filter(Boolean).join('、') || item?.drawingNumber || fallback || '';
+      }
+      function formatNow() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+      function createEntryItem(item, index) {
+        return { id: item?.id || `entry-${index}-${uuid()}`, name: item?.name || '', method: item?.method || '', type: item?.type || 'number', requirement: item?.requirement || '', drawingNumber: drawingText(item), drawingNumbers: Array.isArray(item?.drawingNumbers) ? [...item.drawingNumbers] : [], checkCount: toNum(item?.checkCount) ?? 1, standardValue: toNum(item?.standardValue), upperTolerance: toNum(item?.upperTolerance), lowerTolerance: toNum(item?.lowerTolerance), measurements: Array.isArray(item?.measurements) ? item.measurements.slice(0, MAX_MEASUREMENTS) : [] };
+      }
+      function entryItemsForPlan(plan) {
+        let materials = [];
+        try { materials = JSON.parse(localStorage.getItem('warehouse-material-v1') || '[]'); } catch { /* use demo template */ }
+        const material = materials.find(m => m.materialCode === plan.materialCode && (!m.supplierCode || m.supplierCode === plan.sapSupplierCode));
+        const standards = material?.inspectionStandards || [];
+        return (standards.length ? standards.map(s => ({ name: s.inspectionItem, method: s.inspectionMethod, requirement: s.technicalRequirement, drawingNumber: drawingText(s, material?.drawingNumber), drawingNumbers: s.drawingNumbers, type: toNum(s.standardValue) === null ? 'text' : 'number', checkCount: s.inspectionQty, standardValue: s.standardValue, upperTolerance: s.upperTolerance, lowerTolerance: s.lowerTolerance })) : DEFAULT_TEMPLATE).map(createEntryItem);
+      }
+      function entryMeta(plan) {
+        return [['ASN号', plan.asnNo || plan.asnNumber || '—'], ['供应商', plan.supplierName || '苏州瑞玛精密工业集团股份有限公司'], ['物料', `${plan.materialCode || '—'} · ${plan.materialName || '—'}`], ['采购凭证', plan.voucher || '—'], ['到料日期', plan.arrivalDate || '—'], ['计划数量', empty(plan.planQty) ? '—' : Number(plan.planQty).toLocaleString('zh-CN')], ['交付方式', plan.deliveryMode || '—'], ['计划状态', planStatusText(plan.status)]].map(([label, value]) => `<div class="entry-meta-item"><span>${label}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+      }
+      function entryValueRow(item, index, value = '') { return `<div class="entry-value-row"><span class="entry-value-index">${index + 1}</span><input class="entry-input" ${item.type === 'text' ? 'type="text"' : 'type="number" step="any" inputmode="decimal"'} data-entry-value value="${escapeHtml(value)}" aria-label="${escapeHtml(item.name)} 实测值 ${index + 1}"><button class="entry-remove" type="button" data-remove-entry-value aria-label="删除第 ${index + 1} 个实测值">×</button></div>`; }
+      function entryValueEditor(item) {
+        const values = item.measurements.length ? item.measurements : [''];
+        return `<div class="entry-value-editor"><div class="entry-value-meta"><span data-entry-count>${item.measurements.filter(v => !empty(v)).length ? `已录入 ${item.measurements.filter(v => !empty(v)).length} 个` : '待录入'}</span><span>最多 ${MAX_MEASUREMENTS} 个</span></div><div class="entry-value-list">${values.map((value, index) => entryValueRow(item, index, value)).join('')}</div><button class="entry-add" type="button" data-add-entry-value>＋ 添加实测值</button></div>`;
+      }
+      function renderEntry() {
+        const entry = state.entry; if (!entry) return;
+        document.getElementById('entryTitle').textContent = entry.editing ? '编辑出货检验数据' : '录入出货检验数据';
+        document.getElementById('entryMeta').innerHTML = entryMeta(entry.plan);
+        document.getElementById('entryBody').innerHTML = entry.items.map((item, index) => `<tr data-entry-row="${index}"><td><strong>${escapeHtml(item.name)}</strong></td><td>${escapeHtml(item.method || '—')}</td><td>${escapeHtml(item.requirement || '—')}<span class="material-cell"><span>图纸 ${escapeHtml(item.drawingNumber || '—')}</span></span></td><td>${item.standardValue ?? '—'}</td><td>${item.upperTolerance ?? '—'}</td><td>${item.lowerTolerance ?? '—'}</td><td>${entryValueEditor(item)}</td></tr>`).join('');
+      }
+      function openEntry(plan, rec = null) {
+        const recordPlan = rec ? { id: rec.planId, supplierCode: rec.supplierCode, factory: rec.factory, materialCode: rec.materialCode, materialName: rec.materialName, supplierName: rec.supplierName, arrivalDate: rec.arrivalDate, asnNo: rec.asnNo, voucher: rec.voucher, planQty: rec.planQty, shipDate: rec.shipDate, batchNo: rec.batchNo, deliveryMode: rec.deliveryMode, status: rec.planStatus } : plan;
+        state.entry = { plan: recordPlan, record: rec, editing: Boolean(rec), items: (rec?.items || entryItemsForPlan(plan)).map(createEntryItem) };
+        renderEntry(); openModal('entryModal');
+      }
+      function renumberEntryValues(editor, item) {
+        editor.querySelectorAll('.entry-value-row').forEach((row, index) => { row.querySelector('.entry-value-index').textContent = index + 1; row.querySelector('[data-entry-value]').setAttribute('aria-label', `${item.name} 实测值 ${index + 1}`); row.querySelector('[data-remove-entry-value]').setAttribute('aria-label', `删除第 ${index + 1} 个实测值`); });
+      }
+      function saveEntry(status) {
+        const entry = state.entry; if (!entry) return;
+        const items = entry.items.map(item => { const measurements = item.measurements.filter(v => !empty(v)); return { ...item, measurements, result: status === 'submitted' ? evaluateItem({ ...item, measurements }) || '无法判定' : '' }; });
+        const p = entry.plan, old = entry.record;
+        const rec = { id: old?.id || uuid(), planId: p.id || '', supplierCode: p.sapSupplierCode || p.supplierCode || '', factory: p.factory || '', batchNo: p.batchNo || '', materialCode: p.materialCode || '', materialName: p.materialName || '', supplierName: p.supplierName || '', arrivalDate: p.arrivalDate || '', asnNo: p.asnNo || p.asnNumber || '', voucher: p.voucher || '', planQty: toNum(p.planQty) ?? '', shipDate: p.shipDate || '', deliveryMode: p.deliveryMode || '', planStatus: p.status || '', status, items, createdAt: old?.createdAt || formatNow(), updatedAt: formatNow() };
+        const index = state.inspections.findIndex(x => x.id === rec.id);
+        if (index >= 0) state.inspections[index] = rec; else state.inspections.unshift(rec);
+        saveInspections(state.inspections); closeModal('entryModal'); state.entry = null; updateStats(); renderList(); toast(status === 'submitted' ? '出货检查已提交' : '草稿已保存');
       }
 
       // 详情
@@ -524,7 +643,7 @@
           <div class="detail-table-wrap">
             <table class="detail-table">
               <thead><tr>
-                <th class="center" style="width:40px;">序号</th><th>检验项目</th><th>检验方法</th><th>类别</th><th>技术要求</th>
+                <th class="center" style="width:40px;">序号</th><th>检验项目</th><th>检验方法</th><th>类别</th><th>技术要求 / 图纸编号</th>
                 <th class="num">检验数</th><th class="num">标准值</th><th class="num">上公差</th><th class="num">下公差</th>
                 <th class="center">检验结果</th><th>实测记录</th><th class="num">检验数量</th><th class="num">BW实验室</th>
               </tr></thead>
@@ -583,7 +702,7 @@
           <div class="meta">${meta.map(([l, v]) => `<div><span>${l}</span><span>${escapeHtml(v ?? '—')}</span></div>`).join('')}</div>
           <table>
             <thead><tr>
-              <th class="c" style="width:36px;">序号</th><th>检验项目</th><th>检验方法</th><th>类别</th><th>技术要求</th>
+              <th class="c" style="width:36px;">序号</th><th>检验项目</th><th>检验方法</th><th>类别</th><th>技术要求 / 图纸编号</th>
               <th class="r">检验数</th><th class="r">标准值</th><th class="r">上公差</th><th class="r">下公差</th>
               <th class="c">检验结果</th><th>实测记录</th><th class="r">检验数量</th><th class="r">BW实验室</th>
             </tr></thead>
@@ -636,6 +755,40 @@
         document.getElementById('hResult').value = '';
         renderList();
       });
+      document.getElementById('entryBody').addEventListener('input', event => {
+        const input = event.target.closest('[data-entry-value]');
+        if (!input || !state.entry) return;
+        const row = input.closest('[data-entry-row]');
+        const item = state.entry.items[Number(row.dataset.entryRow)];
+        const valueRow = input.closest('.entry-value-row');
+        const index = [...valueRow.parentElement.querySelectorAll('.entry-value-row')].indexOf(valueRow);
+        item.measurements[index] = input.value;
+        valueRow.closest('.entry-value-editor').querySelector('[data-entry-count]').textContent = item.measurements.filter(v => !empty(v)).length ? `已录入 ${item.measurements.filter(v => !empty(v)).length} 个` : '待录入';
+      });
+      document.getElementById('entryBody').addEventListener('click', event => {
+        const add = event.target.closest('[data-add-entry-value]');
+        const remove = event.target.closest('[data-remove-entry-value]');
+        if ((!add && !remove) || !state.entry) return;
+        const row = event.target.closest('[data-entry-row]');
+        const item = state.entry.items[Number(row.dataset.entryRow)];
+        const editor = row.querySelector('.entry-value-editor');
+        const list = editor.querySelector('.entry-value-list');
+        if (add) {
+          if (item.measurements.length >= MAX_MEASUREMENTS) { toast(`每个检验项目最多 ${MAX_MEASUREMENTS} 条实测记录`, true); return; }
+          item.measurements.push(''); list.insertAdjacentHTML('beforeend', entryValueRow(item, list.querySelectorAll('.entry-value-row').length));
+          list.querySelector('.entry-value-row:last-child .entry-input').focus();
+        } else {
+          const valueRow = remove.closest('.entry-value-row');
+          const index = [...list.querySelectorAll('.entry-value-row')].indexOf(valueRow);
+          if (list.querySelectorAll('.entry-value-row').length === 1) { item.measurements[0] = ''; valueRow.querySelector('[data-entry-value]').value = ''; }
+          else { item.measurements.splice(index, 1); valueRow.remove(); }
+          renumberEntryValues(editor, item);
+        }
+        editor.querySelector('[data-entry-count]').textContent = item.measurements.filter(v => !empty(v)).length ? `已录入 ${item.measurements.filter(v => !empty(v)).length} 个` : '待录入';
+      });
+      document.getElementById('saveEntryDraft').addEventListener('click', () => saveEntry('draft'));
+      document.getElementById('submitEntry').addEventListener('click', () => saveEntry('submitted'));
+      window.addEventListener('keydown', event => { if (event.key === 'Escape') document.querySelectorAll('.modal-layer.show').forEach(layer => closeModal(layer.id)); });
 
       // 初始化
       updateStats();

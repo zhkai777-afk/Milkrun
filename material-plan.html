@@ -31,6 +31,7 @@
     }
 
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     html, body { margin: 0; min-height: 100%; }
     body {
       background: var(--canvas);
@@ -151,15 +152,15 @@
     .col-shipreg { display: none; }
     .tab-in_transit .col-shipreg,
     .tab-received .col-shipreg { display: table-cell; }
+    /* 供应商名称保持两行信息密度，完整名称可通过悬停查看。 */
+    #planTable .col-supplier { width: 154px; min-width: 154px; max-width: 154px; white-space: normal; }
+    #planTable td.col-supplier { line-height: 1.45; }
+    .cell-two-lines { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
 
     .diff-tag { display: inline-flex; align-items: center; white-space: nowrap; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
     .diff-tag.same { color: #388951; background: var(--success-soft); }
     .diff-tag.diff { color: #b73238; background: var(--danger-soft); }
     .diff-tag.missing { color: #7b8590; background: #eef1f4; }
-    .logistics-cell { display: inline-flex; align-items: center; gap: 6px; }
-    .logistics-cell .logistics-name { white-space: nowrap; }
-    .logistics-cell .change-btn { border: 0; background: transparent; color: var(--primary); cursor: pointer; font-size: 12px; padding: 2px 4px; white-space: nowrap; border-radius: 3px; }
-    .logistics-cell .change-btn:hover { background: rgba(7,134,141,.1); text-decoration: underline; }
 
     .empty { padding: 64px 20px; text-align: center; color: var(--text-3); }
     .empty .icon { width: 34px; height: 34px; margin-bottom: 8px; color: #b8c0ca; }
@@ -167,6 +168,8 @@
     /* 分页 */
     .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
     .pagination .total { color: var(--text-3); font-size: 13px; margin-right: auto; }
+    .page-numbers { display: flex; align-items: center; gap: 8px; }
+    .page-ellipsis { min-width: 20px; color: var(--text-3); text-align: center; line-height: 34px; }
     .page-size { min-height: 34px; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: 5px; background: #fff; color: var(--text); }
     .page-btn { min-width: 34px; min-height: 34px; padding: 0 9px; border: 1px solid var(--border-strong); border-radius: 5px; background: #fff; color: var(--text-2); }
     .page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
@@ -192,6 +195,7 @@
     .form-row input:focus, .form-row select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); outline: none; }
     .form-row input:disabled, .form-row select:disabled { background: #f4f6f8; color: #6c7680; cursor: not-allowed; border-color: #e0e4e8; }
     .field-error { min-height: 19px; margin-top: 4px; color: var(--danger); font-size: 12px; }
+    .field-hint { margin-top: 4px; color: var(--text-3); font-size: 12px; line-height: 1.5; }
 
     /* 编辑计划弹窗：双列紧凑布局 */
     .plan-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 20px; }
@@ -201,6 +205,21 @@
     .plan-form-grid .form-row textarea { width: 100%; border-radius: 5px; resize: vertical; }
     .plan-form-grid .form-section-title { grid-column: 1 / -1; font-size: 14px; font-weight: 600; color: var(--text); margin-top: 4px; padding-bottom: 2px; border-bottom: 1px solid var(--border); }
     .plan-form-grid .form-section-title:first-child { margin-top: 0; }
+    .plan-form-grid[hidden] { display: none; }
+
+    /* 查看计划：使用标签—值信息块，避免以禁用输入框表达只读状态 */
+    .plan-detail { display: grid; gap: 24px; }
+    .plan-detail[hidden] { display: none; }
+    .detail-section { display: grid; gap: 0; }
+    .detail-section-title { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text); font-size: 14px; font-weight: 600; }
+    .detail-section-title::before { content: ''; width: 3px; height: 16px; border-radius: 2px; background: var(--primary); }
+    .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--border); }
+    .detail-item { min-width: 0; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .detail-item:nth-child(odd) { border-right: 1px solid var(--border); }
+    .detail-item.full-width { grid-column: 1 / -1; border-right: 0; }
+    .detail-label { margin-bottom: 5px; color: var(--text-3); font-size: 12px; line-height: 1.4; }
+    .detail-value { min-height: 22px; color: var(--text); font-size: 14px; font-weight: 500; line-height: 1.6; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    .detail-value.empty { padding: 0; text-align: left; color: var(--text-3); }
 
     .promise-summary { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; font-size: 13px; line-height: 1.9; color: var(--text-2); }
     .promise-summary p { margin: 0; }
@@ -273,6 +292,8 @@
       .pagination { justify-content: center; }
       .pagination .total { margin-right: 0; width: 100%; text-align: center; }
       .tabs { overflow-x: auto; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-item:nth-child(odd) { border-right: 0; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -285,7 +306,13 @@
     .view-tab.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px rgba(27,39,51,.14); }
 
     /* 物料视图 */
-    .material-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .material-layout { display: block; }
+    .material-toolbar { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)) repeat(2, minmax(140px, 1fr)) minmax(180px, 1fr) minmax(150px, 1fr) auto; gap: 12px; align-items: end; }
+    .material-toolbar .field { min-width: 0 !important; }
+    .material-toolbar .field label { display: block; margin-bottom: 5px; color: var(--text-2); font-size: 13px; }
+    .material-toolbar .field input, .material-toolbar .field select { width: 100%; min-height: 36px; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 5px; background: #fff; color: var(--text); }
+    .material-toolbar .field select:disabled { background: #f4f6f8; color: #6c7680; cursor: not-allowed; }
+    .material-query-actions { display: flex; gap: 8px; }
     .material-list { max-height: calc(100dvh - 230px); overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
     .material-card { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--border); background: var(--surface); padding: 14px 16px; display: block; cursor: pointer; transition: background .15s; }
     .material-card:last-child { border-bottom: 0; }
@@ -335,7 +362,8 @@
     .cal-cell.blank { background: #fcfcfd; }
     .cal-cell:nth-child(7n) { border-right: 0; }
     .cal-cell .cal-date { font-size: 12px; color: var(--text-3); }
-    .cal-cell.has-data { cursor: pointer; background: var(--primary-soft); transition: background .15s; }
+    .cal-cell.has-data { cursor: pointer; background: var(--primary-soft); transition: background .15s; font: inherit; text-align: left; }
+    .cal-cell.has-data > span { display: block; }
     .cal-cell.has-data:hover { background: #d7efef; }
     .cal-cell.selected { box-shadow: inset 0 0 0 2px var(--primary); background: #d0eded; }
     .cal-cell .cal-plan, .cal-cell .cal-promised { font-size: 12px; margin-top: 5px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -344,15 +372,25 @@
     .cal-detail { padding: 14px 18px; border-top: 1px solid var(--border); background: #fbfcfd; }
     .cal-detail-head { font-weight: 600; margin-bottom: 10px; }
     .cal-detail .empty { padding: 18px 0; }
+    .day-plan-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+    .day-plan-table { width: 100%; min-width: 980px; border-collapse: separate; border-spacing: 0; }
+    .day-plan-table th { padding: 10px 12px; background: #f7f9fa; border-bottom: 1px solid var(--border); color: var(--text-2); font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; }
+    .day-plan-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); color: var(--text); font-size: 13px; vertical-align: middle; }
+    .day-plan-table tbody tr:last-child td { border-bottom: 0; }
+    .day-plan-table tbody tr:hover td { background: var(--primary-soft); }
+    .day-plan-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .day-plan-table .supplier { min-width: 180px; }
+    .day-plan-table .voucher { min-width: 170px; }
+    .day-plan-table .asn { min-width: 130px; }
     @media (max-width: 820px) {
-      .material-layout { grid-template-columns: 1fr; }
+      .material-toolbar { grid-template-columns: 1fr 1fr; }
+      .material-query-actions { grid-column: 1 / -1; }
       .material-list { max-height: 300px; }
       .material-detail { min-height: auto; }
       .cal-cell { min-height: 74px; }
     }
     /* 承诺调整 / 历史 / 缺口预警 */
     textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); resize: vertical; }
-    .req { color: var(--danger); }
     .form-summary { background: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 13px; color: var(--text-2); }
     .form-summary p { margin: 0 0 4px; }
     .form-summary p:last-child { margin-bottom: 0; }
@@ -361,11 +399,14 @@
     .adj-badge:hover { filter: brightness(.97); }
     .warn-tag { display: inline-block; margin-left: 4px; color: var(--danger); background: var(--danger-soft); border: 1px solid var(--danger); border-radius: 999px; padding: 0 7px; font-size: 11px; font-weight: 600; }
     .cell-ph { color: var(--text-3); font-style: italic; }
-    .history-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-    .history-list li { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--surface); }
-    .history-list .h-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); }
-    .history-list .h-change { font-size: 14px; font-weight: 600; margin: 4px 0; font-variant-numeric: tabular-nums; }
-    .history-list .h-reason { font-size: 13px; color: var(--text-2); }
+    .history-timeline { list-style: none; margin: 16px 0 0; padding: 0 0 0 22px; position: relative; }
+    .history-timeline::before { content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 1px; background: var(--border); }
+    .history-timeline li { position: relative; padding: 0 0 18px 14px; }
+    .history-timeline li:last-child { padding-bottom: 0; }
+    .history-timeline li::before { content: ''; position: absolute; left: -21px; top: 4px; width: 10px; height: 10px; box-sizing: border-box; border: 2px solid var(--primary); border-radius: 50%; background: var(--surface); }
+    .history-timeline .h-row { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+    .history-timeline .h-change { font-size: 14px; font-weight: 600; margin: 3px 0; }
+    .history-timeline .h-reason { font-size: 13px; color: var(--text-2); line-height: 1.5; }
     .summary-bar { display: flex; gap: 24px; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; color: var(--text-2); }
     .summary-bar b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
     .pr-meta .cal-promise { width: 84px; padding: 2px 6px; }
@@ -405,12 +446,24 @@
             <input id="fVoucher" type="text" placeholder="请输入采购凭证" autocomplete="off">
           </div>
           <div class="field">
+            <label for="fAsnNo">ASN号</label>
+            <input id="fAsnNo" type="text" placeholder="请输入ASN号" autocomplete="off">
+          </div>
+          <div class="field">
             <label for="fPlanner">计划员</label>
             <input id="fPlanner" type="text" placeholder="请输入计划员" autocomplete="off">
           </div>
           <div class="field">
             <label for="fShipDate">发货日期</label>
             <input id="fShipDate" type="date">
+          </div>
+          <div class="field">
+            <label for="fDeliveryMode">配送方式</label>
+            <select id="fDeliveryMode">
+              <option value="">全部配送方式</option>
+              <option value="直送">直送</option>
+              <option value="自提">自提</option>
+            </select>
           </div>
           <div class="filter-actions">
             <button class="btn btn-primary" type="submit">
@@ -453,7 +506,7 @@
                 <th class="col-check"><input class="check" id="selectAll" type="checkbox" aria-label="全选"></th>
                 <th>物料编号</th>
                 <th>SAP供应商编号</th>
-                <th>供应商名称</th>
+                <th class="col-supplier">供应商名称</th>
                 <th>计划员</th>
                 <th>采购凭证</th>
                 <th>ASN号</th>
@@ -490,7 +543,7 @@
             <option value="50">50 条/页</option>
           </select>
           <button class="page-btn" id="prevPage" type="button" aria-label="上一页">‹</button>
-          <span id="pageNumbers" style="display:flex;gap:8px;"></span>
+          <span class="page-numbers" id="pageNumbers" aria-label="页码导航"></span>
           <button class="page-btn" id="nextPage" type="button" aria-label="下一页">›</button>
           <span class="go-page">前往 <input id="goPageInput" type="number" min="1"> 页</span>
         </div>
@@ -499,13 +552,15 @@
       <!-- 物料视图 -->
       <div id="materialView" hidden>
         <div class="toolbar material-toolbar">
-          <div class="field" style="flex:1; min-width:220px;">
-            <label for="fMaterialKeyword">物料 / 供应商</label>
-            <input id="fMaterialKeyword" type="text" placeholder="搜索物料编号或供应商" autocomplete="off">
-          </div>
+          <div class="field"><label for="matSupplier">供应商</label><select id="matSupplier"><option value="">全部供应商</option></select></div>
+          <div class="field"><label for="matMaterial">物料编号</label><select id="matMaterial"><option value="">全部物料编号</option></select></div>
+          <div class="field"><label for="matStartDate">开始日期</label><input id="matStartDate" type="date"></div>
+          <div class="field"><label for="matEndDate">结束日期</label><input id="matEndDate" type="date"></div>
+          <div class="field"><label for="matVoucher">采购凭证</label><input id="matVoucher" type="text" placeholder="请输入采购凭证" autocomplete="off"></div>
+          <div class="field"><label for="matAsnNo">ASN号</label><input id="matAsnNo" type="text" placeholder="请输入ASN号" autocomplete="off"></div>
+          <div class="material-query-actions"><button class="btn btn-primary" id="matQueryBtn" type="button">查询</button><button class="btn" id="matResetBtn" type="button">重置</button></div>
         </div>
         <div class="material-layout">
-          <aside class="material-list" id="materialList" aria-label="物料列表"></aside>
           <section class="material-detail" id="materialDetail"></section>
         </div>
       </div>
@@ -537,7 +592,7 @@
             </div>
             <div class="form-row">
               <label class="form-label" for="mPlanner"><span class="required">*</span>计划员</label>
-              <div><input id="mPlanner" type="text" maxlength="30" placeholder="请输入计划员" autocomplete="off"><div class="field-error" id="plannerError" role="alert"></div></div>
+              <div><input id="mPlanner" readonly type="text" maxlength="30" placeholder="请输入计划员" autocomplete="off"><div class="field-error" id="plannerError" role="alert"></div></div>
             </div>
             <div class="form-row full-width">
               <label class="form-label" for="mVoucher"><span class="required">*</span>采购凭证</label>
@@ -546,7 +601,7 @@
 
             <div class="form-row">
               <label class="form-label" for="mAsnNo">ASN号</label>
-              <div><input id="mAsnNo" type="text" maxlength="40" placeholder="请输入ASN号" autocomplete="off"></div>
+              <div><input id="mAsnNo" type="text" maxlength="16" placeholder="待导入 SAP ASN" readonly disabled aria-describedby="asnNoHint"><div class="field-hint" id="asnNoHint">ASN号仅通过“导入 SAP ASN”写入，不可手工修改</div></div>
             </div>
 
             <div class="form-section-title">数量与承诺</div>
@@ -570,19 +625,14 @@
               <label class="form-label" for="mPerPalletQty">标准装托数量</label>
               <div><input id="mPerPalletQty" type="number" min="0" step="1" inputmode="numeric" placeholder="请输入标准装托数量"></div>
             </div>
-            <div class="form-row full-width" id="promiseReasonRow">
-              <label class="form-label" for="mPromiseReason">承诺调整原因 <span class="req">*</span></label>
-              <div><textarea id="mPromiseReason" rows="2" placeholder="修改承诺发货数量时必填，便于后续追溯审计"></textarea><div class="field-error" id="promiseReasonError" role="alert"></div></div>
-            </div>
-
             <div class="form-section-title">物流与日期</div>
             <div class="form-row">
               <label class="form-label" for="mDeliveryMode">配送方式</label>
-              <div><select id="mDeliveryMode"><option value="直送">直送</option><option value="自提">自提</option></select></div>
+              <div><select id="mDeliveryMode" disabled><option value="直送">直送</option><option value="自提">自提</option></select></div>
             </div>
             <div class="form-row">
               <label class="form-label" for="mLogistics">指定物流商</label>
-              <div><input id="mLogistics" type="text" maxlength="40" placeholder="请输入指定物流商" autocomplete="off"></div>
+              <div><input id="mLogistics" type="search" list="logisticsOptions" maxlength="40" placeholder="请选择或输入关键字搜索物流商" autocomplete="off"><datalist id="logisticsOptions"></datalist></div>
             </div>
             <div class="form-row">
               <label class="form-label" for="mShipDate">计划发货日期</label>
@@ -597,9 +647,10 @@
               <div><input id="mShipmentRegDate" type="date"></div>
             </div>
           </div>
+          <div class="plan-detail" id="planDetail" hidden aria-label="计划详情"></div>
         </div>
         <div class="modal-foot">
-          <button class="btn" type="button" data-close="formModal">取消</button>
+          <button class="btn" id="formCloseBtn" type="button" data-close="formModal">取消</button>
           <button class="btn btn-primary" id="formSaveBtn" type="submit">保存</button>
         </div>
       </form>
@@ -627,52 +678,24 @@
     </div>
   </div>
 
+  <div class="modal-layer" id="reverseModal" role="presentation">
+    <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="reverseTitle">
+      <div class="modal-head"><h3 id="reverseTitle">撤回计划</h3><button class="close-btn" type="button" data-close="reverseModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button></div>
+      <div class="modal-body">
+        <p class="confirm-copy" id="reverseText"></p>
+        <label class="field"><span>处理原因 <b class="required">*</b></span><textarea id="reverseReason" rows="3" maxlength="200" placeholder="请输入撤回原因"></textarea></label>
+        <p class="form-hint">撤回后仅计划员可调整；ASN号保持不变，供应商将不能继续确认。</p>
+      </div>
+      <div class="modal-foot"><button class="btn" type="button" data-close="reverseModal">取消</button><button class="btn btn-danger" id="reverseConfirmBtn" type="button">确认撤回</button></div>
+    </div>
+  </div>
+
   <!-- 工厂差异确认前置条件提示 -->
   <div class="modal-layer" id="platformConfirmNoticeModal" role="presentation">
     <div class="modal small" role="alertdialog" aria-modal="true" aria-labelledby="platformConfirmNoticeTitle" aria-describedby="platformConfirmNoticeText">
       <div class="modal-head"><h3 id="platformConfirmNoticeTitle">暂不可确认</h3><button class="close-btn" type="button" data-close="platformConfirmNoticeModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button></div>
       <div class="modal-body"><p class="confirm-copy" id="platformConfirmNoticeText">仅“计划发货数量 ≠ ASN 承诺发货数量”的记录需要工厂确认；未导入 ASN 或已推送供应商的记录无需操作。</p></div>
       <div class="modal-foot"><button class="btn btn-primary" type="button" data-close="platformConfirmNoticeModal">知道了</button></div>
-    </div>
-  </div>
-
-  <!-- 变更物流商弹窗 -->
-  <div class="modal-layer" id="logisticsModal" role="presentation">
-    <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="logisticsTitle">
-      <div class="modal-head">
-        <h3 id="logisticsTitle">变更物流商</h3>
-        <button class="close-btn" type="button" data-close="logisticsModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid">
-          <div class="form-row">
-            <label class="form-label" for="mLogisticsSelect"><span class="required">*</span>物流商</label>
-            <div>
-              <select id="mLogisticsSelect">
-                <option value="顺丰速运">顺丰速运</option>
-                <option value="德邦物流">德邦物流</option>
-                <option value="中通快递">中通快递</option>
-                <option value="ZTO快递">ZTO快递</option>
-                <option value="圆通速递">圆通速递</option>
-                <option value="京东物流">京东物流</option>
-                <option value="韵达快递">韵达快递</option>
-                <option value="申通快递">申通快递</option>
-                <option value="百世快递">百世快递</option>
-                <option value="EMS">EMS</option>
-                <option value="__custom">自定义...</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row" id="customLogisticsWrap" style="display:none;">
-            <label class="form-label" for="mLogisticsCustom">自定义物流商</label>
-            <div><input id="mLogisticsCustom" type="text" maxlength="40" placeholder="请输入物流商名称" autocomplete="off"></div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-foot">
-        <button class="btn" type="button" data-close="logisticsModal">取消</button>
-        <button class="btn btn-primary" id="saveLogisticsBtn" type="button">确认变更</button>
-      </div>
     </div>
   </div>
 
@@ -776,13 +799,24 @@
     </div>
   </div>
 
+  <!-- 物料日历当日计划明细 -->
+  <div class="modal-layer" id="materialDayModal" role="presentation">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="materialDayTitle">
+      <div class="modal-head"><h3 id="materialDayTitle">当日物料计划明细</h3><button class="close-btn" type="button" data-close="materialDayModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button></div>
+      <div class="modal-body" id="materialDayBody"></div>
+      <div class="modal-foot"><button class="btn" type="button" data-close="materialDayModal">关闭</button></div>
+    </div>
+  </div>
+
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
 
+  <script src="./logistics-flow.js"></script>
   <script>
     (() => {
       'use strict';
 
-      const STORAGE_KEY = 'material-plan-v5';
+      // 升级种子版本，避免浏览器沿用上一版虚构演示数据。
+      const STORAGE_KEY = 'material-plan-v8';
       const ASN_KEY = 'material-plan-asn-v2';
       const SUPPLIER_DELIVERY_KEY = 'bw_supplier_deliveries';
       const CARRIER_PICKUP_KEY = 'bw_carrier_pickups';
@@ -798,6 +832,7 @@
         awaiting_asn: { label: '待导入ASN', class: 'status-platform-pending' },
         supplier_pending: { label: '待供应商确认', class: 'status-supplier-pending' },
         platform_pending: { label: '待工厂确认差异', class: 'status-platform-pending' },
+        planner_adjustment: { label: '待计划员调整', class: 'status-platform-pending' },
         confirming: { label: '待供应商确认', class: 'status-supplier-pending' },
         pending_shipment: { label: '待发货', class: 'status-pending_shipment' },
         in_transit: { label: '运输中', class: 'status-in_transit' },
@@ -806,14 +841,14 @@
       };
 
       const TABS = [
-        { key: 'confirming', label: '确认中', statuses: ['awaiting_asn', 'supplier_pending', 'platform_pending', 'confirming'] },
+        { key: 'confirming', label: '确认中', statuses: ['awaiting_asn', 'supplier_pending', 'platform_pending', 'planner_adjustment', 'confirming'] },
         { key: 'pending_shipment', label: '待发货', statuses: ['pending_shipment'] },
         { key: 'in_transit', label: '运输中', statuses: ['in_transit'] },
         { key: 'received', label: '已收货', statuses: ['received'] },
         { key: 'cancelled', label: '已作废', statuses: ['cancelled'] }
       ];
 
-      const CONFIRMING_STATUSES = ['awaiting_asn', 'supplier_pending', 'platform_pending', 'confirming'];
+      const CONFIRMING_STATUSES = ['awaiting_asn', 'supplier_pending', 'platform_pending', 'planner_adjustment', 'confirming'];
       function isConfirmingStatus(status) { return CONFIRMING_STATUSES.includes(status); }
 
       function uuid() {
@@ -823,66 +858,64 @@
           return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
       }
-      // 生成唯一 ASN号（ASN + 日期 + 4 位随机），existing 为可选去重集合
-      function genAsnNo(existing) {
-        const set = existing || new Set((state.rows || []).map(r => r.asnNo).filter(Boolean));
-        let no;
-        do {
-          const d = new Date();
-          const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-          const rand = String(Math.floor(Math.random() * 9000) + 1000);
-          no = `ASN${ymd}${rand}`;
-        } while (set.has(no));
-        set.add(no);
-        return no;
-      }
-      // 业务规则：只要承诺发货数量有数据，就一定存在 ASN号
-      function ensureAsnNo(obj, existing) {
-        const hasPromised = obj.promisedQty !== null && obj.promisedQty !== undefined && obj.promisedQty !== '';
-        if (hasPromised && !obj.asnNo) {
-          obj.asnNo = defaultAsnNoForRow(obj);
-          if (existing) existing.add(obj.asnNo);
-          return true;
-        }
+      // ASN只由“导入 SAP ASN”写入；计划或承诺数据不得在前端补造编号。
+      function ensureAsnNo(obj, existing, rows = []) {
         return false;
       }
 
-      const seedPlans = [
-        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: 'Dr. Julien Heller', voucher: '2026-05-31-10626MSC', asnNo: 'ASN0001', shipDate: '2026-05-26', arrivalDate: '2026-05-31', planQty: 500, promisedQty: 300, confirmQty: null, perBoxQty: 50, perPalletQty: 250, deliveryMode: '直送', logistics: '新增物流商', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-05-26 14:21:39', updatedAt: '2026-05-26 14:30:40' },
-        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: 'Dr. Julien Heller', voucher: '2026-05-14-10626MSC', asnNo: 'ASN0002', shipDate: '2026-05-14', arrivalDate: '2026-05-14', planQty: 3680, promisedQty: 0, confirmQty: null, perBoxQty: 80, perPalletQty: 400, deliveryMode: '自提', logistics: 'ZTO快递', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-04-29 14:04:23', updatedAt: '2026-05-29 14:23:30' },
-        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: '齐桂英', voucher: '2026-05-15-10626MSC', asnNo: 'ASN0003', shipDate: '2026-05-15', arrivalDate: '2026-05-15', planQty: 9620, promisedQty: null, confirmQty: null, perBoxQty: 50, perPalletQty: 250, deliveryMode: '直送', logistics: 'ZTO快递', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-04-29 14:04:23', updatedAt: '2026-04-29 14:04:23' },
-        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: '第二次导入', voucher: '2026-05-05-10626MSC', asnNo: 'ASN0004', shipDate: '2026-05-03', arrivalDate: '2026-05-05', planQty: 4000, promisedQty: 4000, confirmQty: null, perBoxQty: 100, perPalletQty: 500, deliveryMode: '直送', logistics: 'ZTO快递', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-04-29 13:25:28', updatedAt: '2026-04-29 14:03:27' },
-        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: '王五', voucher: '2026-05-04-10626MSC', asnNo: 'ASN0005', shipDate: '2026-05-03', arrivalDate: '2026-05-04', planQty: 4000, promisedQty: 3000, confirmQty: null, perBoxQty: 80, perPalletQty: 400, deliveryMode: '自提', logistics: 'ZTO快递', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-04-29 13:11:56', updatedAt: '2026-04-29 13:23:00' },
-        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: '张三', voucher: '2026-06-29-10626MSC', asnNo: 'ASN0006', shipDate: '2026-06-29', arrivalDate: '2026-06-29', planQty: 3000, promisedQty: 2000, confirmQty: null, perBoxQty: 50, perPalletQty: 250, deliveryMode: '直送', logistics: 'ZTO快递', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-04-29 09:44:07', updatedAt: '2026-04-29 11:07:48' },
-        { id: uuid(), materialCode: '10626MSC', sapSupplierCode: '16668', supplierName: '苏州瑞玛精密工业集团股份有限公司2', planner: '李四', voucher: '2026-07-01-10626MSC', asnNo: 'ASN0007', shipDate: '2026-06-20', arrivalDate: '2026-06-25', planQty: 1500, promisedQty: 1500, confirmQty: 1500, perBoxQty: 50, perPalletQty: 250, deliveryMode: '直送', logistics: '顺丰速运', planCode: '202', actualArrivalQty: null, status: 'pending_shipment', createdAt: '2026-06-18 10:12:33', updatedAt: '2026-06-19 09:05:21' },
-        { id: uuid(), materialCode: '20815ABC', sapSupplierCode: '18002', supplierName: '无锡威孚精密制造有限公司', planner: '王芳', voucher: '2026-07-10-20815ABC', asnNo: 'ASN0008', shipDate: '2026-07-05', arrivalDate: '2026-07-12', planQty: 2200, promisedQty: 2000, confirmQty: null, perBoxQty: 50, perPalletQty: 250, deliveryMode: '自提', logistics: '德邦物流', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-07-02 15:40:11', updatedAt: '2026-07-03 08:22:49' },
-        { id: uuid(), materialCode: '20815ABC', sapSupplierCode: '18002', supplierName: '无锡威孚精密制造有限公司', planner: '赵强', voucher: '2026-07-20-20815ABC', asnNo: 'ASN0009', shipDate: '2026-07-15', arrivalDate: '2026-07-22', planQty: 800, promisedQty: null, confirmQty: null, perBoxQty: null, perPalletQty: null, deliveryMode: '直送', logistics: '中通快递', planCode: '202', actualArrivalQty: null, status: 'cancelled', createdAt: '2026-07-08 11:03:55', updatedAt: '2026-07-09 16:48:30' },
-        { id: uuid(), materialCode: '30987XYZ', sapSupplierCode: '19005', supplierName: '上海博格华纳动力系统有限公司', planner: '陈晨', voucher: '2026-07-25-30987XYZ', asnNo: 'ASN0010', shipDate: '2026-07-22', arrivalDate: '2026-07-28', planQty: 1000, promisedQty: null, confirmQty: null, perBoxQty: 50, perPalletQty: 250, deliveryMode: '直送', logistics: '顺丰速运', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-07-20 09:15:33', updatedAt: '2026-07-21 14:30:12' },
-        { id: uuid(), materialCode: '41256LMN', sapSupplierCode: '19005', supplierName: '上海博格华纳动力系统有限公司', planner: '陈晨', voucher: '2026-07-28-41256LMN', asnNo: 'ASN0011', shipDate: '2026-07-25', arrivalDate: '2026-07-30', planQty: 2000, promisedQty: null, confirmQty: null, perBoxQty: 100, perPalletQty: 500, deliveryMode: '自提', logistics: '德邦物流', planCode: '202', actualArrivalQty: null, status: 'supplier_pending', createdAt: '2026-07-20 09:15:33', updatedAt: '2026-07-21 14:30:12' }
-      ];
+      // 客户提供的 Delivery Plan（WK23）真实排产数据：51 个物料、619 条日期数量记录。
+      // 仅使用源文件明确提供的物料、描述、采购凭证、MOQ 和日期计划数量；ASN、承诺和物流字段保持待 SAP/供应商后续补充。
+      const customerPlanSchedule = [["5018185-CN","Oil Pump Sprocket 22T","5500023268",2160,[["2026-06-11",10800],["2026-06-18",12960],["2026-07-02",4320],["2026-07-16",4320],["2026-07-23",2160],["2026-07-30",4320],["2026-08-06",2160],["2026-08-13",2160],["2026-08-20",4320],["2026-08-27",2160],["2026-09-03",4320],["2026-09-10",2160],["2026-09-17",2160],["2026-09-22",4320],["2026-09-30",2160],["2026-10-08",4320],["2026-10-15",2160]]],["5018187-CN","SPROCKET-IDLER BS IN 24T","5500023270",1260,[["2026-06-04",6300],["2026-06-08",700],["2026-06-11",6300],["2026-06-18",6300],["2026-06-25",6300],["2026-07-09",6300],["2026-07-23",6300],["2026-08-13",6300],["2026-08-27",6300],["2026-09-10",6300],["2026-09-22",6300],["2026-10-08",6300]]],["5020207-CN-PRT","SGMW B12 VCT RING CENTER","5500023276",12000,[["2026-09-10",20000]]],["5022641-CN","CRANK SPROCKET 23T","5500023281",0,[["2026-06-04",1920],["2026-06-16",1920],["2026-06-25",1920],["2026-07-09",1920],["2026-07-16",1920],["2026-07-30",1920],["2026-08-06",1920],["2026-08-13",1920],["2026-08-27",1920],["2026-09-03",1920],["2026-09-15",1920],["2026-09-17",1920],["2026-09-29",1920],["2026-10-15",1920]]],["5025150-CN","HOUSING MACHD","5500023282",0,[["2026-06-25",2240]]],["5029132-CN","Housing-Machd","5500038594",0,[["2026-09-10",1280],["2026-09-22",1280]]],["5032780-CN","BMPC A151 CAM SPROCKET","5500023279",0,[["2026-08-27",960],["2026-09-03",960],["2026-09-10",1280],["2026-09-22",960],["2026-09-29",960],["2026-10-08",960]]],["5035088-CN","op sprocket","5500045252",0,[["2026-06-11",1300],["2026-06-23",1300],["2026-06-30",2600],["2026-07-07",1300],["2026-07-14",3900],["2026-07-28",2600],["2026-08-04",2600],["2026-08-11",2600],["2026-08-18",2600],["2026-08-25",2600],["2026-09-01",2600],["2026-09-08",1300],["2026-09-10",2600],["2026-09-17",1300],["2026-09-24",2600],["2026-10-06",2600],["2026-10-13",2600]]],["5035380-CN","GAIC P7 CRANKSPROCKET","5500023277",0,[["2026-06-04",1920],["2026-06-11",960],["2026-06-16",1920],["2026-06-25",960],["2026-07-02",960],["2026-07-09",960],["2026-07-16",1920],["2026-07-23",960],["2026-07-30",1920],["2026-08-06",960],["2026-08-13",1920],["2026-08-20",960],["2026-08-27",2880],["2026-09-03",1920],["2026-09-10",1920],["2026-09-17",1920],["2026-09-22",1920],["2026-09-29",1920],["2026-10-08",1920],["2026-10-15",1920]]],["5035835-CN","RING BIAS CENTER","5500048504",0,[["2026-06-04",4800],["2026-06-18",4800],["2026-06-25",4800],["2026-07-16",4800],["2026-07-23",4800],["2026-07-30",4800],["2026-08-13",4800],["2026-08-20",4800],["2026-08-27",4800],["2026-09-10",4800],["2026-09-15",4800],["2026-09-22",4800],["2026-10-15",4800]]],["5037109-CN","CRANK SPROCKET Z=20T","5500038270",0,[["2026-06-16",5600],["2026-07-21",5600],["2026-08-18",5600],["2026-09-01",5600],["2026-09-15",5600]]],["5037110-CN","DPCA EP6.2 OIL PUMP SPROCKET Z=20T","5500038271",0,[["2026-06-23",1350],["2026-07-21",1350],["2026-07-28",1350],["2026-08-04",1350],["2026-08-18",1350],["2026-09-01",1350],["2026-09-15",2700]]],["5037194-CN","op sprocket","5500045253",0,[["2026-06-11",1040],["2026-06-23",2080],["2026-06-30",2080],["2026-07-07",2080],["2026-07-14",4160],["2026-07-28",2080],["2026-08-04",2080],["2026-08-11",3120],["2026-08-18",2080],["2026-08-25",2080],["2026-09-01",3120],["2026-09-08",1040],["2026-09-10",3120],["2026-09-17",1040],["2026-09-24",3120],["2026-10-06",3120],["2026-10-13",2080]]],["5037535-CN","GW EC01 LDELER BS EX SPROCKET FOR NVH","5500023552",0,[["2026-06-04",6048],["2026-06-11",6048],["2026-06-18",6048],["2026-06-25",6048],["2026-07-09",6048],["2026-07-23",6048],["2026-08-06",6048],["2026-08-20",6048],["2026-09-03",6048],["2026-09-17",6048],["2026-09-30",6048],["2026-10-15",6048]]],["5041788-CN","PLATE-OUTER-EXH","5500047856",0,[["2026-06-08",2112],["2026-06-09",4224],["2026-06-11",2112],["2026-06-18",4224],["2026-07-16",6336],["2026-07-30",6336],["2026-08-13",4224],["2026-08-27",6336],["2026-09-03",6336],["2026-09-17",6336],["2026-09-30",4224],["2026-10-08",6336]]],["5042028-CN","PLATE-OUTER-INT","5500047855",0,[["2026-06-08",2000],["2026-06-09",2000],["2026-06-11",2000],["2026-06-18",5600],["2026-07-16",6000],["2026-07-30",5600],["2026-08-13",5600],["2026-08-27",5600],["2026-09-03",5600],["2026-09-17",5600],["2026-09-30",6000],["2026-10-08",5600]]],["5042412-CN","SPROCKET_CAMSHAFT-46T","5500025236",0,[["2026-06-11",640],["2026-06-18",960],["2026-07-09",960],["2026-08-06",960],["2026-09-17",960],["2026-10-15",960]]],["5043224-CN","SPROCKET-OIL PUMP 23T","5500040457",0,[["2026-06-16",1500],["2026-07-02",3000],["2026-07-23",3000],["2026-08-06",3000],["2026-08-20",4500],["2026-09-03",3000],["2026-09-15",3000],["2026-09-29",4500]]],["5043227-CN","SPROCKET CRANKSHAFT 21T","5500040456",0,[["2026-06-16",1440],["2026-07-02",1440],["2026-07-23",1440],["2026-08-06",720],["2026-08-20",1440],["2026-09-03",1440],["2026-09-15",1440],["2026-09-29",1440]]],["5043759-CN-S","ROTOR-EXH","5500063442",3000,[["2026-06-04",3456],["2026-06-08",6912],["2026-06-11",3456],["2026-06-18",6912],["2026-06-25",10368],["2026-07-02",6912],["2026-07-16",6912],["2026-07-23",10368],["2026-07-30",6912],["2026-08-06",3456],["2026-08-13",6912],["2026-08-20",6912],["2026-08-27",6912],["2026-09-03",6912],["2026-09-10",6912],["2026-09-15",6912],["2026-09-22",10368],["2026-09-30",6912],["2026-10-15",6912]]],["5043817-CN","GM 45T Bushing (lower bearing)","5500045022",0,[["2026-06-04",120000],["2026-06-11",60000],["2026-06-18",60000],["2026-06-25",90000],["2026-07-02",60000],["2026-07-09",60000],["2026-07-16",30000],["2026-07-23",90000],["2026-07-30",90000],["2026-08-06",90000],["2026-08-13",60000],["2026-08-20",90000],["2026-08-27",60000],["2026-09-03",90000],["2026-09-10",60000],["2026-09-15",30000],["2026-09-17",60000],["2026-09-22",60000],["2026-09-30",60000],["2026-10-08",60000],["2026-10-15",30000]]],["5046974-CN","SPROCKET-OP-DRIVE-35T","5500050620",0,[["2026-09-01",520],["2026-10-06",520]]],["5047321-CN","SGMW N15T HOUSING-MACHD-INT","5500040484",0,[["2026-06-25",2240]]],["5048117-CN-LC","ROTOR-MACHD-INTAKE","5500082807",3000,[["2026-06-08",3000],["2026-06-12",3000],["2026-06-22",3000],["2026-06-29",3000],["2026-07-13",3000],["2026-07-20",3000],["2026-07-27",3000],["2026-08-03",3000],["2026-08-10",3000],["2026-08-24",3000],["2026-08-31",3000],["2026-09-07",3000],["2026-09-11",5760],["2026-09-23",3000],["2026-10-12",3000]]],["5048793-CN","JLR-P7 HOUSING MACHD","5500040222",0,[["2026-09-10",1280],["2026-10-15",1280]]],["5048898-CN","HOUSING/SPROCKET MACHINED","5500048500",0,[["2026-06-04",2560],["2026-06-08",1280],["2026-06-11",2560],["2026-06-18",3840],["2026-06-25",3840],["2026-07-02",3840],["2026-07-16",3840],["2026-07-23",3840],["2026-07-30",3840],["2026-08-06",1280],["2026-08-13",3840],["2026-08-20",5120],["2026-08-27",3840],["2026-09-03",2560],["2026-09-10",3840],["2026-09-15",3840],["2026-09-22",3840],["2026-09-30",2560],["2026-10-15",2560]]],["5048902-CN","HOUSING/SPROCKET-EXH","5500048503",0,[["2026-06-04",2240],["2026-06-08",2240],["2026-06-11",2240],["2026-06-18",4480],["2026-06-25",4480],["2026-07-02",2240],["2026-07-16",4480],["2026-07-23",4480],["2026-07-30",2240],["2026-08-06",2240],["2026-08-13",4480],["2026-08-20",4480],["2026-08-27",4480],["2026-09-03",2240],["2026-09-10",4480],["2026-09-15",2240],["2026-09-22",4480],["2026-09-30",2240],["2026-10-15",2240]]],["5049569-CN","ROTOR MACHD","5500048501",0,[["2026-06-04",3456],["2026-06-08",1728],["2026-06-11",1728],["2026-06-18",3456],["2026-06-25",3456],["2026-07-02",3456],["2026-07-16",3456],["2026-07-23",5184],["2026-07-30",3456],["2026-08-06",1728],["2026-08-13",5184],["2026-08-20",3456],["2026-08-27",5184],["2026-09-03",1728],["2026-09-10",3456],["2026-09-15",5184],["2026-09-22",3456],["2026-09-30",1728],["2026-10-15",3456]]],["5050010-CN","RING-RETAINER","5500068695",6000,[["2026-06-04",12000],["2026-06-11",6000],["2026-06-18",12000],["2026-06-25",6000],["2026-07-02",6000],["2026-07-09",6000],["2026-07-23",12000],["2026-07-30",12000],["2026-08-06",12000],["2026-08-13",6000],["2026-08-20",12000],["2026-08-27",12000],["2026-09-03",12000],["2026-09-10",6000],["2026-09-17",6000],["2026-09-22",6000],["2026-09-30",6000],["2026-10-08",6000],["2026-10-15",6000]]],["5050501-CN","ROTOR-INT","5500053101",0,[["2026-06-08",2880],["2026-06-11",1152],["2026-06-18",4608],["2026-06-25",4032],["2026-07-02",3456],["2026-07-16",4032],["2026-07-23",4608],["2026-07-30",4032],["2026-08-06",2304],["2026-08-13",1728],["2026-08-20",4608],["2026-08-27",3456],["2026-09-03",4608],["2026-09-10",1728],["2026-09-15",4032],["2026-09-22",4032],["2026-09-30",4032],["2026-10-08",1728],["2026-10-15",4608]]],["5050635-CN","HOUSING/SPROCKET-INT","5500053102",0,[["2026-06-04",2016],["2026-06-08",2016],["2026-06-11",1680],["2026-06-18",4032],["2026-06-25",4368],["2026-07-02",3360],["2026-07-16",4368],["2026-07-23",4032],["2026-07-30",4368],["2026-08-06",2352],["2026-08-13",2016],["2026-08-20",4032],["2026-08-27",3696],["2026-09-03",4368],["2026-09-10",2016],["2026-09-15",4032],["2026-09-22",4368],["2026-09-30",3696],["2026-10-08",1680],["2026-10-15",4368]]],["5050643-CN","HOUSING/SPROCKET-EXH","5500053103",0,[["2026-06-04",2016],["2026-06-08",2016],["2026-06-11",1008],["2026-06-18",4704],["2026-06-25",3360],["2026-07-02",4368],["2026-07-16",4032],["2026-07-23",4368],["2026-07-30",3696],["2026-08-06",2352],["2026-08-13",2352],["2026-08-20",3696],["2026-08-27",4368],["2026-09-03",4032],["2026-09-10",2016],["2026-09-15",4368],["2026-09-22",3696],["2026-09-30",4032],["2026-10-08",2016],["2026-10-15",4032]]],["5050646-CN","RING CENTER","5500053104",0,[["2026-06-04",3000],["2026-06-11",1000],["2026-06-18",4500],["2026-06-25",3500],["2026-07-02",4500],["2026-07-16",4000],["2026-07-23",4500],["2026-07-30",3500],["2026-08-06",2500],["2026-08-13",2500],["2026-08-20",3500],["2026-08-27",4000],["2026-09-03",4500],["2026-09-10",2000],["2026-09-15",4000],["2026-09-22",3500],["2026-09-30",4500],["2026-10-08",2000],["2026-10-15",4000]]],["5051230-CN","housing","5500068696",3576,[["2026-06-04",2304],["2026-06-08",4608],["2026-06-09",3456],["2026-06-11",10368],["2026-06-23",8064],["2026-06-30",6912],["2026-07-07",6912],["2026-07-14",3576],["2026-07-21",3576],["2026-07-28",12672],["2026-08-04",10368],["2026-08-11",9216],["2026-08-18",10368],["2026-08-25",10368],["2026-09-01",11520],["2026-09-08",11520],["2026-09-15",8064],["2026-09-17",4608],["2026-09-24",6912],["2026-10-06",6912],["2026-10-13",6912]]],["5051956-CN","housing/pulley-MACHD-EXH","5500068697",3576,[["2026-06-04",2304],["2026-06-08",4608],["2026-06-09",3456],["2026-06-11",10368],["2026-06-23",8064],["2026-06-30",6912],["2026-07-07",6912],["2026-07-14",3576],["2026-07-21",3576],["2026-07-28",12672],["2026-08-04",10368],["2026-08-11",10368],["2026-08-18",10368],["2026-08-25",9216],["2026-09-01",11520],["2026-09-08",11520],["2026-09-15",8064],["2026-09-17",4608],["2026-09-24",6912],["2026-10-06",6912],["2026-10-13",6912]]],["5051986-CN-LC","Plate/Spkt-Inner-INT","5500082808",0,[["2026-06-08",1920],["2026-06-12",1920],["2026-06-22",3840],["2026-06-29",1920],["2026-07-06",1920],["2026-07-13",3840],["2026-07-20",1920],["2026-07-27",1920],["2026-08-03",1920],["2026-08-10",3840],["2026-08-17",1920],["2026-08-24",1920],["2026-08-31",3840],["2026-09-07",1920],["2026-09-11",5760],["2026-09-23",1920],["2026-10-05",1920],["2026-10-12",1920]]],["5051990-CN-LC","Plate/Spkt-Inner-EXH","5500082809",0,[["2026-06-08",1600],["2026-06-09",1600],["2026-06-12",3200],["2026-06-22",1600],["2026-06-29",3200],["2026-07-06",1600],["2026-07-13",3200],["2026-07-20",1600],["2026-07-27",3200],["2026-08-03",3200],["2026-08-10",1600],["2026-08-17",3200],["2026-08-24",1600],["2026-08-31",3200],["2026-09-07",1600],["2026-09-11",4800],["2026-09-23",3200],["2026-10-05",3200],["2026-10-12",1600]]],["5054154-CN","PLATE/SPROCKET-INNER-EXH","5500052818",0,[["2026-06-04",3200],["2026-06-11",3200],["2026-06-18",1600],["2026-06-25",1600],["2026-07-02",1600],["2026-07-16",1600],["2026-07-23",1600],["2026-08-06",1600],["2026-08-13",1600],["2026-08-27",1600],["2026-09-03",1600],["2026-09-17",1600],["2026-09-22",1600],["2026-10-08",1600],["2026-10-15",1600]]],["5059705-CN","ROTOR-MACHD-INT","5500052814",0,[["2026-06-04",2880],["2026-06-11",4320],["2026-06-18",1440],["2026-07-02",1440],["2026-07-09",1440],["2026-07-16",1440],["2026-07-30",1440],["2026-08-06",1440],["2026-08-13",1440],["2026-08-27",1440],["2026-09-03",1440],["2026-09-10",1440],["2026-09-17",1440],["2026-09-30",1440],["2026-10-08",1440],["2026-10-15",1440]]],["5060654-CN-LC","HOUSING-MACHD","5500063430",0,[["2026-06-09",2688],["2026-06-11",2688],["2026-07-02",2688],["2026-07-16",2688],["2026-07-30",2688],["2026-08-13",2688],["2026-08-20",2688],["2026-09-10",2688],["2026-09-17",2688],["2026-10-08",2688],["2026-10-15",2688]]],["5063229-CN","PLATE/SPRKT INNER ASSY INT","5500063431",0,[["2026-07-16",2304]]],["5063230-CN","PLATE/SPRKT INNER ASSY EXH","5500063432",0,[["2026-07-16",2304]]],["5065576-CN","PLATE/SPKT INNER ASSY INT","5500057233",0,[["2026-06-04",2304],["2026-06-11",4608],["2026-06-25",2304],["2026-07-09",2304],["2026-07-23",2304],["2026-08-06",2304],["2026-08-20",2304],["2026-09-10",2304],["2026-09-22",2304],["2026-10-08",2304]]],["5068632-CN","crankshaft sprocket-29T","5500057049",0,[["2026-06-11",750],["2026-06-16",1050],["2026-06-25",1050],["2026-07-02",1200],["2026-07-09",1050],["2026-07-16",1050],["2026-07-23",1350],["2026-07-30",1200],["2026-08-06",1200],["2026-08-13",1350],["2026-08-20",1200],["2026-08-27",1200],["2026-09-03",1350],["2026-09-10",1200],["2026-09-17",1200],["2026-09-22",1350],["2026-09-29",1200],["2026-10-08",1200],["2026-10-15",1350]]],["5069875-CN","oil-pump sprocket","5500077394",0,[["2026-07-02",380],["2026-07-23",380],["2026-07-30",380],["2026-08-13",380],["2026-08-27",380],["2026-09-10",380],["2026-09-22",380],["2026-09-30",380]]],["5071791-CN","SPROCKET CRANKSHAFT 21T","5500059856",3000,[["2026-06-16",3000],["2026-08-20",3000],["2026-09-15",3000]]],["5073256-CN","Armature","5500092836",0,[["2026-06-04",4368],["2026-06-22",5096],["2026-07-06",3640],["2026-07-27",6552],["2026-08-10",2184],["2026-08-24",6552],["2026-09-18",5824]]],["5080123-CN","sprocket","5500083660",0,[["2026-06-04",240],["2026-06-11",6000],["2026-06-17",20400],["2026-06-25",8400],["2026-07-02",7200],["2026-07-09",8400],["2026-07-23",20400],["2026-07-30",7200],["2026-08-06",8400],["2026-08-13",8400],["2026-08-20",19200],["2026-08-27",8400],["2026-09-03",8400],["2026-09-10",8400],["2026-09-16",20400],["2026-09-21",9600],["2026-09-29",8400],["2026-10-08",9600]]],["5080124-CN","sprocket","5500083661",0,[["2026-06-11",3600],["2026-06-17",18000],["2026-06-25",7200],["2026-07-02",7200],["2026-07-09",7200],["2026-07-23",19800],["2026-07-30",7200],["2026-08-06",7200],["2026-08-13",7200],["2026-08-20",19800],["2026-08-27",7200],["2026-09-03",7200],["2026-09-10",7200],["2026-09-16",19800],["2026-09-21",9000],["2026-09-29",7200],["2026-10-08",9000]]],["5080320-CN","cam sprocket-34T","5500100952",0,[["2026-06-09",6480],["2026-06-16",3960],["2026-06-25",2160],["2026-07-30",3960],["2026-08-27",2880],["2026-09-23",2160]]],["5097496-CN","Crank Sprocket 23T-25T","5500111199",0,[["2026-06-24",48],["2026-07-29",288],["2026-08-26",720],["2026-09-18",672]]]];
+      // 为演示“导入 SAP ASN”后的列表状态：同供应商、同到货日期共用一个模拟导入 ASN。
+      // 导入数量等于客户计划数量；这不是客户工作簿中提供的 ASN 或承诺数据。
+      const simulatedSapAsnByDate = new Map([...new Set(customerPlanSchedule.flatMap(item => item[4].map(schedule => schedule[0])))]
+        .map(date => [date, `ASN-${date.replaceAll('-', '').slice(2)}-001`]));
+      const customerSeedPlans = customerPlanSchedule.flatMap(([materialCode, materialDesc, voucher, moq, schedules]) => schedules.map(([arrivalDate, planQty]) => ({
+        id: uuid(), materialCode, materialDesc, voucher,
+        sapSupplierCode: 'PORITE', supplierName: '扬州保来得科技实业有限公司', planner: '系统计划员',
+        asnNo: simulatedSapAsnByDate.get(arrivalDate), asnSource: 'sap-simulation', shipDate: arrivalDate, arrivalDate, planQty, promisedQty: planQty, confirmQty: null,
+        perBoxQty: Number(moq) || null, perPalletQty: null,
+        deliveryMode: '直送', logistics: '', planCode: '202', actualArrivalQty: null,
+        status: 'supplier_pending', createdAt: '2026-06-02 09:00:00', updatedAt: '2026-06-02 09:00:00',
+        source: 'customer-delivery-plan-wk23'
+      })));
 
-      const seedAsn = [
-        { materialCode: '30987XYZ', voucher: '2026-07-25-30987XYZ', asnQty: 950 },
-        { materialCode: '41256LMN', voucher: '2026-07-28-41256LMN', asnQty: 2200 }
-      ];
+      // 自提演示：数量、物料和采购凭证取自客户计划，但供应商、ASN和物流商均为原型模拟。
+      const selfPickupDates = new Set(['2026-06-04', '2026-06-11', '2026-07-02', '2026-08-13', '2026-08-20', '2026-10-08']);
+      const selfPickupSeedPlans = customerPlanSchedule
+        .filter(([materialCode]) => ['5018185-CN', '5018187-CN'].includes(materialCode))
+        .flatMap(([materialCode, materialDesc, voucher, moq, schedules]) => schedules
+          .filter(([arrivalDate]) => selfPickupDates.has(arrivalDate))
+          .map(([arrivalDate, planQty]) => ({
+            id: uuid(), materialCode, materialDesc, voucher,
+            sapSupplierCode: 'PORITE-PICKUP', supplierName: '华东精密制造有限公司（演示自提）', planner: '自提计划员',
+            asnNo: `ASN-${arrivalDate.replaceAll('-', '').slice(2)}-002`, asnSource: 'self-pickup-simulation',
+            shipDate: arrivalDate, arrivalDate, planQty, promisedQty: planQty, confirmQty: null,
+            perBoxQty: Number(moq) || null, perPalletQty: null,
+            deliveryMode: '自提', logistics: '德邦物流（模拟）', planCode: '202', actualArrivalQty: null,
+            status: 'supplier_pending', createdAt: '2026-06-02 09:00:00', updatedAt: '2026-06-02 09:00:00',
+            source: 'self-pickup-simulation'
+          })));
+      const seedPlans = [...customerSeedPlans, ...selfPickupSeedPlans];
+
+      const seedAsn = seedPlans.map(row => ({ materialCode: row.materialCode, voucher: row.voucher, asnNo: row.asnNo, asnQty: row.promisedQty, source: 'sap-simulation' }));
 
       const state = {
         rows: loadPlans(),
         asn: loadAsn(),
         checkedIds: new Set(),
-        filters: { materialCode: '', supplier: '', voucher: '', planner: '', shipDate: '' },
+        filters: { materialCode: '', supplier: '', voucher: '', asnNo: '', planner: '', shipDate: '', deliveryMode: '' },
         viewMode: 'plan',
         activeTab: 'confirming',
         page: 1,
         pageSize: 10,
-        materialKeyword: '',
-        selectedMaterial: null,
+        materialQuery: { supplier: '', material: '', startDate: '', endDate: '', voucher: '', asnNo: '', applied: false },
         matMonth: null,
-        matSelectedDay: null,
         editingId: null,
         formViewOnly: false,
         pendingCancelIds: [],
-        pendingDiffId: null
+        pendingDiffId: null,
+        pendingReverseId: null
       };
 
       const $ = id => document.getElementById(id);
@@ -909,13 +942,12 @@
         let migrated = false;
         rows = rows.map(r => {
           const s = seedByKey.get(makeKey(r.materialCode, r.voucher));
-          const nr = { ...r };
+          const nr = LogisticsFlow.applySupplier({ ...r });
           if ((nr.perBoxQty === null || nr.perBoxQty === undefined) && s && s.perBoxQty != null) { nr.perBoxQty = s.perBoxQty; migrated = true; }
           if ((nr.perPalletQty === null || nr.perPalletQty === undefined) && s && s.perPalletQty != null) { nr.perPalletQty = s.perPalletQty; migrated = true; }
+          if (s && nr.asnSource !== 'sap' && /^ASN\d{4}$/.test(String(nr.asnNo || '')) && nr.asnNo !== s.asnNo) { nr.asnNo = s.asnNo; migrated = true; }
           if (nr.shipmentRegDate === null || nr.shipmentRegDate === undefined) { nr.shipmentRegDate = ''; migrated = true; }
           if (nr.asnNo === null || nr.asnNo === undefined) { nr.asnNo = ''; migrated = true; }
-          // 业务规则：承诺发货数量有数据则 ASN号 必须存在（历史数据补齐）
-          if (ensureAsnNo(nr, existingAsn)) migrated = true;
           if (!['pending_shipment', 'in_transit', 'received', 'cancelled'].includes(nr.status)) {
             const nextStatus = (nr.promisedQty === null || nr.promisedQty === undefined || nr.promisedQty === '')
               ? 'awaiting_asn'
@@ -923,6 +955,18 @@
             if (nr.status !== nextStatus) { nr.status = nextStatus; migrated = true; }
           }
           return nr;
+        });
+        // 兼容旧演示编号：种子计划按稳定物料+凭证映射替换为新格式；其他不属于SAP导入的确认阶段旧号仍可按分组补齐。
+        const legacyGroups = new Map();
+        rows.forEach(row => {
+          if (!isConfirmingStatus(row.status) || row.asnSource === 'sap' || !/^ASN\d{4}$/.test(String(row.asnNo || ''))) return;
+          const key = makeAsnGroupKey(row);
+          if (!legacyGroups.has(key)) legacyGroups.set(key, []);
+          legacyGroups.get(key).push(row);
+        });
+        legacyGroups.forEach(items => {
+          const nextNo = defaultAsnNoForRow(items[0], rows);
+          items.forEach(row => { row.asnNo = nextNo; migrated = true; });
         });
         if (normalizePlanAsnGroups(rows) > 0) migrated = true;
         if (reconcileShipmentRegistrations(rows) > 0) migrated = true;
@@ -967,7 +1011,7 @@
           return Array.isArray(parsed) ? parsed : seedAsn;
         } catch { return seedAsn; }
       }
-      function savePlans() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.rows)); }
+      function savePlans() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.rows.map(r=>LogisticsFlow.applySupplier(r)))); }
       function saveAsn() { localStorage.setItem(ASN_KEY, JSON.stringify(state.asn)); }
 
       function escapeHtml(v) { return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
@@ -984,25 +1028,35 @@
       function makeAsnGroupKey(row) {
         return `${String(row.sapSupplierCode || row.supplierName || '').trim()}|${String(row.arrivalDate || '').trim()}`;
       }
-      function defaultAsnNoForRow(row) {
-        const date = String(row.arrivalDate || '').replaceAll('-', '') || 'DATE';
-        const supplier = String(row.sapSupplierCode || 'SAP').replace(/[^0-9A-Za-z_-]/g, '') || 'SAP';
-        return `ASN-${date}-${supplier}`;
+      function asnDateCode(row) {
+        const digits = String(row.arrivalDate || row.shipDate || '').replace(/\D/g, '');
+        if (digits.length >= 8) return digits.slice(2, 8);
+        const d = new Date();
+        return `${String(d.getFullYear()).slice(-2)}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+      }
+      function defaultAsnNoForRow(row, rows = []) {
+        const dateCode = asnDateCode(row);
+        const used = new Set((rows || []).map(r => String(r.asnNo || '')).filter(no => no.startsWith(`ASN-${dateCode}-`)));
+        for (let seq = 1; seq <= 999; seq++) {
+          const candidate = `ASN-${dateCode}-${String(seq).padStart(3, '0')}`;
+          if (!used.has(candidate)) return candidate;
+        }
+        throw new Error(`ASN-${dateCode} 当日流水号已用尽`);
       }
       // ASN 是到货日批次主单：同一供应商、同一计划到货日的物料必须共用同一 ASN号。
       function normalizePlanAsnGroups(rows) {
         const groups = new Map(), owner = new Map();
         let changed = 0;
         rows.forEach(row => {
-          const hasPromised = row.promisedQty !== null && row.promisedQty !== undefined && row.promisedQty !== '';
-          if (!row.arrivalDate || (!row.asnNo && !hasPromised)) return;
+          if (!row.arrivalDate || !row.asnNo) return;
           const key = makeAsnGroupKey(row);
           if (!groups.has(key)) groups.set(key, []);
           groups.get(key).push(row);
         });
         groups.forEach((items, key) => {
-          let asnNo = items.find(r => r.asnSource === 'sap' && r.asnNo)?.asnNo || items.find(r => r.asnNo)?.asnNo || defaultAsnNoForRow(items[0]);
-          if (owner.has(asnNo) && owner.get(asnNo) !== key) asnNo = defaultAsnNoForRow(items[0]);
+          let asnNo = items.find(r => r.asnSource === 'sap' && r.asnNo)?.asnNo || items.find(r => r.asnNo)?.asnNo;
+          if (!asnNo) return;
+          if (owner.has(asnNo) && owner.get(asnNo) !== key) asnNo = defaultAsnNoForRow(items[0], rows);
           owner.set(asnNo, key);
           items.forEach(row => {
             if (row.asnNo !== asnNo || row.asnGroupKey !== key) changed++;
@@ -1021,12 +1075,12 @@
         return Number.isFinite(qty) ? qty : null;
       }
 
-      // 计划与承诺差异：以「承诺发货数量」(promisedQty) 为准。承诺有数据即代表已通过 ASN 导入，
-      // 因此不会出现「未导入」；仅当承诺发货数量为空时才视为未承诺。
+      // 计划与承诺差异按「承诺发货数量 - 计划发货数量」计算：负数表示承诺不足。
+      // 承诺有数据即代表已通过 ASN 导入；仅当承诺发货数量为空时才视为未承诺。
       function getDiff(row) {
         const qty = row.promisedQty;
         if (qty === null || qty === undefined || qty === '') return null;
-        return row.planQty - Number(qty);
+        return Number(qty) - (Number(row.planQty) || 0);
       }
 
       // 计划与承诺发货的缺口：承诺未填写时视为「未承诺」
@@ -1093,6 +1147,8 @@
         let direct = 0, factory = 0;
         state.rows.forEach(row => {
           if (['pending_shipment', 'in_transit', 'received', 'cancelled'].includes(row.status)) return;
+          LogisticsFlow.applySupplier(row, true);
+          if(row.confirmationSource==='supplier-asn-switch' && row.status==='pending_shipment'){direct++;return;}
           const diff = getDiff(row);
           if (diff === null) row.status = 'awaiting_asn';
           else if (diff === 0) { row.status = 'supplier_pending'; row.confirmQty = null; direct++; }
@@ -1114,8 +1170,10 @@
             (!f.materialCode || r.materialCode.toLowerCase().includes(f.materialCode.toLowerCase())) &&
             (!f.supplier || r.supplierName.toLowerCase().includes(f.supplier.toLowerCase()) || r.sapSupplierCode.toLowerCase().includes(f.supplier.toLowerCase())) &&
             (!f.voucher || r.voucher.toLowerCase().includes(f.voucher.toLowerCase())) &&
+            (!f.asnNo || String(r.asnNo || '').toLowerCase().includes(f.asnNo.toLowerCase())) &&
             (!f.planner || r.planner.toLowerCase().includes(f.planner.toLowerCase())) &&
-            (!f.shipDate || r.shipDate === f.shipDate)
+            (!f.shipDate || r.shipDate === f.shipDate) &&
+            (!f.deliveryMode || r.deliveryMode === f.deliveryMode)
           );
         });
       }
@@ -1125,6 +1183,17 @@
           const count = state.rows.filter(r => tab.statuses.includes(r.status)).length;
           return `<button class="tab ${tab.key === state.activeTab ? 'active' : ''}" data-tab="${tab.key}" role="tab" aria-selected="${tab.key === state.activeTab}">${tab.label}<span class="count">${count}</span></button>`;
         }).join('');
+      }
+
+      // 大数据量只保留首尾页与当前页附近页码，避免页码控件挤出容器。
+      function compactPageItems(pageCount, currentPage) {
+        if (pageCount <= 7) return Array.from({ length: pageCount }, (_, index) => index + 1);
+        const pages = new Set([1, pageCount]);
+        for (let page = currentPage - 1; page <= currentPage + 1; page++) {
+          if (page > 1 && page < pageCount) pages.add(page);
+        }
+        const ordered = [...pages].sort((a, b) => a - b);
+        return ordered.flatMap((page, index) => index && page - ordered[index - 1] > 1 ? ['ellipsis', page] : [page]);
       }
 
       function renderTable() {
@@ -1151,13 +1220,15 @@
 
             const gap = getGap(r);
             const canConfirm = r.status === 'platform_pending';
-            const isViewOnly = !canConfirm;
+            const canAdjust = r.status === 'planner_adjustment';
+            const canWithdraw = r.status === 'supplier_pending';
+            const isViewOnly = !(canConfirm || canAdjust || canWithdraw);
             return `
               <tr class="${diff !== null && diff !== 0 ? 'diff' : ''}" data-id="${r.id}" data-status="${r.status}">
                 <td class="col-check"><input class="check row-check" type="checkbox" data-id="${r.id}" aria-label="选择${escapeHtml(r.materialCode)}" ${state.checkedIds.has(r.id) ? 'checked' : ''} ${isViewOnly ? 'disabled' : ''}></td>
                 <td>${escapeHtml(r.materialCode)}</td>
                 <td>${escapeHtml(r.sapSupplierCode)}</td>
-                <td>${escapeHtml(r.supplierName)}</td>
+                <td class="col-supplier" title="${escapeHtml(r.supplierName)}"><span class="cell-two-lines">${escapeHtml(r.supplierName)}</span></td>
                 <td>${escapeHtml(r.planner)}</td>
                 <td>${escapeHtml(r.voucher)}</td>
                 <td>${r.asnNo ? escapeHtml(r.asnNo) : '<span class="cell-ph">—</span>'}</td>
@@ -1174,12 +1245,7 @@
                 <td class="col-num" data-calc="boxCount">${formatNumber(calcBoxCount(r))}</td>
                 <td class="col-num" data-calc="palletCount">${formatNumber(calcPalletCount(r))}</td>
                 <td>${escapeHtml(r.deliveryMode)}</td>
-                <td>
-                  <span class="logistics-cell">
-                    <span class="logistics-name">${escapeHtml(r.logistics)}</span>
-                    ${isViewOnly ? '' : `<button class="change-btn" data-logistics="${r.id}" type="button">变更</button>`}
-                  </span>
-                </td>
+                <td>${escapeHtml(r.logistics)}</td>
                 <td class="col-time">${escapeHtml(r.createdAt)}</td>
                 <td class="col-time">${escapeHtml(r.updatedAt)}</td>
                 <td class="col-status"><span class="badge ${status.class}">${status.label}</span></td>
@@ -1187,9 +1253,11 @@
                   <div class="row-actions">
                     ${isViewOnly
                       ? `<button class="link-btn edit" data-inspect="${r.id}" type="button">${svg.search}查看</button>`
-                      : `<button class="link-btn edit" data-edit="${r.id}" type="button">${svg.edit}修改</button>
+                      : `${canAdjust ? `<button class="link-btn edit" data-edit="${r.id}" type="button">${svg.edit}调整</button>` : ''}
+                         ${canWithdraw ? `<button class="link-btn delete" data-reverse="${r.id}" type="button">${svg.trash}撤回</button>` : ''}
                          ${canConfirm ? `<button class="link-btn confirm" data-confirm="${r.id}" type="button">${svg.check}确认ASN差异</button>` : ''}
-                         <button class="link-btn delete" data-cancel="${r.id}" type="button">${svg.trash}作废</button>`}
+                         <button class="link-btn edit" data-inspect="${r.id}" type="button">${svg.search}查看</button>
+                         ${(r.actionHistory || []).length ? `<button class="link-btn edit" data-history="${r.id}" type="button">历史</button>` : ''}`}
                   </div>
                 </td>
               </tr>`;
@@ -1206,9 +1274,10 @@
         els.totalText.textContent = `共 ${total} 条`;
         els.prevPage.disabled = state.page <= 1;
         els.nextPage.disabled = state.page >= pageCount;
-        const pages = [];
-        for (let i = 1; i <= pageCount; i++) pages.push(i);
-        els.pageNumbers.innerHTML = pages.map(p => `<button class="page-btn ${p === state.page ? 'active' : ''}" data-page="${p}" type="button">${p}</button>`).join('');
+        const pageItems = compactPageItems(pageCount, state.page);
+        els.pageNumbers.innerHTML = pageItems.map(p => p === 'ellipsis'
+          ? '<span class="page-ellipsis" aria-hidden="true">…</span>'
+          : `<button class="page-btn ${p === state.page ? 'active' : ''}" data-page="${p}" type="button" aria-label="第 ${p} 页"${p === state.page ? ' aria-current="page"' : ''}>${p}</button>`).join('');
         els.goPageInput.max = pageCount;
 
         const sumPlan = filtered.reduce((s, r) => s + (Number(r.planQty) || 0), 0);
@@ -1224,121 +1293,123 @@
       }
 
       /* ============ 物料视图 ============ */
-      function getMaterialRows() {
-        // 与计划视图保持完全一致：复用 getFilteredRows()（状态页签 / 搜索条件），
-        // 再叠加物料视图自身可见的「物料/供应商搜索」。
-        let rows = getFilteredRows();
-        const kw = state.materialKeyword.trim().toLowerCase();
-        if (kw) {
-          rows = rows.filter(r => r.materialCode.toLowerCase().includes(kw) || r.supplierName.toLowerCase().includes(kw) || r.sapSupplierCode.toLowerCase().includes(kw));
-        }
-        return rows;
+      function formatDateForInput(date) {
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
       }
 
-      function buildMaterials() {
-        const groups = new Map();
-        getMaterialRows().forEach(r => {
-          if (!groups.has(r.materialCode)) groups.set(r.materialCode, []);
-          groups.get(r.materialCode).push(r);
-        });
-        // 状态页签 / 搜索条件已由 getMaterialRows() 统一处理，
-        // 此处仅按物料分组并排序，避免与计划视图过滤规则重复或冲突。
-        const arr = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-        return arr;
+      function setDefaultMaterialDateRange() {
+        const end = new Date();
+        const start = new Date(end);
+        start.setDate(end.getDate() - 29);
+        $('matStartDate').value = formatDateForInput(start);
+        $('matEndDate').value = formatDateForInput(end);
       }
 
-      function renderMaterialList(groups) {
-        const list = $('materialList');
-        if (!groups.length) {
-          list.innerHTML = `<div class="empty">${svg.search}<div>未找到符合条件的物料</div></div>`;
+      function getMaterialSourceRows() {
+        // 物料视图复用计划视图当前的状态页签与筛选结果，保证候选和日历数据联动。
+        return getFilteredRows();
+      }
+
+      function renderMaterialFilterOptions() {
+        const supplier = $('matSupplier');
+        const material = $('matMaterial');
+        const selectedSupplier = supplier.value;
+        const sourceRows = getMaterialSourceRows();
+        const suppliers = [...new Set(sourceRows.map(r => r.supplierName).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        supplier.innerHTML = `<option value="">请选择供应商</option>${suppliers.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
+        supplier.value = suppliers.includes(selectedSupplier) ? selectedSupplier : '';
+        const materials = [...new Set(sourceRows.filter(r => !supplier.value || r.supplierName === supplier.value).map(r => r.materialCode).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        const selectedMaterial = material.value;
+        material.disabled = false;
+        material.innerHTML = `<option value="">全部物料编号</option>${materials.map(code => `<option value="${escapeHtml(code)}">${escapeHtml(code)}</option>`).join('')}`;
+        material.value = materials.includes(selectedMaterial) ? selectedMaterial : '';
+      }
+
+      function getMaterialQueryRows() {
+        const q = state.materialQuery;
+        if (!q.applied) return [];
+        const voucher = q.voucher.toLowerCase();
+        const asnNo = q.asnNo.toLowerCase();
+        return getMaterialSourceRows().filter(r => (!q.supplier || r.supplierName === q.supplier)
+          && (!q.material || r.materialCode === q.material)
+          && r.shipDate >= q.startDate && r.shipDate <= q.endDate
+          && (!voucher || String(r.voucher || '').toLowerCase().includes(voucher))
+          && (!asnNo || String(r.asnNo || '').toLowerCase().includes(asnNo)));
+      }
+
+      function applyMaterialQuery() {
+        const query = {
+          supplier: $('matSupplier').value,
+          material: $('matMaterial').value,
+          startDate: $('matStartDate').value,
+          endDate: $('matEndDate').value,
+          voucher: $('matVoucher').value.trim(),
+          asnNo: $('matAsnNo').value.trim(),
+          applied: false
+        };
+        if (!query.startDate || !query.endDate || query.startDate > query.endDate) {
+          toast('请选择有效的时间范围', 'error');
           return;
         }
-        list.innerHTML = groups.map(([code, rows]) => {
-          const first = rows[0];
-          const totalPlan = rows.reduce((s, r) => s + (Number(r.planQty) || 0), 0);
-          const totalPromised = rows.reduce((s, r) => s + (Number(r.promisedQty) || 0), 0);
-          const gap = totalPlan - totalPromised;
-          const active = state.selectedMaterial === code;
-          return `<button class="material-card ${active ? 'active' : ''}" data-material="${escapeHtml(code)}" type="button">
-            <div class="mc-code">${escapeHtml(code)}</div>
-            <div class="mc-supplier">${escapeHtml(first.supplierName)}</div>
-            <div class="mc-metrics">
-              <span class="mc-metric">计划 <b>${formatNumber(totalPlan)}</b></span>
-              <span class="mc-metric">承诺 <b>${formatNumber(totalPromised)}</b></span>
-            </div>
-            <div class="mc-gap">${gapTagForValue(gap === 0 ? 0 : gap)}</div>
-          </button>`;
-        }).join('');
+        query.applied = true;
+        state.materialQuery = query;
+        state.matMonth = query.startDate.slice(0, 7);
+        renderMaterialView();
       }
 
-      function renderPlanRowsHtml(rows) {
-        return rows.map(r => {
-          const canEdit = isConfirmingStatus(r.status);
-          const canConfirm = isConfirmingStatus(r.status);
-          const canCancel = isConfirmingStatus(r.status);
-          const isViewOnly = !isConfirmingStatus(r.status);
-          return `<div class="plan-row">
-            <div class="pr-main">
-              <div class="pr-voucher">${escapeHtml(r.voucher)} ${isAdjusted(r) ? `<button class="adj-badge" data-history="${r.id}" type="button">已调整</button>` : ''}</div>
-              <div class="pr-meta">
-                <span>计划 <b>${formatNumber(r.planQty)}</b></span>
-                <span>承诺 <b>${formatNumber(r.promisedQty)}</b></span>
-                <span>缺口 <b>${gapTag(r)}</b></span>
-                <span>配送 <b>${escapeHtml(r.deliveryMode)}</b></span>
-              </div>
-            </div>
-            <div class="pr-actions">
-              ${isViewOnly ? `<button class="link-btn edit" data-inspect="${r.id}" type="button">${svg.search}查看</button>` : ''}
-              ${canEdit ? `<button class="link-btn edit" data-edit="${r.id}" type="button">${svg.edit}修改</button>` : ''}
-              ${canConfirm ? `<button class="link-btn confirm" data-confirm="${r.id}" type="button">${svg.check}确认</button>` : ''}
-              ${canCancel ? `<button class="link-btn delete" data-cancel="${r.id}" type="button">${svg.trash}作废</button>` : ''}
-            </div>
-          </div>`;
-        }).join('');
+      function openMaterialDayDetail(day, rows) {
+        $('materialDayTitle').textContent = `${day} · 当日物料计划明细（${rows.length} 条）`;
+        $('materialDayBody').innerHTML = `<div class="day-plan-table-wrap"><table class="day-plan-table"><thead><tr><th>供应商</th><th>物料编号</th><th>采购凭证</th><th>ASN号</th><th class="num">计划数量</th><th class="num">承诺数量</th><th class="num">差异</th><th>配送方式</th><th>指定物流商</th><th>状态</th></tr></thead><tbody>${rows.map(r => {
+          const diff = getDiff(r);
+          const status = STATUS_MAP[r.status] || STATUS_MAP.confirming;
+          return `<tr><td class="supplier">${escapeHtml(r.supplierName || '-')}</td><td>${escapeHtml(r.materialCode || '-')}</td><td class="voucher">${escapeHtml(r.voucher || '-')}</td><td class="asn">${escapeHtml(r.asnNo || '-')}</td><td class="num">${formatNumber(r.planQty)}</td><td class="num">${formatNumber(r.promisedQty)}</td><td class="num">${diff === null ? '未承诺' : `${diff > 0 ? '+' : ''}${formatNumber(diff)}`}</td><td>${escapeHtml(r.deliveryMode || '-')}</td><td>${escapeHtml(r.logistics || '-')}</td><td><span class="badge ${status.class}">${escapeHtml(status.label)}</span></td></tr>`;
+        }).join('')}</tbody></table></div>`;
+        openModal('materialDayModal');
       }
 
-      function defaultMonthForMaterial(code) {
-        const rows = getMaterialRows().filter(r => r.materialCode === code && r.shipDate);
-        if (!rows.length) {
-          const n = new Date();
-          return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`;
-        }
-        const dates = rows.map(r => r.shipDate).sort();
-        return dates[0].slice(0, 7);
-      }
-
-      function renderMaterialDetail(code) {
+      function renderEmptyMaterialCalendar(message) {
         const detail = $('materialDetail');
-        if (!code) {
-          detail.innerHTML = `<div class="empty">${svg.search}<div>请选择左侧物料查看计划</div></div>`;
+        const fallback = $('matStartDate').value || formatDateForInput(new Date());
+        if (!state.matMonth || !/^\d{4}-\d{2}$/.test(state.matMonth)) state.matMonth = fallback.slice(0, 7);
+        const [yy, mm] = state.matMonth.split('-').map(Number);
+        const firstDay = new Date(yy, mm - 1, 1);
+        const leading = (firstDay.getDay() + 6) % 7;
+        const daysInMonth = new Date(yy, mm, 0).getDate();
+        const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+        let cells = '';
+        for (let i = 0; i < leading; i++) cells += `<div class="cal-cell blank"></div>`;
+        for (let d = 1; d <= daysInMonth; d++) cells += `<div class="cal-cell"><div class="cal-date">${d}</div></div>`;
+        const trailing = (7 - ((leading + daysInMonth) % 7)) % 7;
+        for (let i = 0; i < trailing; i++) cells += `<div class="cal-cell blank"></div>`;
+        detail.innerHTML = `<div class="material-detail-head"><div><h2>物料计划日历</h2><div class="md-sub">请选择供应商和物料后查询对应计划</div></div></div>
+          <div class="cal-toolbar"><button class="page-btn" data-cal="prev" type="button" aria-label="上个月">‹</button><span class="cal-title">${yy}年${mm}月</span><button class="page-btn" data-cal="next" type="button" aria-label="下个月">›</button><span class="cal-legend">每个日期显示：<b>计</b>划数量 · 供应商<b>诺</b>发货数量 · 红色为缺口</span></div>
+          <div class="cal-grid cal-head">${weekDays.map(w => `<div>${w}</div>`).join('')}</div><div class="cal-grid">${cells}</div><div class="cal-detail"><div class="empty">${escapeHtml(message)}</div></div>`;
+      }
+
+      function renderMaterialView() {
+        const detail = $('materialDetail');
+        if (!state.materialQuery.applied) {
+          renderEmptyMaterialCalendar('可按时间范围、供应商、物料、采购凭证或ASN号查询计划');
           return;
         }
-        const rows = getMaterialRows().filter(r => r.materialCode === code);
+        const rows = getMaterialQueryRows();
+        const q = state.materialQuery;
         if (!rows.length) {
-          detail.innerHTML = `<div class="empty">${svg.search}<div>该物料暂无计划</div></div>`;
+          renderEmptyMaterialCalendar('当前查询条件下未找到物料计划');
           return;
         }
         const first = rows[0];
         const totalPlan = rows.reduce((s, r) => s + (Number(r.planQty) || 0), 0);
         const totalPromised = rows.reduce((s, r) => s + (Number(r.promisedQty) || 0), 0);
         const totalGap = totalPlan - totalPromised;
-
-        // 按日期分组（日维度）
         const byDate = new Map();
         rows.forEach(r => {
-          const d = r.shipDate || '未排期';
-          if (!byDate.has(d)) byDate.set(d, []);
-          byDate.get(d).push(r);
+          if (!byDate.has(r.shipDate)) byDate.set(r.shipDate, []);
+          byDate.get(r.shipDate).push(r);
         });
-
-        // 当前展示月份
-        if (!state.matMonth || !/^\d{4}-\d{2}$/.test(state.matMonth)) {
-          state.matMonth = defaultMonthForMaterial(code);
-        }
+        if (!state.matMonth || !/^\d{4}-\d{2}$/.test(state.matMonth)) state.matMonth = q.startDate.slice(0, 7);
         const [yy, mm] = state.matMonth.split('-').map(Number);
         const monthTitle = `${yy}年${mm}月`;
-
-        // 构建日历网格（周一为起始）
         const firstDay = new Date(yy, mm - 1, 1);
         const leading = (firstDay.getDay() + 6) % 7;
         const daysInMonth = new Date(yy, mm, 0).getDate();
@@ -1352,62 +1423,19 @@
             const plan = dRows.reduce((s, r) => s + (Number(r.planQty) || 0), 0);
             const promised = dRows.reduce((s, r) => s + (Number(r.promisedQty) || 0), 0);
             const gap = plan - promised;
-            const isSel = state.matSelectedDay === ds;
-            const gapHtml = gap > 0 ? `<span class="cal-gap">缺口 +${formatNumber(gap)}</span>` : '';
-            cells += `<div class="cal-cell has-data ${isSel ? 'selected' : ''}" data-day="${ds}">
-              <div class="cal-date">${d}</div>
-              <div class="cal-plan">计 <b>${formatNumber(plan)}</b></div>
-              <div class="cal-promised">诺 <b>${formatNumber(promised)}</b></div>
-              ${gapHtml}
-            </div>`;
+            cells += `<button class="cal-cell has-data" data-day="${ds}" type="button" aria-label="查看${ds}的${dRows.length}条计划">
+              <span class="cal-date">${d}</span><span class="cal-plan">计 <b>${formatNumber(plan)}</b></span><span class="cal-promised">诺 <b>${formatNumber(promised)}</b></span>${gap > 0 ? `<span class="cal-gap">缺口 +${formatNumber(gap)}</span>` : ''}
+            </button>`;
           } else {
             cells += `<div class="cal-cell"><div class="cal-date">${d}</div></div>`;
           }
         }
         const trailing = (7 - ((leading + daysInMonth) % 7)) % 7;
         for (let i = 0; i < trailing; i++) cells += `<div class="cal-cell blank"></div>`;
-
-        // 选中日期的当日明细
-        let detailHtml;
-        if (state.matSelectedDay && byDate.has(state.matSelectedDay)) {
-          const dr = byDate.get(state.matSelectedDay);
-          detailHtml = `<div class="cal-detail">
-            <div class="cal-detail-head">${escapeHtml(state.matSelectedDay)} · 当日计划明细（${dr.length} 条）</div>
-            ${renderPlanRowsHtml(dr)}
-          </div>`;
-        } else {
-          detailHtml = `<div class="cal-detail"><div class="empty">点击日历中高亮的日期，查看该日计划与供应商承诺发货明细</div></div>`;
-        }
-
         detail.innerHTML = `
-          <div class="material-detail-head">
-            <div>
-              <h2>${escapeHtml(code)}</h2>
-              <div class="md-sub">${escapeHtml(first.supplierName)} · SAP ${escapeHtml(first.sapSupplierCode)}</div>
-            </div>
-            <div class="material-summary">
-              <div class="ms-item"><div class="ms-label">计划总量</div><div class="ms-value">${formatNumber(totalPlan)}</div></div>
-              <div class="ms-item"><div class="ms-label">承诺总量</div><div class="ms-value">${formatNumber(totalPromised)}</div></div>
-              <div class="ms-item"><div class="ms-label">缺口总量</div><div class="ms-value ${totalGap > 0 ? 'gap' : ''}">${gapTagForValue(totalGap)}</div></div>
-            </div>
-          </div>
-          <div class="cal-toolbar">
-            <button class="page-btn" data-cal="prev" type="button" aria-label="上个月">‹</button>
-            <span class="cal-title">${monthTitle}</span>
-            <button class="page-btn" data-cal="next" type="button" aria-label="下个月">›</button>
-            <span class="cal-legend">每个日期显示：<b>计</b>划数量 · 供应商<b>诺</b>发货数量 · 红色为缺口</span>
-          </div>
-          <div class="cal-grid cal-head">${weekDays.map(w => `<div>${w}</div>`).join('')}</div>
-          <div class="cal-grid">${cells}</div>
-          ${detailHtml}`;
-      }
-
-      function renderMaterialView() {
-        const groups = buildMaterials();
-        if (state.selectedMaterial && !groups.some(([c]) => c === state.selectedMaterial)) state.selectedMaterial = null;
-        if (!state.selectedMaterial && groups.length) state.selectedMaterial = groups[0][0];
-        renderMaterialList(groups);
-        renderMaterialDetail(state.selectedMaterial);
+          <div class="material-detail-head"><div><h2>${escapeHtml(q.material)}</h2><div class="md-sub">${escapeHtml(q.supplier)} · SAP ${escapeHtml(first.sapSupplierCode || '-')}</div></div><div class="material-summary"><div class="ms-item"><div class="ms-label">计划总量</div><div class="ms-value">${formatNumber(totalPlan)}</div></div><div class="ms-item"><div class="ms-label">承诺总量</div><div class="ms-value">${formatNumber(totalPromised)}</div></div><div class="ms-item"><div class="ms-label">缺口总量</div><div class="ms-value ${totalGap > 0 ? 'gap' : ''}">${gapTagForValue(totalGap)}</div></div></div></div>
+          <div class="cal-toolbar"><button class="page-btn" data-cal="prev" type="button" aria-label="上个月">‹</button><span class="cal-title">${monthTitle}</span><button class="page-btn" data-cal="next" type="button" aria-label="下个月">›</button><span class="cal-legend">每个日期显示：<b>计</b>划数量 · 供应商<b>诺</b>发货数量 · 红色为缺口</span></div>
+          <div class="cal-grid cal-head">${weekDays.map(w => `<div>${w}</div>`).join('')}</div><div class="cal-grid">${cells}</div>`;
       }
 
       function syncStickyOffsets() {
@@ -1434,7 +1462,75 @@
         setTimeout(() => node.remove(), 3200);
       }
       function clearErrors() {
-        ['materialCodeError','sapSupplierCodeError','supplierNameError','plannerError','voucherError','planQtyError','promisedQtyError','promiseReasonError'].forEach(id => $(id).textContent = '');
+        ['materialCodeError','sapSupplierCodeError','supplierNameError','plannerError','voucherError','planQtyError','promisedQtyError'].forEach(id => $(id).textContent = '');
+      }
+
+      const DEFAULT_LOGISTICS_OPTIONS = ['顺丰速运', '顺丰物流', '德邦物流', '中通快递', 'ZTO快递', '圆通速递', '京东物流', '韵达快递', '申通快递', '百世快递', 'EMS'];
+      function renderLogisticsOptions(currentValue = '') {
+        const supplierRows = LogisticsFlow.read('bw-suppliers', []);
+        const supplierCarriers = (Array.isArray(supplierRows) ? supplierRows : []).map(s => s?.carrier).filter(Boolean);
+        const rowCarriers = state.rows.map(r => r.logistics).filter(Boolean);
+        const options = [...new Set([...DEFAULT_LOGISTICS_OPTIONS, ...supplierCarriers, ...rowCarriers, currentValue].filter(Boolean))];
+        $('logisticsOptions').innerHTML = options.map(name => `<option value="${escapeHtml(name)}"></option>`).join('');
+      }
+
+      function syncAsnPreview() {
+        if (state.editingId) return;
+        $('mAsnNo').value = '';
+      }
+
+      function renderPlanDetail(row) {
+        const isShipping = row?.status === 'in_transit';
+        const actualQty = isShipping ? row?.actualShipQty : row?.actualArrivalQty;
+        const actualGap = actualQty === null || actualQty === undefined || actualQty === ''
+          ? null
+          : (Number(row?.planQty) || 0) - Number(actualQty);
+        const promisedDiff = getDiff(row);
+        const actualGapText = actualGap === null
+          ? (isShipping ? '未登记发货' : '未到货')
+          : `${actualGap > 0 ? '缺口 +' : actualGap < 0 ? (isShipping ? '超发货 ' : '超收货 ') : ''}${actualGap === 0 ? '无缺口' : formatNumber(Math.abs(actualGap))}`;
+        const value = raw => {
+          const empty = raw === null || raw === undefined || raw === '';
+          return `<div class="detail-value${empty ? ' empty' : ''}">${empty ? '-' : escapeHtml(String(raw))}</div>`;
+        };
+        const item = (label, raw, full = false) => `<div class="detail-item${full ? ' full-width' : ''}"><div class="detail-label">${label}</div>${value(raw)}</div>`;
+        const section = (title, content) => `<section class="detail-section"><div class="detail-section-title">${title}</div><div class="detail-grid">${content}</div></section>`;
+        $('planDetail').innerHTML = [
+          section('基础信息', [
+            item('采购凭证', row?.voucher),
+            item('供应商名称', row?.supplierName),
+            item('ASN号', row?.asnNo),
+            item('物料编号', row?.materialCode),
+            item('物料描述', row?.materialDesc || row?.materialName),
+            item('计划员', row?.planner),
+            item('SAP供应商编号', row?.sapSupplierCode)
+          ].join('')),
+          section('数量与承诺', [
+            item('计划发货数量', row?.planQty),
+            item('承诺发货数量', row?.promisedQty),
+            item('计划与承诺差异', promisedDiff === null ? '未承诺' : `${promisedDiff > 0 ? '+' : ''}${formatNumber(promisedDiff)}`),
+            item(isShipping ? '实际发货数量' : '实际到货数量', actualQty),
+            item(isShipping ? '实际发货缺口' : '实际到货缺口', actualGapText),
+            item('标准装箱数量', row?.perBoxQty),
+            item('标准装托数量', row?.perPalletQty),
+            item('箱数', calcBoxCount(row)),
+            item('托数', calcPalletCount(row))
+          ].join('')),
+          section('物流与日期', [
+            item('配送方式', row?.deliveryMode),
+            item('指定物流商', row?.logistics),
+            item('计划发货日期', row?.shipDate),
+            item('计划到货日期', row?.arrivalDate),
+            item('发货登记日期', row?.shipmentRegDate)
+          ].join('')),
+          section('记录信息', [
+            item('计划创建时间', row?.createdAt),
+            item('计划更新时间', row?.updatedAt),
+            item('状态', STATUS_MAP[row?.status]?.label),
+            item('修订号', row?.revisionNo || 0),
+            item('逆向处理记录', (row?.actionHistory || []).length ? `${row.actionHistory.length} 条` : '-')
+          ].join(''))
+        ].join('');
       }
 
       function openForm(id = null, viewOnly = false) {
@@ -1459,19 +1555,27 @@
         $('mArrivalDate').value = row?.arrivalDate || '';
         $('mActualArrivalQty').value = row?.actualArrivalQty ?? '';
         $('mShipmentRegDate').value = row?.shipmentRegDate || '';
-        $('mPromiseReason').value = '';
-        $('promiseReasonRow').hidden = !id || state.formViewOnly;
+        renderLogisticsOptions(row?.logistics || '');
         els.planForm.querySelectorAll('input, select, textarea').forEach(el => {
           el.disabled = false;
           el.removeAttribute('title');
         });
         setFormReadonly(!!id);
+        $('mAsnNo').readOnly = true;
+        $('mAsnNo').disabled = true;
+        $('mAsnNo').setAttribute('title', 'ASN号仅通过“导入 SAP ASN”写入，不可手工修改');
+        $('mDeliveryMode').disabled=true;
         if (state.formViewOnly) {
           els.planForm.querySelectorAll('input, select, textarea').forEach(el => {
             el.disabled = true;
             el.setAttribute('title', '非确认中记录仅支持查看');
           });
         }
+        els.planForm.querySelector('.plan-form-grid').hidden = state.formViewOnly;
+        $('planDetail').hidden = !state.formViewOnly;
+        if (state.formViewOnly) renderPlanDetail(row);
+        else $('planDetail').innerHTML = '';
+        $('formCloseBtn').textContent = state.formViewOnly ? '关闭' : '取消';
         $('formSaveBtn').hidden = state.formViewOnly;
         openModal('formModal');
       }
@@ -1494,7 +1598,7 @@
         const materialCode = editingRow ? editingRow.materialCode : $('mMaterialCode').value.trim();
         const sapSupplierCode = editingRow ? editingRow.sapSupplierCode : $('mSapSupplierCode').value.trim();
         const supplierName = editingRow ? editingRow.supplierName : $('mSupplierName').value.trim();
-        const planner = editingRow ? editingRow.planner : $('mPlanner').value.trim();
+        const planner = LogisticsFlow.supplierFor({sapSupplierCode})?.planner || editingRow?.planner || '';
         const voucher = editingRow ? editingRow.voucher : $('mVoucher').value.trim();
         const planQty = Number($('mPlanQty').value);
         const perBoxQty = $('mPerBoxQty').value === '' ? null : Number($('mPerBoxQty').value);
@@ -1505,26 +1609,19 @@
         const arrivalDate = $('mArrivalDate').value;
         const actualArrivalQty = $('mActualArrivalQty').value === '' ? null : Number($('mActualArrivalQty').value);
         const shipmentRegDate = $('mShipmentRegDate').value || '';
-        let asnNo = $('mAsnNo').value.trim();
+        let asnNo = editingRow?.asnNo || $('mAsnNo').value.trim();
         const promisedQty = $('mPromisedQty').value === '' ? null : Number($('mPromisedQty').value);
 
         let valid = true;
         if (!materialCode) { $('materialCodeError').textContent = '请输入物料编号'; valid = false; }
         if (!sapSupplierCode) { $('sapSupplierCodeError').textContent = '请输入SAP供应商编号'; valid = false; }
         if (!supplierName) { $('supplierNameError').textContent = '请输入供应商名称'; valid = false; }
-        if (!planner) { $('plannerError').textContent = '请输入计划员'; valid = false; }
+        
         if (!voucher) { $('voucherError').textContent = '请输入采购凭证'; valid = false; }
         if (!Number.isFinite(planQty) || planQty < 0 || !Number.isInteger(planQty)) { $('planQtyError').textContent = '请输入大于等于 0 的整数'; valid = false; }
         if (promisedQty !== null && (!Number.isFinite(promisedQty) || promisedQty < 0 || !Number.isInteger(promisedQty))) { $('promisedQtyError').textContent = '请输入大于等于 0 的整数'; valid = false; }
-        // 编辑已有记录且承诺发货数量发生变化时，必须填写调整原因（审计）
-        if (editingRow && String(promisedQty) !== String(editingRow.promisedQty)) {
-          const reason = $('mPromiseReason').value.trim();
-          if (!reason) { $('promiseReasonError').textContent = '修改承诺发货数量时请填写调整原因（必填）'; valid = false; }
-        }
         if (!valid) return;
 
-        // 业务规则：承诺发货数量有数据则 ASN号 必须存在（缺失时自动生成）
-        if (promisedQty !== null && !asnNo) asnNo = defaultAsnNoForRow({ arrivalDate, sapSupplierCode, supplierName });
 
         const now = formatNow();
         if (state.editingId) {
@@ -1532,10 +1629,21 @@
           const origPromised = row.promisedQty;
           if (String(promisedQty) !== String(origPromised)) {
             if (!row.promiseHistory) row.promiseHistory = [];
-            row.promiseHistory.push({ time: formatNow(), from: Number(origPromised) || 0, to: promisedQty, by: row.planner || '计划员', reason: $('mPromiseReason').value.trim() });
+            row.promiseHistory.push({ time: formatNow(), from: Number(origPromised) || 0, to: promisedQty, by: row.planner || '计划员' });
           }
-          Object.assign(row, { planQty, promisedQty, perBoxQty, perPalletQty, deliveryMode, logistics, shipDate, arrivalDate, actualArrivalQty, shipmentRegDate, asnNo, updatedAt: now });
-          toast('计划已更新');
+          const wasReturned = row.status === 'planner_adjustment';
+          Object.assign(row, { planQty, promisedQty, perBoxQty, perPalletQty, deliveryMode, logistics, shipDate, arrivalDate, actualArrivalQty, shipmentRegDate, asnNo: row.asnNo || asnNo, updatedAt: now });
+          if (wasReturned) {
+            row.status = 'supplier_pending';
+            row.revisionNo = Number(row.revisionNo || 0) + 1;
+            if (!row.actionHistory) row.actionHistory = [];
+            row.actionHistory.push({ type: 'plan_adjusted_resubmitted', label: '计划员调整并重新发起', byRole: '工厂计划员', by: row.planner || '计划员', time: now, fromStatus: 'planner_adjustment', toStatus: 'supplier_pending', revisionNo: row.revisionNo });
+            toast('计划已调整并重新发起供应商确认');
+          } else {
+            if (!row.actionHistory) row.actionHistory = [];
+            row.actionHistory.push({ type: 'plan_adjusted', label: '计划员调整', byRole: '工厂计划员', by: row.planner || '计划员', time: now, fromStatus: row.status, toStatus: row.status, revisionNo: Number(row.revisionNo || 0) });
+            toast('计划已更新');
+          }
         } else {
           state.rows.unshift({ id: uuid(), materialCode, sapSupplierCode, supplierName, planner, voucher, asnNo, planQty, promisedQty, confirmQty: null, perBoxQty, perPalletQty, deliveryMode, logistics, planCode: '202', status: promisedQty === null ? 'awaiting_asn' : (planQty === promisedQty ? 'supplier_pending' : 'platform_pending'), shipDate, arrivalDate, actualArrivalQty, shipmentRegDate, createdAt: now, updatedAt: now });
           toast('计划新增成功');
@@ -1585,17 +1693,19 @@
       function openHistory(id) {
         const row = state.rows.find(r => r.id === id);
         if (!row) return;
-        const hist = row.promiseHistory || [];
-        let html = `<p><strong>物料编号：</strong>${escapeHtml(row.materialCode)}　<strong>采购凭证：</strong>${escapeHtml(row.voucher)}</p>`;
-        if (!hist.length) {
-          html += `<div class="empty">暂无承诺调整记录</div>`;
+        const hist = (row.promiseHistory || []).map(h => ({ ...h, label: '承诺数量调整', detail: `${formatNumber(h.from)} → ${formatNumber(h.to)}` }));
+        const actions = row.actionHistory || [];
+        const events = [...hist, ...actions].sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
+        let html = '';
+        if (!events.length) {
+          html += `<div class="empty">暂无调整、撤回或退回记录</div>`;
         } else {
-          html += '<ul class="history-list">' + hist.slice().reverse().map(h => `
-            <li>
-              <div class="h-row"><span>${escapeHtml(h.time)}</span><span>${escapeHtml(h.by || '计划员')}</span></div>
-              <div class="h-change">${formatNumber(h.from)} → ${formatNumber(h.to)}</div>
-              <div class="h-reason">${escapeHtml(h.reason)}</div>
-            </li>`).join('') + '</ul>';
+          html += '<ol class="history-timeline" aria-label="计划处理时间轴">' + events.map(h => `
+            <li><div class="h-row"><span>${escapeHtml(h.time || '')}</span></div>
+              <div class="h-change">${escapeHtml(h.label || h.type || '计划操作')}</div>
+              ${h.detail ? `<div class="h-reason">${escapeHtml(h.detail)}</div>` : ''}
+              ${h.reason ? `<div class="h-reason">${escapeHtml(h.reason)}</div>` : ''}
+            </li>`).join('') + '</ol>';
         }
         $('historyBody').innerHTML = html;
         openModal('historyModal');
@@ -1610,6 +1720,30 @@
           ? `确定作废采购凭证为「${vouchers[0]}」的计划吗？作废后可在「已作废」标签中查看。`
           : `确定作废选中的 ${valid.length} 条计划吗？作废后可在「已作废」标签中查看。`;
         openModal('cancelModal');
+      }
+
+      function requestReverse(id) {
+        const row = state.rows.find(r => r.id === id && r.status === 'supplier_pending');
+        if (!row) return;
+        state.pendingReverseId = id;
+        $('reverseReason').value = '';
+        $('reverseText').textContent = `撤回物料「${row.materialCode}」后，供应商无法继续确认；计划将转为“待计划员调整”，ASN号保持不变。`;
+        openModal('reverseModal');
+      }
+
+      function doReverse() {
+        const row = state.rows.find(r => r.id === state.pendingReverseId);
+        const reason = $('reverseReason').value.trim();
+        if (!row || row.status !== 'supplier_pending') { closeModal('reverseModal'); return; }
+        if (!reason) { toast('请输入撤回原因', 'error'); $('reverseReason').focus(); return; }
+        const now = formatNow();
+        if (!row.actionHistory) row.actionHistory = [];
+        row.actionHistory.push({ type: 'planner_withdrawn', label: '计划员撤回待调整', byRole: '工厂计划员', by: row.planner || '计划员', time: now, reason, fromStatus: 'supplier_pending', toStatus: 'planner_adjustment', revisionNo: Number(row.revisionNo || 0) });
+        row.status = 'planner_adjustment';
+        row.updatedAt = now;
+        state.pendingReverseId = null;
+        savePlans(); closeModal('reverseModal'); renderAll();
+        toast('计划已撤回，等待计划员调整');
       }
 
       function doCancel() {
@@ -1690,7 +1824,7 @@
         const deliveryMode = get('配送方式', 'deliveryMode') || '直送';
         const planCode = get('计划', 'planCode', 'planNo') || '202';
         if (!materialCode || !voucher || !Number.isFinite(planQty)) return null;
-        return { materialCode, sapSupplierCode, supplierName, planner, voucher, shipDate, arrivalDate, planQty, promisedQty, confirmQty: null, actualArrivalQty, shipmentRegDate, perBoxQty, perPalletQty, deliveryMode, logistics, planCode };
+        return {factory:get('工厂','factory'),batchNo:get('批次号','batchNo'),materialCode, sapSupplierCode, supplierName, planner, voucher, shipDate, arrivalDate, planQty, promisedQty, confirmQty: null, actualArrivalQty, shipmentRegDate, perBoxQty, perPalletQty, deliveryMode, logistics, planCode };
       }
 
       function normalizeAsnItem(raw) {
@@ -1701,8 +1835,9 @@
         const materialCode = get('物料编号', 'materialCode', 'material');
         const voucher = get('采购凭证', 'voucher', 'purchaseOrder', 'po');
         const asnNo = get('ASN号', 'asnNo', 'ASN', 'asn');
-        const qty = Number(get('承诺发货数量', 'asnQty', 'committedQty', 'qty', 'quantity', '发货数量'));
-        if (!asnNo || !materialCode || !voucher || !Number.isFinite(qty)) return null;
+        const qtyRaw=get('承诺发货数量', 'asnQty', 'committedQty', 'qty', 'quantity', '发货数量');
+        const qty = qtyRaw===''?NaN:Number(qtyRaw);
+        if (!asnNo || !materialCode || !voucher || (!Number.isFinite(qty)||qty<0)) return null;
         return { materialCode, voucher, asnNo, asnQty: qty };
       }
 
@@ -1716,11 +1851,13 @@
           if (idx >= 0) {
             const row = state.rows[idx];
             Object.assign(row, item, { updatedAt: now });
-            ensureAsnNo(row); // 承诺有数据则 ASN号 必须存在
+            LogisticsFlow.applySupplier(row,true);
+            ensureAsnNo(row, null, state.rows); // 承诺有数据则 ASN号 必须存在
             updated++;
           } else {
             const newRow = { id: uuid(), ...item, status: item.promisedQty === null ? 'awaiting_asn' : (Number(item.planQty) === Number(item.promisedQty) ? 'supplier_pending' : 'platform_pending'), createdAt: now, updatedAt: now };
-            ensureAsnNo(newRow);
+            LogisticsFlow.applySupplier(newRow,true);
+            ensureAsnNo(newRow, null, state.rows);
             state.rows.unshift(newRow);
             added++;
           }
@@ -1744,8 +1881,9 @@
           const row = state.rows.find(r => makeKey(r.materialCode, r.voucher) === key);
           if (row && Number.isFinite(item.asnQty)) {
             row.promisedQty = item.asnQty;
-            row.asnNo = item.asnNo || row.asnNo || defaultAsnNoForRow(row);
+            row.asnNo = item.asnNo || row.asnNo || defaultAsnNoForRow(row, state.rows);
             row.asnSource = 'sap';
+            LogisticsFlow.applySupplier(row,true);
             row.updatedAt = formatNow();
             committed++;
           }
@@ -2047,15 +2185,17 @@
         state.filters.materialCode = $('fMaterialCode').value.trim();
         state.filters.supplier = $('fSupplier').value.trim();
         state.filters.voucher = $('fVoucher').value.trim();
+        state.filters.asnNo = $('fAsnNo').value.trim();
         state.filters.planner = $('fPlanner').value.trim();
         state.filters.shipDate = $('fShipDate').value;
+        state.filters.deliveryMode = $('fDeliveryMode').value;
         state.page = 1;
         renderAll();
       });
       $('resetBtn').addEventListener('click', () => {
-        state.filters = { materialCode: '', supplier: '', voucher: '', planner: '', shipDate: '' };
+        state.filters = { materialCode: '', supplier: '', voucher: '', asnNo: '', planner: '', shipDate: '', deliveryMode: '' };
         $('fMaterialCode').value = ''; $('fSupplier').value = ''; $('fVoucher').value = '';
-        $('fPlanner').value = ''; $('fShipDate').value = '';
+        $('fAsnNo').value = ''; $('fPlanner').value = ''; $('fShipDate').value = ''; $('fDeliveryMode').value = '';
         state.page = 1; renderAll();
       });
 
@@ -2226,53 +2366,6 @@
       setupDropZone('plan');
       setupDropZone('asn');
 
-      // 变更物流商
-      let editingLogisticsId = null;
-      const PRESET_LOGISTICS = ['顺丰速运', '德邦物流', '中通快递', 'ZTO快递', '圆通速递', '京东物流', '韵达快递', '申通快递', '百世快递', 'EMS'];
-
-      function openLogisticsModal(rowId) {
-        editingLogisticsId = rowId;
-        const row = state.rows.find(r => r.id === rowId);
-        if (!row || !isConfirmingStatus(row.status)) return;
-        const select = $('mLogisticsSelect');
-        const customWrap = $('customLogisticsWrap');
-        const customInput = $('mLogisticsCustom');
-        if (PRESET_LOGISTICS.includes(row.logistics)) {
-          select.value = row.logistics;
-          customWrap.style.display = 'none';
-          customInput.value = '';
-        } else {
-          select.value = '__custom';
-          customWrap.style.display = '';
-          customInput.value = row.logistics || '';
-        }
-        openModal('logisticsModal');
-      }
-
-      $('mLogisticsSelect').addEventListener('change', e => {
-        $('customLogisticsWrap').style.display = e.target.value === '__custom' ? '' : 'none';
-      });
-
-      $('saveLogisticsBtn').addEventListener('click', () => {
-        if (!editingLogisticsId) return;
-        const row = state.rows.find(r => r.id === editingLogisticsId);
-        if (!row || !isConfirmingStatus(row.status)) return;
-        const select = $('mLogisticsSelect');
-        let newLogistics;
-        if (select.value === '__custom') {
-          newLogistics = $('mLogisticsCustom').value.trim();
-          if (!newLogistics) { toast('请输入物流商名称', 'error'); return; }
-        } else {
-          newLogistics = select.value;
-        }
-        row.logistics = newLogistics;
-        row.updatedAt = formatNow();
-        savePlans();
-        renderAll();
-        closeModal('logisticsModal');
-        toast('物流商已变更');
-      });
-
       els.selectAll.addEventListener('change', e => {
         const pageRows = getFilteredRows().slice((state.page - 1) * state.pageSize, (state.page - 1) * state.pageSize + state.pageSize);
         pageRows.filter(r => r.status === 'platform_pending').forEach(r => e.target.checked ? state.checkedIds.add(r.id) : state.checkedIds.delete(r.id));
@@ -2304,8 +2397,8 @@
         if (confirm) { const id = confirm.dataset.confirm; if (advanceConfirm(id)) { savePlans(); renderAll(); } return; }
         const cancel = e.target.closest('[data-cancel]');
         if (cancel) { requestCancel([cancel.dataset.cancel]); return; }
-        const logistics = e.target.closest('[data-logistics]');
-        if (logistics) { openLogisticsModal(logistics.dataset.logistics); return; }
+        const reverse = e.target.closest('[data-reverse]');
+        if (reverse) { requestReverse(reverse.dataset.reverse); return; }
         const history = e.target.closest('[data-history]');
         if (history) { openHistory(history.dataset.history); return; }
         const check = e.target.closest('.row-check');
@@ -2313,8 +2406,12 @@
       });
 
       els.planForm.addEventListener('submit', submitForm);
+      $('mPromisedQty').addEventListener('change', syncAsnPreview);
+      $('mArrivalDate').addEventListener('change', syncAsnPreview);
+      $('mShipDate').addEventListener('change', syncAsnPreview);
       els.diffConfirmBtn.addEventListener('click', confirmDiff);
       els.doCancelBtn.addEventListener('click', doCancel);
+      $('reverseConfirmBtn').addEventListener('click', doReverse);
 
       els.pageSize.addEventListener('change', () => { state.pageSize = Number(els.pageSize.value); state.page = 1; renderAll(); });
       els.prevPage.addEventListener('click', () => { if (state.page > 1) { state.page--; renderAll(); } });
@@ -2340,12 +2437,8 @@
         $('planView').hidden = state.viewMode !== 'plan';
         $('materialView').hidden = state.viewMode !== 'material';
         if (state.viewMode === 'material') {
-          if (!state.selectedMaterial) {
-            const g = buildMaterials();
-            if (g.length) state.selectedMaterial = g[0][0];
-          }
-          state.matMonth = null;
-          state.matSelectedDay = null;
+          renderMaterialFilterOptions();
+          if (!$('matStartDate').value || !$('matEndDate').value) setDefaultMaterialDateRange();
           renderMaterialView();
         } else {
           renderTable();
@@ -2353,23 +2446,29 @@
         }
       });
 
-      // 物料视图：选择物料
-      $('materialList').addEventListener('click', e => {
-        const card = e.target.closest('[data-material]');
-        if (!card) return;
-        state.selectedMaterial = card.dataset.material;
+      // 物料视图：供应商可限定物料候选；查询条件需明确提交。
+      $('matSupplier').addEventListener('change', () => {
+        renderMaterialFilterOptions();
+        state.materialQuery.applied = false;
+        renderMaterialView();
+      });
+      $('matMaterial').addEventListener('change', () => {
+        state.materialQuery.applied = false;
+        renderMaterialView();
+      });
+      $('matQueryBtn').addEventListener('click', applyMaterialQuery);
+      $('matResetBtn').addEventListener('click', () => {
+        $('matSupplier').value = '';
+        renderMaterialFilterOptions();
+        setDefaultMaterialDateRange();
+        $('matVoucher').value = '';
+        $('matAsnNo').value = '';
+        state.materialQuery = { supplier: '', material: '', startDate: '', endDate: '', voucher: '', asnNo: '', applied: false };
         state.matMonth = null;
-        state.matSelectedDay = null;
         renderMaterialView();
       });
 
-      // 物料视图：搜索与过滤
-      $('fMaterialKeyword').addEventListener('input', e => {
-        state.materialKeyword = e.target.value;
-        renderMaterialView();
-      });
-
-      // 物料视图：行内操作（翻月 / 选日期 / 修改 / 确认 / 作废）
+      // 物料视图：翻月 / 点击日期查看当日只读明细。
       $('materialDetail').addEventListener('click', e => {
         const cal = e.target.closest('[data-cal]');
         if (cal) {
@@ -2377,31 +2476,15 @@
           const [yy, mm] = state.matMonth.split('-').map(Number);
           const nd = new Date(yy, mm - 1 + dir, 1);
           state.matMonth = `${nd.getFullYear()}-${String(nd.getMonth() + 1).padStart(2, '0')}`;
-          state.matSelectedDay = null;
-          renderMaterialDetail(state.selectedMaterial);
+          renderMaterialView();
           return;
         }
         const day = e.target.closest('[data-day]');
         if (day) {
-          state.matSelectedDay = (state.matSelectedDay === day.dataset.day) ? null : day.dataset.day;
-          renderMaterialDetail(state.selectedMaterial);
+          const rows = getMaterialQueryRows().filter(r => r.shipDate === day.dataset.day);
+          if (rows.length) openMaterialDayDetail(day.dataset.day, rows);
           return;
         }
-        const inspect = e.target.closest('[data-inspect]');
-        if (inspect) { openForm(inspect.dataset.inspect, true); return; }
-        const edit = e.target.closest('[data-edit]');
-        if (edit) { openForm(edit.dataset.edit); return; }
-        const confirm = e.target.closest('[data-confirm]');
-        if (confirm) {
-          const id = confirm.dataset.confirm;
-          const ok = advanceConfirm(id);
-          if (ok) { savePlans(); renderAll(); }
-          return;
-        }
-        const cancel = e.target.closest('[data-cancel]');
-        if (cancel) { requestCancel([cancel.dataset.cancel]); return; }
-        const history = e.target.closest('[data-history]');
-        if (history) { openHistory(history.dataset.history); return; }
       });
 
       document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => {

@@ -174,12 +174,7 @@
   .btn-ghost { border-color: transparent; background: transparent; color: var(--text-2); }
 
   /* Content Body */
-  .content-body { flex: 1; display: flex; min-height: 380px; }
-  .time-slots {
-    width: 72px; padding: 20px 0; display: flex; flex-direction: column; align-items: center;
-    gap: 40px; flex-shrink: 0; border-right: 1px solid var(--border); background: var(--muted);
-  }
-  .time-slot { font-size: 12px; color: var(--text-2); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .content-body { flex: 1; min-height: 380px; }
   .appointments-area { flex: 1; padding: 20px 24px; overflow-y: auto; }
 
   /* Appointment Card */
@@ -452,11 +447,6 @@
         </div>
 
         <div class="content-body">
-          <div class="time-slots">
-            <div class="time-slot">12:00</div>
-            <div class="time-slot">15:00</div>
-          </div>
-
           <div class="appointments-area" id="appointmentsArea">
             <div class="appointment-card" id="aptCard">
               <div class="card-top">

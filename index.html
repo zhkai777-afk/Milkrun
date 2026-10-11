@@ -234,7 +234,7 @@
     <section class="page-card" aria-labelledby="pageTitle">
       <header class="page-head">
         <h1 id="pageTitle">库区维护</h1>
-        <span class="page-note">库区基础信息与每日托数统一维护</span>
+        <span class="page-note">库区基础信息与每日数量统一维护</span>
       </header>
 
       <div class="workspace">
@@ -276,11 +276,11 @@
           </div>
         </aside>
 
-        <section class="panel calendar-panel" aria-label="每日托数日历">
+        <section class="panel calendar-panel" aria-label="每日数量日历">
           <div class="panel-head">
             <div class="panel-title">
-              <h2 id="calendarZoneName">每日托数</h2>
-              <p id="calendarZoneMeta">选择左侧库区后维护每日托数</p>
+              <h2 id="calendarZoneName">每日数量</h2>
+              <p id="calendarZoneMeta">选择左侧库区后维护每日数量</p>
             </div>
             <div class="calendar-tools">
               <button class="btn" id="todayBtn" type="button">今天</button>
@@ -314,12 +314,12 @@
             <div><input id="zoneName" name="name" type="text" maxlength="30" placeholder="请输入库区名称" autocomplete="off"><div class="field-error" id="nameError" role="alert"></div></div>
           </div>
           <div class="form-row">
-            <label class="form-label" for="zoneLimit"><span class="required">*</span>托数上限</label>
+            <label class="form-label" for="zoneLimit"><span class="required">*</span>数量上限</label>
             <div>
               <div class="number-stepper">
-                <button class="step-btn" id="minusLimit" type="button" aria-label="减少托数上限">−</button>
-                <input id="zoneLimit" name="limit" type="number" min="0" max="99999999" step="100" inputmode="numeric" value="10000">
-                <button class="step-btn" id="plusLimit" type="button" aria-label="增加托数上限">＋</button>
+                <button class="step-btn" id="minusLimit" type="button" aria-label="减少数量上限">−</button>
+                <input id="zoneLimit" name="limit" type="number" min="0" max="99999999" step="100" inputmode="numeric" value="200000">
+                <button class="step-btn" id="plusLimit" type="button" aria-label="增加数量上限">＋</button>
               </div>
               <div class="field-error" id="limitError" role="alert"></div>
             </div>
@@ -343,30 +343,22 @@
   <div class="modal-layer" id="capacityModal" role="presentation">
     <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="capacityModalTitle">
       <div class="modal-head">
-        <h3 id="capacityModalTitle">修改每日托数</h3>
+        <h3 id="capacityModalTitle">修改每日数量</h3>
         <button class="close-btn" type="button" data-close="capacityModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button>
       </div>
       <form id="capacityForm" novalidate>
         <div class="modal-body">
           <p class="edit-date" id="capacityDateText"></p>
-          <div class="slot-grid">
-            <div class="slot-field">
-              <label for="capacityAm">上午托数</label>
-              <input id="capacityAm" type="number" min="0" max="99999999" inputmode="numeric" placeholder="上午留空">
-            </div>
-            <div class="slot-field">
-              <label for="capacityPm">下午托数</label>
-              <input id="capacityPm" type="number" min="0" max="99999999" inputmode="numeric" placeholder="下午留空">
-            </div>
+          <div class="slot-field">
+            <label for="dailyCapacity">全天数量</label>
+            <input id="dailyCapacity" type="number" min="0" max="99999999" inputmode="numeric" placeholder="全天留空">
           </div>
           <div class="field-error" id="capacityError" role="alert"></div>
           <div class="quick-values">
-            <button type="button" data-slot="all" data-value="150">全天各 150</button>
-            <button type="button" data-slot="am" data-value="150">上午 150</button>
-            <button type="button" data-slot="pm" data-value="150">下午 150</button>
+            <button type="button" data-value="200000">全天 200,000</button>
             <button type="button" data-slot="all" data-value="">全天清空</button>
           </div>
-          <div class="helper">上午、下午可分别调整或清空。工作日默认各 150 托；周末及法定节假日默认留空。修改后的日期右上角会显示青色标记。</div>
+          <div class="helper">仅维护全天数量。每天默认 200,000；修改后的日期右上角会显示青色标记。</div>
         </div>
         <div class="modal-foot">
           <button class="btn" type="button" data-close="capacityModal">取消</button>
@@ -391,9 +383,8 @@
       'use strict';
 
       const STORAGE_KEY = 'warehouse-zone-maintenance-v1';
-      const DEFAULT_DAILY = 300;
-      const DEFAULT_HALF_DAY = DEFAULT_DAILY / 2;
-      const DEFAULT_ZONE_LIMIT = 10000;
+      const DEFAULT_DAILY = 200000;
+      const DEFAULT_ZONE_LIMIT = 200000;
       const svg = {
         edit: '<svg class="icon" aria-hidden="true"><path d="m10.8 3.2 2 2L6 12l-3 .8.8-3 7-6.6ZM9.5 4.5l2 2"/></svg>',
         trash: '<svg class="icon" aria-hidden="true"><path d="M3 5h12M7 5V3h4v2m2 0-.7 10H5.7L5 5m3 3v4m3-4v4"/></svg>',
@@ -401,7 +392,7 @@
         search: '<svg class="icon" aria-hidden="true"><circle cx="7.5" cy="7.5" r="4.5"/><path d="m11 11 4 4"/></svg>'
       };
 
-      // 2025–2026 放假日期按国务院办公厅年度通知内置；周末及节假日默认托数为空。
+      // 2025–2026 放假日期按国务院办公厅年度通知内置；每日默认数量不区分工作日、周末或节假日。
       const holidayMap = {
         '2025-01-01': '元旦', '2025-01-28': '春节', '2025-01-29': '春节', '2025-01-30': '春节', '2025-01-31': '春节', '2025-02-01': '春节', '2025-02-02': '春节', '2025-02-03': '春节', '2025-02-04': '春节',
         '2025-04-04': '清明节', '2025-04-05': '清明节', '2025-04-06': '清明节', '2025-05-01': '劳动节', '2025-05-02': '劳动节', '2025-05-03': '劳动节', '2025-05-04': '劳动节', '2025-05-05': '劳动节',
@@ -412,10 +403,10 @@
       };
 
       const seedZones = [
-        { id: crypto.randomUUID(), code: '1', name: '1号库区', limit: 10000, status: 'enabled', createdAt: '2026-01-29 15:03:52', daily: {} },
-        { id: crypto.randomUUID(), code: '2', name: '2号库区', limit: 10000, status: 'enabled', createdAt: '2026-03-17 11:10:10', daily: {} },
-        { id: crypto.randomUUID(), code: '3', name: '3号库区', limit: 10000, status: 'enabled', createdAt: '2026-01-29 15:04:36', daily: {} },
-        { id: crypto.randomUUID(), code: '4', name: '4号库区', limit: 10000, status: 'disabled', createdAt: '2026-01-29 15:04:50', daily: {} }
+        { id: crypto.randomUUID(), code: '1', name: '1号库区', limit: 200000, status: 'enabled', createdAt: '2026-01-29 15:03:52', daily: {} },
+        { id: crypto.randomUUID(), code: '2', name: '2号库区', limit: 200000, status: 'enabled', createdAt: '2026-03-17 11:10:10', daily: {} },
+        { id: crypto.randomUUID(), code: '3', name: '3号库区', limit: 200000, status: 'enabled', createdAt: '2026-01-29 15:04:36', daily: {} },
+        { id: crypto.randomUUID(), code: '4', name: '4号库区', limit: 200000, status: 'disabled', createdAt: '2026-01-29 15:04:50', daily: {} }
       ];
 
       const state = {
@@ -435,7 +426,7 @@
         zoneList: $('zoneList'), zoneCountText: $('zoneCountText'), selectedCount: $('selectedCount'), selectAll: $('selectAll'), batchDeleteBtn: $('batchDeleteBtn'),
         keywordInput: $('keywordInput'), statusFilter: $('statusFilter'), calendarContent: $('calendarContent'), calendarZoneName: $('calendarZoneName'), calendarZoneMeta: $('calendarZoneMeta'), monthTitle: $('monthTitle'),
         zoneModal: $('zoneModal'), zoneForm: $('zoneForm'), zoneModalTitle: $('zoneModalTitle'), zoneCode: $('zoneCode'), zoneName: $('zoneName'), zoneLimit: $('zoneLimit'),
-        capacityModal: $('capacityModal'), capacityForm: $('capacityForm'), capacityAm: $('capacityAm'), capacityPm: $('capacityPm'), capacityDateText: $('capacityDateText'), confirmModal: $('confirmModal'), confirmText: $('confirmText')
+        capacityModal: $('capacityModal'), capacityForm: $('capacityForm'), dailyCapacity: $('dailyCapacity'), capacityDateText: $('capacityDateText'), confirmModal: $('confirmModal'), confirmText: $('confirmText')
       };
 
       function loadZones() {
@@ -455,22 +446,16 @@
         const q = state.keyword.trim().toLowerCase();
         return state.zones.filter(z => (!q || z.code.toLowerCase().includes(q) || z.name.toLowerCase().includes(q)) && (state.status === 'all' || z.status === state.status));
       }
-      function getDailySlots(zone, key) {
+      function getDailyCapacity(zone, key) {
         if (Object.prototype.hasOwnProperty.call(zone.daily || {}, key)) {
           const saved = zone.daily[key];
-          if (saved && typeof saved === 'object') return { am: saved.am ?? null, pm: saved.pm ?? null };
-          if (saved === null || saved === '') return { am: null, pm: null };
-          const legacyTotal = Number(saved);
-          const am = Math.floor(legacyTotal / 2);
-          return { am, pm: legacyTotal - am };
+          if (saved && typeof saved === 'object') {
+            const values = [saved.am, saved.pm].filter(value => value != null && value !== '');
+            return values.length ? values.reduce((sum, value) => sum + Number(value), 0) : null;
+          }
+          return saved === null || saved === '' ? null : Number(saved);
         }
-        const dayOfWeek = new Date(`${key}T00:00:00`).getDay();
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        return holidayMap[key] || isWeekend ? { am: null, pm: null } : { am: DEFAULT_HALF_DAY, pm: DEFAULT_HALF_DAY };
-      }
-      function getSlotsTotal(slots) {
-        const values = [slots.am, slots.pm].filter(value => value !== null && value !== '');
-        return values.length ? values.reduce((sum, value) => sum + Number(value), 0) : null;
+        return DEFAULT_DAILY;
       }
 
       function renderZones() {
@@ -506,25 +491,25 @@
         const month = state.viewDate.getMonth();
         els.monthTitle.textContent = `${year}年${month + 1}月`;
         if (!zone) {
-          els.calendarZoneName.textContent = '每日托数';
-          els.calendarZoneMeta.textContent = '选择左侧库区后维护每日托数';
+          els.calendarZoneName.textContent = '每日数量';
+          els.calendarZoneMeta.textContent = '选择左侧库区后维护每日数量';
           els.calendarContent.innerHTML = `<div class="calendar-empty"><div><div>${svg.calendar}</div><div>暂无可维护的库区<br>请先在左侧新增库区</div></div></div>`;
           return;
         }
-        els.calendarZoneName.textContent = `${zone.name} · 每日托数`;
-        els.calendarZoneMeta.textContent = `库区编号 ${zone.code} · 托数上限 ${formatNumber(zone.limit)} · 点击日期中的托数即可修改`;
+        els.calendarZoneName.textContent = `${zone.name} · 每日数量`;
+        els.calendarZoneMeta.textContent = `库区编号 ${zone.code} · 数量上限 ${formatNumber(zone.limit)} · 点击日期中的数量即可修改`;
 
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         let total = 0, workingDays = 0, blankDays = 0, modified = 0;
         for (let d = 1; d <= daysInMonth; d++) {
           const key = dateKey(new Date(year, month, d));
-          const value = getSlotsTotal(getDailySlots(zone, key));
+          const value = getDailyCapacity(zone, key);
           if (value === null) blankDays++; else { total += value; workingDays++; }
           if (Object.prototype.hasOwnProperty.call(zone.daily || {}, key)) modified++;
         }
         const summaries = `
           <div class="summary-bar">
-            <div class="summary-item"><div class="summary-label">本月托数合计</div><div class="summary-value">${formatNumber(total)} <small>托</small></div></div>
+            <div class="summary-item"><div class="summary-label">本月数量合计</div><div class="summary-value">${formatNumber(total)}</div></div>
             <div class="summary-item"><div class="summary-label">有计划天数</div><div class="summary-value">${workingDays} <small>天</small></div></div>
             <div class="summary-item"><div class="summary-label">空白天数</div><div class="summary-value">${blankDays} <small>天</small></div></div>
             <div class="summary-item"><div class="summary-label">手动调整</div><div class="summary-value">${modified} <small>天</small></div></div>
@@ -540,14 +525,12 @@
           const key = dateKey(date);
           const other = date.getMonth() !== month;
           const holiday = holidayMap[key] || '';
-          const slots = other ? { am: null, pm: null } : getDailySlots(zone, key);
-          const value = getSlotsTotal(slots);
+          const value = other ? null : getDailyCapacity(zone, key);
           const isModified = !other && Object.prototype.hasOwnProperty.call(zone.daily || {}, key);
           cells += `<div class="day ${other ? 'other' : ''} ${key === todayKey ? 'today' : ''} ${isModified ? 'modified' : ''}">
             <div class="day-top"><span class="date-number">${date.getDate()}</span>${holiday && !other ? `<span class="holiday-name" title="${holiday}">${holiday}</span>` : ''}</div>
-            ${other ? '' : `<button class="capacity-button ${value === null ? 'blank' : ''}" type="button" data-date="${key}" aria-label="修改${key}上午和下午托数">
-              <span class="capacity-label">${holiday ? '节假日托数' : '全天合计'}</span><span class="capacity-value">${value === null ? '未设置' : formatNumber(value)}</span>
-              <span class="capacity-slots"><span>上午 ${slots.am === null || slots.am === '' ? '—' : formatNumber(slots.am)}</span><span>下午 ${slots.pm === null || slots.pm === '' ? '—' : formatNumber(slots.pm)}</span></span>
+            ${other ? '' : `<button class="capacity-button ${value === null ? 'blank' : ''}" type="button" data-date="${key}" aria-label="修改${key}全天数量">
+              <span class="capacity-label">${holiday ? '节假日数量' : '全天合计'}</span><span class="capacity-value">${value === null ? '未设置' : formatNumber(value)}</span>
             </button>`}
           </div>`;
         }
@@ -597,7 +580,7 @@
         } else {
           const zone = { id: crypto.randomUUID(), code, name, limit, status, createdAt: formatNow(), daily: {} };
           state.zones.unshift(zone); state.selectedZoneId = zone.id;
-          toast('库区新增成功，工作日托数已默认设为 300');
+          toast('库区新增成功，每日数量默认设为 200,000');
         }
         saveZones(); closeModal('zoneModal'); renderAll();
       }
@@ -607,7 +590,7 @@
         if (!validIds.length) return;
         state.pendingDeleteIds = validIds;
         const names = state.zones.filter(z => validIds.includes(z.id)).map(z => z.name);
-        els.confirmText.textContent = validIds.length === 1 ? `删除“${names[0]}”后，该库区的每日托数数据也会一并删除，且无法恢复。` : `确定删除选中的 ${validIds.length} 个库区吗？相关每日托数数据也会一并删除，且无法恢复。`;
+        els.confirmText.textContent = validIds.length === 1 ? `删除“${names[0]}”后，该库区的每日数量数据也会一并删除，且无法恢复。` : `确定删除选中的 ${validIds.length} 个库区吗？相关每日数量数据也会一并删除，且无法恢复。`;
         openModal('confirmModal');
       }
 
@@ -622,9 +605,8 @@
       function openCapacityForm(key) {
         const zone = getSelectedZone(); if (!zone) return;
         state.editingDateKey = key; clearErrors();
-        const slots = getDailySlots(zone, key);
-        els.capacityAm.value = slots.am === null || slots.am === '' ? '' : slots.am;
-        els.capacityPm.value = slots.pm === null || slots.pm === '' ? '' : slots.pm;
+        const capacity = getDailyCapacity(zone, key);
+        els.dailyCapacity.value = capacity === null || capacity === '' ? '' : capacity;
         const date = new Date(`${key}T00:00:00`);
         const week = ['日','一','二','三','四','五','六'][date.getDay()];
         els.capacityDateText.textContent = `${key.replaceAll('-', '年').replace(/年(\d{2})$/, '月$1日')} · 周${week}${holidayMap[key] ? ` · ${holidayMap[key]}` : ''}`;
@@ -633,20 +615,16 @@
 
       function submitCapacity(event) {
         event.preventDefault(); $('capacityError').textContent = '';
-        const rawAm = els.capacityAm.value.trim();
-        const rawPm = els.capacityPm.value.trim();
-        const am = rawAm === '' ? null : Number(rawAm);
-        const pm = rawPm === '' ? null : Number(rawPm);
-        const invalidAm = am !== null && (!Number.isInteger(am) || am < 0 || am > 99999999);
-        const invalidPm = pm !== null && (!Number.isInteger(pm) || pm < 0 || pm > 99999999);
-        if (invalidAm || invalidPm) {
-          $('capacityError').textContent = '上午和下午均需输入 0–99,999,999 之间的整数，或留空';
-          (invalidAm ? els.capacityAm : els.capacityPm).focus();
+        const rawCapacity = els.dailyCapacity.value.trim();
+        const capacity = rawCapacity === '' ? null : Number(rawCapacity);
+        if (capacity !== null && (!Number.isInteger(capacity) || capacity < 0 || capacity > 99999999)) {
+          $('capacityError').textContent = '全天数量需输入 0–99,999,999 之间的整数，或留空';
+          els.dailyCapacity.focus();
           return;
         }
         const zone = getSelectedZone(); if (!zone) return;
-        zone.daily ||= {}; zone.daily[state.editingDateKey] = { am, pm };
-        saveZones(); closeModal('capacityModal'); renderCalendar(); toast('上午、下午托数已保存');
+        zone.daily ||= {}; zone.daily[state.editingDateKey] = capacity;
+        saveZones(); closeModal('capacityModal'); renderCalendar(); toast('全天数量已保存');
       }
 
       $('addZoneBtn').addEventListener('click', () => openZoneForm());
@@ -676,9 +654,8 @@
       document.querySelectorAll('.modal-layer').forEach(layer => layer.addEventListener('mousedown', e => { if (e.target === layer) closeModal(layer.id); }));
       document.addEventListener('keydown', e => { if (e.key === 'Escape') { const open = [...document.querySelectorAll('.modal-layer.show')].pop(); if (open) closeModal(open.id); } });
       document.querySelectorAll('.quick-values button').forEach(btn => btn.addEventListener('click', () => {
-        if (btn.dataset.slot === 'all' || btn.dataset.slot === 'am') els.capacityAm.value = btn.dataset.value;
-        if (btn.dataset.slot === 'all' || btn.dataset.slot === 'pm') els.capacityPm.value = btn.dataset.value;
-        (btn.dataset.slot === 'pm' ? els.capacityPm : els.capacityAm).focus();
+        els.dailyCapacity.value = btn.dataset.value;
+        els.dailyCapacity.focus();
       }));
 
       renderAll();
