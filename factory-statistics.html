@@ -53,7 +53,7 @@ function renderTrend(rows){
  $('trendError').hidden=!model.error;$('trendError').textContent=model.error||'';
  $('trendStatus').textContent=model.error?'':`${period} · ${mode==='month'?'每日':'每月'}数据 · ${buckets.length}个${mode==='month'?'日期':'月份'}${appliedStart||appliedEnd?' · 按当前查询日期交集统计':''}${model.overlap===false?' · 无日期交集':''}`;
  if(model.error){$('trend').innerHTML='<div class="empty">请选择有效的月份或年份</div>';return;}
- const w=Math.max(narrow?600:640,buckets.length*30+88),h=260,left=48,right=w-24,top=20,bottom=208,slot=(right-left)/buckets.length,barWidth=Math.min(model.mode==='year'?10:22,(slot-8)/2),x=i=>left+(i+.5)*slot,y=v=>bottom-v*(bottom-top)/100;
+ const w=Math.max(narrow?600:640,buckets.length*(model.mode==='month'?60:30)+88),h=260,left=48,right=w-24,top=20,bottom=208,slot=(right-left)/buckets.length,barWidth=Math.min(model.mode==='year'?10:14,(slot-8)/2),x=i=>left+(i+.5)*slot,y=v=>bottom-v*(bottom-top)/100;
  let svg=`<svg class="trend-svg" style="min-width:${(narrow&&model.mode==='month')||buckets.length>20?w:0}px" viewBox="0 0 ${w} ${h}" role="img" aria-label="交付准时率分组柱状趋势">`;
  if(model.mode==='month')buckets.forEach((b,i)=>{svg+=`<rect class="day-band" x="${left+i*slot}" y="${top}" width="${slot}" height="${bottom-top+22}" fill="${i%2?'#ffffff':'#f3f8f8'}"/><line x1="${left+i*slot}" x2="${left+i*slot}" y1="${top}" y2="${bottom+22}" stroke="#e5eded"/>`;});
  [0,25,50,75,100].forEach(v=>svg+=`<line x1="${left}" x2="${right}" y1="${y(v)}" y2="${y(v)}" stroke="#e7edef"/><text x="4" y="${y(v)+4}" font-size="11" fill="#71818a">${v}%</text>`);
