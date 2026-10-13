@@ -322,6 +322,8 @@
     .confirm-plan-table .method-col { width: 118px; }
     .confirm-plan-table .logistics-col { width: 158px; }
     .confirm-plan-table .calc-col { width: 108px; }
+    .confirm-plan-table .batch-col { width: 112px; }
+    .confirm-plan-table .action-col { width: 94px; }
     .confirm-material-code { padding: 0; border: 0; background: transparent; color: var(--primary-dark); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
     .confirm-material-code:hover { color: var(--primary); }
     .confirm-material-code:focus-visible { outline: 3px solid var(--primary-soft); outline-offset: 2px; border-radius: 2px; }
@@ -336,6 +338,25 @@
     .confirm-calc-value { padding: 7px 5px; border-radius: 6px; background: var(--primary-soft); text-align: center; color: var(--primary); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
     .confirm-calc-value span { display: block; margin-top: 2px; color: var(--text-3); font-size: 10px; font-weight: 400; }
     .confirm-plan-help { margin-top: 9px; color: var(--text-3); font-size: 12px; line-height: 1.5; }
+    .batch-summary { color: var(--text-2); font-size: 12px; line-height: 1.5; }
+    .batch-summary.is-empty { color: var(--text-3); }
+    .batch-action { min-width: 74px; padding: 5px 8px; border: 1px solid var(--primary); border-radius: 5px; background: var(--surface); color: var(--primary-dark); font-size: 12px; font-weight: 600; cursor: pointer; }
+    .batch-action:hover { background: var(--primary-soft); }
+    #batchDetailModal { z-index: 1100; }
+    .batch-detail-modal { max-width: 680px; }
+    .batch-editor-context { display: flex; justify-content: space-between; gap: 16px; margin: 0 24px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--muted); color: var(--text-2); font-size: 12px; }
+    .batch-editor-context strong { display: block; margin-top: 3px; color: var(--text); font-size: 14px; }
+    .batch-editor-body { padding: 16px 24px 20px; }
+    .batch-detail-labels, .batch-detail-row { display: grid; grid-template-columns: minmax(0, 1fr) 120px 32px; gap: 8px; align-items: center; }
+    .batch-detail-labels { margin-bottom: 5px; color: var(--text-3); font-size: 11px; }
+    .batch-detail-row { margin-top: 8px; }
+    .batch-detail-row input { width: 100%; min-height: 38px; padding: 8px 9px; border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text); font: inherit; outline: none; }
+    .batch-detail-row input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); }
+    .batch-detail-row input.batch-input-error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(233,93,98,.12); }
+    .batch-detail-remove { width: 32px; height: 32px; border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text-2); }
+    .batch-detail-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
+    .batch-detail-error { min-height: 18px; color: var(--danger); font-size: 12px; }
+    .batch-detail-readonly { color: var(--text-2); font-size: 12px; line-height: 1.7; }
     .modal-footer-fixed {
       padding: 14px 24px; border-top: 1px solid var(--border);
       display: flex; align-items: center; justify-content: flex-end; gap: 10px;
@@ -421,11 +442,20 @@
     .appointment-date-box input { min-height: 40px; }
     .appointment-date-hint { margin-top: 6px; color: var(--text-3); font-size: 12px; line-height: 1.45; }
     .appointment-capacity-card {
-      flex: 1; min-width: 420px; display: grid; grid-template-columns: repeat(3, 1fr);
+      flex: 1; min-width: 520px; display: block;
       gap: 8px; padding: 12px 14px; border: 1px solid var(--border);
       border-radius: 8px; background: var(--primary-soft);
     }
     .appointment-capacity-card.over-limit { border-color: #f3c9c9; background: var(--danger-soft); }
+    .appointment-capacity-head, .appointment-capacity-row { display: grid; grid-template-columns: minmax(90px, 1.2fr) repeat(4, minmax(86px, 1fr)); gap: 0; }
+    .appointment-capacity-head { padding-bottom: 6px; color: var(--text-3); font-size: 11px; }
+    .appointment-capacity-row { padding: 8px 0; border-top: 1px solid rgba(160,180,180,.32); color: var(--text); font-size: 12px; }
+    .appointment-capacity-row span { padding: 0 9px; border-right: 1px solid rgba(160,180,180,.28); font-variant-numeric: tabular-nums; }
+    .appointment-capacity-row span:last-child { border-right: none; }
+    .appointment-capacity-row .area { font-weight: 600; }
+    .appointment-capacity-row .remaining { color: var(--success); font-weight: 700; }
+    .appointment-capacity-row.over-limit .remaining { color: var(--danger); }
+    .appointment-capacity-empty { padding: 9px 0 2px; color: var(--text-3); font-size: 12px; }
     .appointment-capacity-item { display: flex; flex-direction: column; gap: 4px; padding: 2px 10px; border-right: 1px solid var(--border); }
     .appointment-capacity-item:last-child { border-right: none; }
     .appointment-capacity-item .label { color: var(--text-2); font-size: 12px; }
@@ -439,9 +469,9 @@
       margin: 0 24px 12px;
     }
     .appointment-filter-bar .filter-field input { width: 160px; }
-    .appointment-table-wrap { margin: 0 24px 16px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-    .appointment-table-wrap table { min-width: unset; }
-    .appointment-table-wrap th { background: #fbfcfd; }
+    .appointment-table-wrap { margin: 0 24px 16px; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; overflow-y: hidden; scrollbar-gutter: stable; }
+    .appointment-table-wrap table { width: max-content; min-width: 1320px; table-layout: auto; }
+    .appointment-table-wrap th { background: #fbfcfd; white-space: nowrap; }
     .appointment-table-wrap td, .appointment-table-wrap th { padding: 10px 14px; }
     .appointment-footer {
       display: flex; align-items: center; justify-content: flex-end; gap: 10px;
@@ -482,9 +512,8 @@
       .top-bar { padding: 0 16px; }
       .confirm-asn-summary { grid-template-columns: 1fr; margin: 12px 16px; }
       .confirm-plan-section { padding: 0 16px 16px; }
-      .appointment-capacity-card { grid-template-columns: 1fr; }
-      .appointment-capacity-item { border-right: none; border-bottom: 1px solid var(--border); padding: 6px 4px 10px; }
-      .appointment-capacity-item:last-child { border-bottom: none; }
+      .appointment-capacity-card { min-width: 0; overflow-x: auto; }
+      .appointment-capacity-head, .appointment-capacity-row { min-width: 520px; }
       .top-bar .company { display: none; }
       .confirm-info-header { flex-direction: column; gap: 12px; }
       .confirm-info-right { grid-template-columns: 1fr 1fr; }
@@ -652,12 +681,7 @@
             <input type="date" id="apptDateInput" aria-describedby="apptDateHint">
             <div class="appointment-date-hint" id="apptDateHint">默认选中已选 ASN 的计划到货日期</div>
           </div>
-          <div class="appointment-capacity-card" id="apptCapacityCard" aria-live="polite">
-            <div class="appointment-capacity-item"><span class="label">库区当日可预约数量</span><span class="value"><span id="apptCapacityTotal">—</span></span></div>
-            <div class="appointment-capacity-item"><span class="label">已预约数量</span><span class="value"><span id="apptCapacityUsed">—</span></span></div>
-            <div class="appointment-capacity-item remaining"><span class="label">剩余可预约数量</span><span class="value"><span id="apptCapacityRemaining">—</span></span></div>
-            <div class="appointment-capacity-item remaining"><span class="label">剩余可预约数量</span><span class="value"><span id="apptCapacityRemaining">—</span></span></div>
-          </div>
+          <div class="appointment-capacity-card" id="apptCapacityCard" aria-live="polite"></div>
         </div>
         <div class="section-title-bar" id="apptSelectionTitle">选择预约 ASN</div>
         <div class="appointment-filter-bar" id="apptFilterBar">
@@ -674,7 +698,7 @@
               <tr id="apptBatchHead"><th class="col-check"><input type="checkbox" id="apptSelectAll"></th>
               <th>ASN号</th><th>物料项数</th><th>配送方式</th><th class="amount">预约数量</th>
               <th class="amount">计划发货数量</th><th class="amount">承诺发货数量</th></tr>
-              <tr id="apptSingleHead" style="display:none;"><th>物料编号</th><th>物料名称</th><th>采购凭证</th><th class="amount">计划发货数量</th><th class="amount">承诺发货数量</th><th class="amount">预约数量</th></tr>
+              <tr id="apptSingleHead" style="display:none;"><th>物料编号</th><th>物料名称</th><th>库区</th><th>采购凭证</th><th class="amount">计划发货数量</th><th class="amount">承诺发货数量</th><th class="amount">标准装箱数</th><th class="amount">标准装托数</th><th class="amount">实际箱数</th><th class="amount">实际托数</th></tr>
             </thead>
             <tbody id="apptTableBody"></tbody>
           </table>
@@ -723,6 +747,19 @@
       </div>
       <div class="modal-body-scrollable" id="asnDetailContent"></div>
       <div class="appointment-footer" id="asnDetailFooter"></div>
+    </div>
+  </div>
+  <div class="modal-layer" id="batchDetailModal">
+    <div class="modal batch-detail-modal" role="dialog" aria-modal="true" aria-labelledby="batchDetailModalTitle">
+      <div class="modal-head">
+        <h3 id="batchDetailModalTitle">维护物料批次</h3>
+        <button class="close-btn" type="button" data-close="batchDetailModal" aria-label="关闭">&times;</button>
+      </div>
+      <div class="modal-body-scrollable" id="batchDetailModalBody"></div>
+      <div class="modal-footer-fixed">
+        <button class="btn" type="button" data-close="batchDetailModal">取消</button>
+        <button class="btn btn-primary" type="button" id="btnBatchDetailSave">保存批次</button>
+      </div>
     </div>
   </div>
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
@@ -1162,7 +1199,7 @@
               '<thead><tr>' +
                 '<th class="material-col">物料信息</th><th class="date-col">计划发货日期</th><th class="date-col">计划到货日期</th>' +
                 '<th class="qty-col">计划发货数量</th><th class="qty-col">SAP 承诺发货数量</th><th class="method-col">配送方式</th>' +
-                '<th class="logistics-col">自提物流商</th><th class="calc-col">自动计算</th>' +
+                '<th class="logistics-col">自提物流商</th><th class="calc-col">自动计算</th><th class="batch-col">批次</th><th class="action-col">操作</th>' +
               '</tr></thead><tbody>' +
               items.map(r => {
           const dm = r.deliveryMethod || '';
@@ -1446,8 +1483,22 @@
 
       function recordAppointmentQty(r) {
         const saved = Number(r.appointmentQty);
-        if (Number.isFinite(saved) && saved >= 0) return saved;
+        if (r.appointmentQty !== null && r.appointmentQty !== undefined && r.appointmentQty !== '' && Number.isFinite(saved) && saved >= 0) return saved;
         return Math.max(0, Number(r.planQtyNum || 0));
+      }
+
+      function appointmentBoxCount(r) {
+        const qty = recordAppointmentQty(r);
+        const saved = Number(r.boxCount);
+        if (qty === 0) return 0;
+        return Number.isFinite(saved) && saved > 0 ? saved : Math.ceil(qty / (Number(r.stdBoxQty) || 1));
+      }
+
+      function appointmentPalletCount(r) {
+        const qty = recordAppointmentQty(r);
+        const saved = Number(r.palletCount);
+        if (qty === 0) return 0;
+        return Number.isFinite(saved) && saved > 0 ? saved : Math.ceil(qty / (Number(r.stdPalletQty) || 1));
       }
 
       function selectedAppointmentQty() {
@@ -1471,11 +1522,6 @@
         return Number.isFinite(limit) && limit >= 0 ? limit : DEFAULT_DAILY_APPOINTMENT_QTY;
       }
 
-      function selectedAppointmentAreas() {
-        const areas = selectedAppointmentRows().map(r => r.warehouseArea || '1号库区');
-        return [...new Set(areas.length ? areas : ['1号库区'])];
-      }
-
       function setDefaultAppointmentDate() {
         const dates = [...new Set(selectedAppointmentRows().map(r => r.arriveDate).filter(Boolean))].sort();
         $('apptDateInput').value = dates[0] || '';
@@ -1489,24 +1535,34 @@
       }
 
       function getAppointmentCapacity(date) {
-        if (!date) return { total: 0, used: 0, remaining: 0 };
-        const areas = selectedAppointmentAreas();
-        const total = areas.reduce((sum, area) => sum + capacityForWarehouseArea(area, date), 0);
-        const used = state.records.filter(r =>
-          r.deliveryMethod === 'direct' && r.appointmentStatus === 'scheduled' && r.appointmentDate === date && areas.includes(r.warehouseArea || '1号库区')
-        ).reduce((sum, r) => sum + recordAppointmentQty(r), 0);
-        return { total, used, remaining: Math.max(0, total - used) };
+        const selectedByArea = new Map();
+        selectedAppointmentRows().forEach(r => {
+          const area = r.warehouseArea || '未设置库区';
+          selectedByArea.set(area, (selectedByArea.get(area) || 0) + recordAppointmentQty(r));
+        });
+        if (!date) return [...selectedByArea.entries()].map(([area, selected]) => ({ area, total: 0, used: 0, selected, remaining: 0 }));
+        return [...selectedByArea.entries()].map(([area, selected]) => {
+          const total = capacityForWarehouseArea(area, date);
+          const used = state.records.filter(r =>
+            r.deliveryMethod === 'direct' && r.appointmentStatus === 'scheduled' && r.appointmentDate === date && (r.warehouseArea || '未设置库区') === area
+          ).reduce((sum, r) => sum + recordAppointmentQty(r), 0);
+          return { area, total, used, selected, remaining: Math.max(0, total - used) };
+        });
       }
 
       function updateAppointmentCapacity() {
         const date = $('apptDateInput').value;
         const stats = getAppointmentCapacity(date);
-        const selected = selectedAppointmentQty();
-        $('apptCapacityTotal').textContent = date ? stats.total : '—';
-        $('apptCapacityUsed').textContent = date ? stats.used : '—';
-        $('apptCapacityRemaining').textContent = date ? stats.remaining : '—';
-        $('apptCapacityCard').classList.toggle('over-limit', !!date && selected > stats.remaining);
-        return stats;
+        const overLimit = !!date && stats.some(item => item.selected > item.remaining);
+        $('apptCapacityCard').classList.toggle('over-limit', overLimit);
+        $('apptCapacityCard').innerHTML = !stats.length
+          ? '<div class="appointment-capacity-empty">请选择待预约 ASN 后查看各库区的当日容量。</div>'
+          : '<div class="appointment-capacity-head"><span>库区</span><span>当日可约数量</span><span>已预约数量</span><span>本次预约数量</span><span>剩余可约数量</span></div>' + stats.map(item =>
+            '<div class="appointment-capacity-row '+(date && item.selected > item.remaining ? 'over-limit' : '')+'">' +
+              '<span class="area">'+item.area+'</span><span>'+ (date ? formatNumber(item.total) : '—') +'</span><span>'+ (date ? formatNumber(item.used) : '—') +'</span><span>'+formatNumber(item.selected)+'</span><span class="remaining">'+(date ? formatNumber(item.remaining) : '—')+'</span>' +
+            '</div>'
+          ).join('');
+        return { items: stats, overLimit };
       }
 
       // 待预约的直送 ASN（已确认 + 直送 + 未全部预约）
@@ -1536,16 +1592,20 @@
         if (state.apptMode === 'single') {
           const materials = state.records.filter(r => r.asnNo === state.apptSingleAsn && r.deliveryMethod === 'direct' && r.appointmentStatus !== 'scheduled');
           if (!materials.length) {
-            b.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px 16px;color:var(--text-3);">当前 ASN 暂无待预约的直送物料</td></tr>';
+            b.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px 16px;color:var(--text-3);">当前 ASN 暂无待预约的直送物料</td></tr>';
           } else {
             b.innerHTML = materials.map(r =>
               '<tr>' +
                 '<td><strong>' + r.materialCode + '</strong></td>' +
                 '<td>' + (r.materialName || '—') + '</td>' +
+                '<td>' + (r.warehouseArea || '未设置库区') + '</td>' +
                 '<td>' + (r.poNumber || '—') + '</td>' +
                 '<td class="amount">' + formatNumber(r.planQtyNum) + '</td>' +
                 '<td class="amount">' + formatNumber(r.commitQtyNum) + '</td>' +
-                '<td class="amount">' + formatNumber(recordAppointmentQty(r)) + '</td>' +
+                '<td class="amount">' + formatNumber(r.stdBoxQty) + '</td>' +
+                '<td class="amount">' + formatNumber(r.stdPalletQty) + '</td>' +
+                '<td class="amount">' + formatNumber(appointmentBoxCount(r)) + '</td>' +
+                '<td class="amount">' + formatNumber(appointmentPalletCount(r)) + '</td>' +
               '</tr>'
             ).join('');
           }
@@ -1578,23 +1638,25 @@
         const date = $('apptDateInput').value;
         const selectedAsns = state.apptSelectedAsns.size;
         const selectedQty = selectedAppointmentQty();
-        const stats = updateAppointmentCapacity();
-        const overLimit = !!date && selectedQty > stats.remaining;
+        const capacity = updateAppointmentCapacity();
+        const overLimit = capacity.overLimit;
+        const shortAreas = capacity.items.filter(item => item.selected > item.remaining).map(item => item.area + ' 缺少 ' + formatNumber(item.selected - item.remaining));
         $('apptSelectedInfo').textContent = state.apptMode === 'single'
-          ? 'ASN ' + state.apptSingleAsn + '，共 ' + selectedAppointmentRows().length + ' 种物料、预约数量 ' + formatNumber(selectedQty) + (overLimit ? '，超出当日剩余数量 ' + formatNumber(selectedQty - stats.remaining) : '')
-          : '已选 ' + selectedAsns + ' 个 ASN，共预约数量 ' + formatNumber(selectedQty) + (overLimit ? '，超出当日剩余数量 ' + formatNumber(selectedQty - stats.remaining) : '');
+          ? 'ASN ' + state.apptSingleAsn + '，共 ' + selectedAppointmentRows().length + ' 种物料、预约数量 ' + formatNumber(selectedQty) + (overLimit ? '；' + shortAreas.join('；') : '')
+          : '已选 ' + selectedAsns + ' 个 ASN，共预约数量 ' + formatNumber(selectedQty) + (overLimit ? '；' + shortAreas.join('；') : '');
         $('btnApptSubmit').disabled = selectedAsns === 0 || !date || overLimit;
-        $('btnApptSubmit').title = overLimit ? '请减少选择数量或更换预约日期' : '';
+        $('btnApptSubmit').title = overLimit ? '存在库区当日剩余数量不足，请减少选择数量或更换预约日期' : '';
       }
 
       function submitAppointment() {
         const date = $('apptDateInput').value;
         if (!date) { toast('请选择预约送货日期'); return; }
         if (state.apptSelectedAsns.size === 0) { toast('请至少选择一个 ASN'); return; }
-        const capacity = getAppointmentCapacity(date);
+        const capacity = updateAppointmentCapacity();
+        const insufficient = capacity.items.filter(item => item.selected > item.remaining);
         const selectedQty = selectedAppointmentQty();
-        if (selectedQty > capacity.remaining) {
-          toast('当日仅剩可预约数量 ' + formatNumber(capacity.remaining) + '，本次预约数量 ' + formatNumber(selectedQty) + '，请减少选择或更换日期');
+        if (insufficient.length) {
+          toast(insufficient.map(item => item.area + ' 剩余可预约数量 ' + formatNumber(item.remaining) + '，本次需 ' + formatNumber(item.selected)).join('；'));
           updateApptSubmitButton();
           return;
         }
@@ -1651,6 +1713,7 @@
       // ===== 自提预约：完成备货（供应商操作，推送物流商端） =====
       function markStockReady(ids) {
         if (!Array.isArray(ids)) ids = [ids];
+        if (!hasValidBatchDetails(ids)) return false;
         const now = new Date(), ts = fmtDt(now);
         let changed = 0;
         for (const id of ids) {
@@ -1660,10 +1723,11 @@
           r.stockReadyTime = ts; r.updateTime = ts;
           changed++;
         }
-        if (!changed) return;
+        if (!changed) return false;
         persistRecords();
         updateStats(); applyFilter();
         toast('已完成备货 ' + changed + ' 条，等待物流商按已预约日期取货登记');
+        return true;
       }
 
       // ===== 工厂收货（工厂端操作，状态 → 已收货） =====
@@ -1761,6 +1825,7 @@
         const route = state.activeTab === 'directDelivery' ? 'direct' : (state.activeTab === 'selfPickup' ? 'self' : '');
         const g = deriveAsn(asnNo, route);
         if (!g) return;
+        state.activeAsnDetail = asnNo;
         $('asnDetailTitle').textContent = 'ASN 发货计划详情 · ' + asnNo;
         const first = g.materials[0];
         $('asnDetailContent').innerHTML =
@@ -1791,6 +1856,8 @@
             '<td><span class="delivery-method-value '+(dmCur ? '' : 'is-empty')+'">'+(dmCur==='self'?'自提':dmCur==='direct'?'直送':'未配置')+'</span></td>' +
             '<td><span class="confirm-display-value '+(dmCur==='self' ? '' : 'muted')+'">'+(dmCur==='self' ? (r.designatedLogistics || '未维护物流商') : '直送无需选择')+'</span></td>' +
             '<td><div class="confirm-calc-pair"><div class="confirm-calc-value">'+(boxCount > 0 ? formatInt(boxCount) : '—')+'<span>箱</span></div><div class="confirm-calc-value">'+(palletCount > 0 ? formatInt(palletCount) : '—')+'<span>托</span></div></div><div class="confirm-pack-standard">'+formatInt(r.stdBoxQty)+'/箱 · '+formatInt(r.stdPalletQty)+'/托</div></td>' +
+            '<td><span class="batch-summary '+(Array.isArray(r.batchDetails) && r.batchDetails.length ? '' : 'is-empty')+'">'+batchSummary(r)+'</span></td>' +
+            '<td><button type="button" class="batch-action" data-batch-edit="'+r.id+'">'+(r.status === 'confirmed' ? '维护批次' : '查看批次')+'</button></td>' +
           '</tr>';
         }).join('') +
               '</tbody></table></div>' +
@@ -1821,6 +1888,75 @@
         }
         $('asnDetailFooter').innerHTML = foot;
         openModal('asnDetailModal');
+      }
+
+      function defaultBatchDetails(r) {
+        if (Array.isArray(r.batchDetails) && r.batchDetails.length) return r.batchDetails;
+        return [{ batchNo: r.batchNo || '', quantity: r.commitQtyNum }];
+      }
+      function batchDetailRowsHtml(r, details, editable) {
+        return details.map((detail, index) => editable
+          ? '<div class="batch-detail-row"><input class="plan-batch-no" maxlength="80" value="'+String(detail.batchNo || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch]))+'" placeholder="批次号" aria-label="'+r.materialCode+' 批次号 '+(index+1)+'"><input class="plan-batch-qty" type="number" min="0" step="any" inputmode="decimal" value="'+(detail.quantity ?? '')+'" aria-label="'+r.materialCode+' 批次数量 '+(index+1)+'"><button type="button" class="batch-detail-remove" data-batch-remove="'+r.id+'" aria-label="删除批次">×</button></div>'
+          : '<div class="batch-detail-readonly">'+(detail.batchNo || '—')+'：'+formatNumber(detail.quantity)+'</div>').join('');
+      }
+      function batchSummary(r) {
+        if (!Array.isArray(r.batchDetails) || !r.batchDetails.length) return '未维护';
+        return r.batchDetails.length + ' 个批次';
+      }
+      function batchModalHtml(r, editable) {
+        const details = defaultBatchDetails(r);
+        const hasSavedDetails = Array.isArray(r.batchDetails) && r.batchDetails.length;
+        return '<div class="batch-editor-context"><div>物料编号<strong>'+r.materialCode+'</strong></div><div>采购凭证<strong>'+ (r.poNumber || '—') +'</strong></div><div>本次发货总数<strong>'+formatNumber(r.commitQtyNum)+'</strong></div></div>' +
+          '<div class="batch-editor-body"><div data-batch-card="'+r.id+'">' +
+          (editable ? '<div class="batch-detail-labels"><span>批次号 <b style="color:var(--danger)">*</b></span><span>批次数量 <b style="color:var(--danger)">*</b></span><span></span></div>' : '') +
+          '<div class="batch-detail-rows">'+(!editable && !hasSavedDetails ? '<div class="batch-detail-readonly">暂未维护批次明细</div>' : batchDetailRowsHtml(r, details, editable))+'</div>' +
+          (editable ? '<div class="batch-detail-actions"><button type="button" class="btn" data-batch-add="'+r.id+'">+ 添加批次</button><span class="batch-detail-error" role="alert" aria-live="polite"></span></div>' : '') +
+        '</div></div>';
+      }
+      function openBatchDetailModal(id) {
+        const r = state.records.find(item => item.id === id);
+        if (!r) return;
+        const editable = r.status === 'confirmed';
+        $('batchDetailModalTitle').textContent = editable ? '维护物料批次' : '查看物料批次';
+        $('batchDetailModalBody').innerHTML = batchModalHtml(r, editable);
+        $('btnBatchDetailSave').style.display = editable ? '' : 'none';
+        $('batchDetailModal').dataset.batchMaterialId = id;
+        openModal('batchDetailModal');
+      }
+      function setBatchCardError(card, message, input) {
+        card.querySelectorAll('input').forEach(el => el.classList.remove('batch-input-error'));
+        card.querySelector('.batch-detail-error').textContent = message;
+        if (input) { input.classList.add('batch-input-error'); input.focus(); }
+      }
+      function saveBatchDetails(id) {
+        const r = state.records.find(item => item.id === id);
+        const card = $('batchDetailModalBody').querySelector('[data-batch-card="'+id+'"]');
+        if (!r || !card) return false;
+        const details = [...card.querySelectorAll('.batch-detail-row')].map(row => ({ batchNo: row.querySelector('.plan-batch-no').value.trim(), qtyInput: row.querySelector('.plan-batch-qty') }));
+        const saved = [];
+        for (const detail of details) {
+          const quantity = Number(detail.qtyInput.value);
+          if (!detail.batchNo) { setBatchCardError(card, '请填写每个批次号', detail.qtyInput.closest('.batch-detail-row').querySelector('.plan-batch-no')); return false; }
+          if (detail.qtyInput.value === '' || !Number.isFinite(quantity) || quantity < 0) { setBatchCardError(card, '批次数量必须为非负数字', detail.qtyInput); return false; }
+          saved.push({ batchNo: detail.batchNo, quantity });
+        }
+        const total = saved.reduce((sum, detail) => sum + detail.quantity, 0);
+        if (Math.abs(total - Number(r.commitQtyNum || 0)) > 1e-9) { setBatchCardError(card, '批次数量合计为 '+formatNumber(total)+'，需等于本次发货总数 '+formatNumber(r.commitQtyNum)); return false; }
+        r.batchDetails = saved; r.updateTime = fmtDt(new Date());
+        persistRecords(); toast(r.materialCode + ' 批次明细已保存');
+        return true;
+      }
+      function hasValidBatchDetails(ids) {
+        for (const id of ids) {
+          const r = state.records.find(item => item.id === id);
+          const details = r && Array.isArray(r.batchDetails) ? r.batchDetails : [];
+          const total = details.reduce((sum, detail) => sum + Number(detail.quantity || 0), 0);
+          if (!r || !details.length || details.some(detail => !detail.batchNo || !Number.isFinite(Number(detail.quantity)) || Number(detail.quantity) < 0) || Math.abs(total - Number(r.commitQtyNum || 0)) > 1e-9) {
+            toast('请先保存完整且数量合计一致的物料批次明细');
+            return false;
+          }
+        }
+        return true;
       }
 
       // ===== 事件绑定 =====
@@ -1894,7 +2030,7 @@
         const ids = btn.dataset.ids ? JSON.parse(btn.dataset.ids) : [];
         if (act === 'confirm') { closeModal('asnDetailModal'); openConfirmModal(ids); }
         else if (act === 'platform') { platformConfirm(ids); closeModal('asnDetailModal'); }
-        else if (act === 'stock') { markStockReady(ids); closeModal('asnDetailModal'); }
+        else if (act === 'stock') { if (markStockReady(ids) !== false) closeModal('asnDetailModal'); }
         else if (act === 'logistics') { closeModal('asnDetailModal'); openLogisticsModal(btn.dataset.asn); }
         else if (act === 'receive') { factoryReceive(ids); closeModal('asnDetailModal'); }
       });
@@ -1902,6 +2038,28 @@
       $('asnDetailContent').addEventListener('click', e => {
         const material = e.target.closest('[data-material-desc]');
         if (material) openMaterialDescription(material.dataset.materialDesc);
+        const edit = e.target.closest('[data-batch-edit]');
+        if (edit) openBatchDetailModal(edit.dataset.batchEdit);
+      });
+
+      $('batchDetailModalBody').addEventListener('click', e => {
+        const add = e.target.closest('[data-batch-add]');
+        if (add) {
+          const card = add.closest('[data-batch-card]');
+          card.querySelector('.batch-detail-rows').insertAdjacentHTML('beforeend', batchDetailRowsHtml({ id:add.dataset.batchAdd, materialCode:state.records.find(r => r.id === add.dataset.batchAdd)?.materialCode || '物料' }, [{ batchNo:'', quantity:'' }], true));
+          card.querySelector('.batch-detail-rows').lastElementChild.querySelector('.plan-batch-no').focus();
+        }
+        const remove = e.target.closest('[data-batch-remove]');
+        if (remove) {
+          const rows = remove.closest('[data-batch-card]').querySelector('.batch-detail-rows');
+          if (rows.children.length === 1) { rows.querySelector('.plan-batch-no').value = ''; rows.querySelector('.plan-batch-qty').value = ''; }
+          else remove.closest('.batch-detail-row').remove();
+        }
+      });
+
+      $('btnBatchDetailSave').addEventListener('click', () => {
+        const id = $('batchDetailModal').dataset.batchMaterialId;
+        if (id && saveBatchDetails(id)) { closeModal('batchDetailModal'); openAsnDetail(state.activeAsnDetail); }
       });
 
       $('pageSizeSelect').addEventListener('change', e => {

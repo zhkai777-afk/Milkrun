@@ -198,9 +198,13 @@
     .batch-add { min-height: 30px; padding: 5px 9px; color: var(--primary-dark); border: 1px dashed var(--primary); border-radius: 6px; font-size: 12px; }
     .batch-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
     .batch-row { display: flex; align-items: center; gap: 8px; }
-    .batch-row input { flex: 1; min-width: 0; min-height: 38px; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 7px; color: var(--text); font: inherit; outline: none; }
+    .batch-row input { min-width: 0; min-height: 38px; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 7px; color: var(--text); font: inherit; outline: none; }
+    .batch-no-input { flex: 1; }
+    .batch-qty-input { width: 112px; text-align: right; }
     .batch-row input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); }
+    .batch-row input.input-error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(233,93,98,.12); }
     .batch-remove { width: 32px; height: 32px; border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text-2); flex-shrink: 0; }
+    .batch-error { min-height: 18px; margin-top: 6px; color: var(--danger); font-size: 12px; }
 
     .field { margin-bottom: 14px; }
     .field:last-child { margin-bottom: 0; }
@@ -339,7 +343,7 @@
   <script src="./logistics-flow.js"></script>
   <script>
     const SUP_KEY = 'bw_supplier_deliveries';
-    const PLAN_KEY = 'material-plan-v5';
+    const PLAN_KEY = LogisticsFlow.PLAN_KEY;
 
     const SAMPLE_PENDING = [
       { id:'DEMO-D01', materialCode:'108143-101', materialName:'壳体总成', sapSupplierCode:'30015', supplierName:'博世汽车部件（苏州）有限公司', voucher:'5500575741-10', shipDate:'2026-08-13', arrivalDate:'2026-08-15', appointmentDate:'2026-08-15', planQty:800, promisedQty:800, deliveryMode:'直送', appointmentStatus:'scheduled', status:'pending_shipment' },
@@ -361,8 +365,7 @@
     }
 
     function loadPlanRows() {
-      try { const r = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]'); return Array.isArray(r) ? r : []; }
-      catch (e) { return []; }
+      return LogisticsFlow.loadRows();
     }
     function getRegisteredAsns() {
       let arr = [];
@@ -384,8 +387,8 @@
     // 发货登记后，按 ASN 回溯全部物料明细。
     function markPlanShipped(asnNo, quantities) {
       try {
-        const rows = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]');
-        if (!Array.isArray(rows) || !rows.length) return;
+        const rows = LogisticsFlow.loadRows();
+        if (!rows.length) return;
         let changed = false;
         let itemIndex = 0;
         rows.forEach(r => {
@@ -396,7 +399,7 @@
           itemIndex += 1;
           changed = true;
         });
-        if (changed) localStorage.setItem(PLAN_KEY, JSON.stringify(rows));
+        if (changed) LogisticsFlow.saveRows(rows);
       } catch (e) {}
     }
 
@@ -496,10 +499,7 @@
             <div class="qty-readonly"><span>承诺发货数量</span><strong>${escapeHtml(formatNum(i.promisedQty))}</strong></div>
             <div class="qty-input"><label for="actual_${index}">实际发货数量</label><input id="actual_${index}" data-item-index="${index}" type="number" min="0" step="any" inputmode="decimal" value="${Number(i.promisedQty) || 0}" aria-label="${escapeHtml(i.materialCode)} 实际发货数量"></div>
           </div>
-          <div class="batch-section">
-            <div class="batch-head"><span>批次号（可添加多个）</span><button type="button" class="batch-add" data-item-index="${index}">+ 添加批次</button></div>
-            <div class="batch-list" id="batches_${index}">${batchRowsHtml(index, initialBatches(i))}</div>
-          </div>
+          <div class="batch-section"><div class="batch-head"><span>批次明细（供应商工作台维护）</span></div><div class="material-voucher">${escapeHtml(displayBatchDetails(i) || '暂未维护')}</div></div>
         </div>`).join('');
       document.getElementById('sheetMask').classList.add('show');
       document.getElementById('sheet').classList.add('show');
@@ -509,33 +509,6 @@
       document.getElementById('sheet').classList.remove('show');
     }
 
-    function initialBatches(item) {
-      if (Array.isArray(item.batches) && item.batches.length) return item.batches;
-      return item.batchNo ? [item.batchNo] : [''];
-    }
-    function batchRowsHtml(itemIndex, batches) {
-      return batches.map((batch, batchIndex) => `<div class="batch-row"><input type="text" maxlength="80" value="${escapeHtml(batch || '')}" placeholder="请输入批次号" aria-label="第 ${itemIndex + 1} 项物料批次号 ${batchIndex + 1}"><button type="button" class="batch-remove" aria-label="删除批次号">×</button></div>`).join('');
-    }
-    function readBatches(itemIndex) {
-      return [...document.querySelectorAll(`#batches_${itemIndex} input`)].map(input => input.value.trim()).filter(Boolean);
-    }
-    document.getElementById('ssList').addEventListener('click', e => {
-      const add = e.target.closest('.batch-add');
-      if (add) {
-        const index = Number(add.dataset.itemIndex);
-        const list = document.getElementById('batches_' + index);
-        const count = list.querySelectorAll('.batch-row').length;
-        list.insertAdjacentHTML('beforeend', batchRowsHtml(index, ['']));
-        list.lastElementChild.querySelector('input').focus();
-        return;
-      }
-      const remove = e.target.closest('.batch-remove');
-      if (!remove) return;
-      const row = remove.closest('.batch-row');
-      const list = row.parentElement;
-      if (list.querySelectorAll('.batch-row').length === 1) row.querySelector('input').value = '';
-      else row.remove();
-    });
 
     function submitShip() {
       const group = activeSheetGroup;
@@ -551,12 +524,19 @@
           return;
         }
         quantities[index] = value;
+        const details = Array.isArray(items[index].batchDetails) ? items[index].batchDetails : [];
+        const batchTotal = details.reduce((total, detail) => total + Number(detail.quantity || 0), 0);
+        const batchValid = details.every(detail => detail && String(detail.batchNo || '').trim() && Number.isFinite(Number(detail.quantity)) && Number(detail.quantity) >= 0);
+        if (!details.length || !batchValid || !Number.isFinite(batchTotal) || Math.abs(batchTotal - value) > 1e-9) {
+          toast('请返回供应商工作台维护完整且与实际发货数量一致的批次明细');
+          return;
+        }
       }
       const shipmentNo = genNo('SHP');
       const rec = {
         no: group.asnNo, asnNo: group.asnNo, shipmentNo,
         supplier: items[0].supplierName,
-        items: items.map((i, index) => { const batches = readBatches(index); return { id:i.id, asnNo:i.asnNo, materialCode: i.materialCode, materialName:i.materialName || i.materialCode, voucher: i.voucher, planQty: i.planQty, promisedQty:i.promisedQty, actualShipQty:quantities[index], batches, batchNo:batches[0] || '', arrivalDate: i.arrivalDate, supplierName:i.supplierName }; }),
+        items: items.map((i, index) => { const batchDetails = i.batchDetails; const batches = batchDetails.map(detail => detail.batchNo); return { id:i.id, asnNo:i.asnNo, materialCode: i.materialCode, materialName:i.materialName || i.materialCode, voucher: i.voucher, planQty: i.planQty, promisedQty:i.promisedQty, actualShipQty:quantities[index], batchDetails, batches, batchNo:batches[0] || '', arrivalDate: i.arrivalDate, supplierName:i.supplierName }; }),
         mode: '供应商直送',
         remark: document.getElementById('remark').value.trim(),
         time: nowStr(),
@@ -650,7 +630,7 @@
             <div class="qty-readonly"><span>承诺发货数量</span><strong>${escapeHtml(displayQty(item.promisedQty))}</strong></div>
             <div class="qty-readonly"><span>实际发货数量</span><strong>${escapeHtml(displayQty(item.actualShipQty))}</strong></div>
           </div>
-          <div class="batch-section"><div class="batch-head"><span>批次号</span></div><div class="material-voucher">${escapeHtml((Array.isArray(item.batches) ? item.batches : (item.batchNo ? [item.batchNo] : [])).filter(Boolean).join('、') || '-')}</div></div>
+          <div class="batch-section"><div class="batch-head"><span>批次号 / 批次数量</span></div><div class="material-voucher">${escapeHtml(displayBatchDetails(item) || '-')}</div></div>
         </div>`).join('') : '<div class="empty-state">该记录未保存物料明细</div>';
       document.getElementById('detailRecord').innerHTML = `
         <div class="detail-record-item"><span>发货单号</span><b>${escapeHtml(rec.shipmentNo || '-')}</b></div>
@@ -658,6 +638,10 @@
         <div class="detail-record-item full"><span>备注</span><b>${escapeHtml(rec.remark || '-')}</b></div>`;
       document.getElementById('detailMask').classList.add('show');
       document.getElementById('detailSheet').classList.add('show');
+    }
+    function displayBatchDetails(item) {
+      if (Array.isArray(item.batchDetails) && item.batchDetails.length) return item.batchDetails.map(detail => `${detail.batchNo || '-'}：${displayQty(detail.quantity)}`).join('；');
+      return (Array.isArray(item.batches) ? item.batches : (item.batchNo ? [item.batchNo] : [])).filter(Boolean).join('、');
     }
     function closeShippedDetail() {
       document.getElementById('detailMask').classList.remove('show');

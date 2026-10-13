@@ -488,9 +488,9 @@
             <div class="appointment-date-hint" id="appointmentDateHelp">默认选中计划到货日期，可直接修改日期</div>
           </div>
           <div class="appointment-capacity-card" id="logisticsCapacityCard" aria-live="polite">
-            <div class="appointment-capacity-item"><span class="label">当日可预约容量</span><span class="value"><span id="logisticsCapacityTotal">—</span><span class="unit">托</span></span></div>
-            <div class="appointment-capacity-item"><span class="label">已预约</span><span class="value"><span id="logisticsCapacityUsed">—</span><span class="unit">托</span></span></div>
-            <div class="appointment-capacity-item remaining"><span class="label">剩余可预约数量</span><span class="value"><span id="logisticsCapacityRemaining">—</span><span class="unit">托</span></span></div>
+            <div class="appointment-capacity-item"><span class="label">库区当日可预约数量</span><span class="value"><span id="logisticsCapacityTotal">—</span></span></div>
+            <div class="appointment-capacity-item"><span class="label">已预约数量</span><span class="value"><span id="logisticsCapacityUsed">—</span></span></div>
+            <div class="appointment-capacity-item remaining"><span class="label">剩余可预约数量</span><span class="value"><span id="logisticsCapacityRemaining">—</span></span></div>
           </div>
         </div>
         <div class="section-title-bar">车辆与司机信息</div>
@@ -512,13 +512,13 @@
         <div class="section-title-bar">ASN 物料明细</div>
         <div class="appointment-table-wrap">
           <table>
-            <thead><tr><th>物料编号</th><th>采购凭证</th><th class="amount">承诺发货数量</th><th class="center">托数</th></tr></thead>
+            <thead><tr><th>物料编号</th><th>采购凭证</th><th class="amount">承诺发货数量</th><th class="amount">预约数量</th></tr></thead>
             <tbody id="appointmentMaterialBody"></tbody>
           </table>
         </div>
       </div>
       <div class="modal-foot">
-        <span class="appointment-selected-info" id="appointmentSelectedInfo">当前 ASN 共 0 种物料、0 托</span>
+        <span class="appointment-selected-info" id="appointmentSelectedInfo">当前 ASN 共 0 种物料、预约数量 0</span>
         <button class="btn" type="button" id="appointmentCancel">关闭</button>
         <button class="btn btn-primary" type="button" id="appointmentSubmit">确认预约</button>
       </div>
@@ -534,7 +534,8 @@
         records: [], filteredRecords: [], currentPage: 1, pageSize: 10,
         activeTab: 'pickupPlan', activeAppointmentAsn: ''
       };
-      const DELIVERY_CAPACITY = { weekday: 120, weekend: 60 };
+      const WAREHOUSE_ZONE_STORAGE_KEY = 'warehouse-zone-maintenance-v1';
+      const DEFAULT_DAILY_APPOINTMENT_QTY = 200000;
 
       const $ = id => document.getElementById(id);
 
@@ -550,6 +551,42 @@
       function itemPallets(row) {
         const qty = Number(row.confirmQty ?? row.promisedQty ?? 0);
         return qty > 0 ? Math.ceil(qty / Math.max(1, Number(row.perPalletQty || 1))) : 0;
+      }
+
+      function appointmentQty(row) {
+        const saved = Number(row.deliveryAppointmentQty);
+        if (Number.isFinite(saved) && saved >= 0) return saved;
+        return Math.max(0, Number(row.planQty ?? row.confirmQty ?? row.promisedQty ?? 0));
+      }
+
+      function getWarehouseZones() {
+        try {
+          const zones = JSON.parse(localStorage.getItem(WAREHOUSE_ZONE_STORAGE_KEY) || '[]');
+          return Array.isArray(zones) ? zones : [];
+        } catch (_) {
+          return [];
+        }
+      }
+
+      function dailyCapacityValue(value) {
+        if (value && typeof value === 'object') {
+          const slots = [value.am, value.pm].filter(v => v != null && v !== '');
+          return slots.length ? slots.reduce((sum, v) => sum + Number(v), 0) : NaN;
+        }
+        return Number(value);
+      }
+
+      function capacityForWarehouseArea(area, date) {
+        const zone = getWarehouseZones().find(z => z && z.name === area);
+        const saved = zone?.daily && Object.prototype.hasOwnProperty.call(zone.daily, date)
+          ? dailyCapacityValue(zone.daily[date]) : NaN;
+        if (Number.isFinite(saved) && saved >= 0) return saved;
+        const limit = Number(zone?.limit);
+        return Number.isFinite(limit) && limit >= 0 ? limit : DEFAULT_DAILY_APPOINTMENT_QTY;
+      }
+
+      function appointmentAreas(rec) {
+        return [...new Set((rec?.items || []).map(row => row.warehouseArea || '1号库区'))];
       }
 
       // 供应商确认“自提”后即进入物流商自提预约；取货登记完成后进入取货记录。
@@ -684,15 +721,10 @@
         $('pickupTabCount').textContent = state.records.filter(r => r.flowStatus === 'picked').length;
       }
 
-      function capacityForDate(date) {
-        const d = new Date(date + 'T00:00:00');
-        return d.getDay() === 0 || d.getDay() === 6 ? DELIVERY_CAPACITY.weekend : DELIVERY_CAPACITY.weekday;
-      }
-
-      function bookedPallets(date, excludeAsn = '') {
+      function bookedAppointmentQty(date, areas, excludeAsn = '') {
         return state.records
-          .filter(r => r.appointmentDate === date && r.asnNo !== excludeAsn)
-          .reduce((sum, r) => sum + Number(r.palletCount || 0), 0);
+          .filter(r => r.appointmentDate === date && r.asnNo !== excludeAsn && appointmentAreas(r).some(area => areas.includes(area)))
+          .reduce((sum, r) => sum + appointmentQty(r), 0);
       }
 
       function updateSelectedCapacity() {
@@ -706,18 +738,20 @@
           $('appointmentSubmit').disabled = true;
           return;
         }
-        const capacity = capacityForDate(date);
-        const bookedWithoutCurrent = bookedPallets(date, rec.asnNo);
+        const areas = appointmentAreas(rec);
+        const capacity = areas.reduce((sum, area) => sum + capacityForWarehouseArea(area, date), 0);
+        const bookedWithoutCurrent = bookedAppointmentQty(date, areas, rec.asnNo);
         const remaining = Math.max(0, capacity - bookedWithoutCurrent);
-        const overLimit = rec.palletCount > remaining;
+        const currentAppointmentQty = appointmentQty(rec);
+        const overLimit = currentAppointmentQty > remaining;
         $('logisticsCapacityTotal').textContent = capacity;
         $('logisticsCapacityUsed').textContent = bookedWithoutCurrent;
         $('logisticsCapacityRemaining').textContent = remaining;
         $('logisticsCapacityCard').classList.toggle('over-limit', overLimit);
         $('appointmentSubmit').disabled = overLimit;
         $('appointmentSubmit').title = overLimit ? '请更换预约日期' : '';
-        $('appointmentSelectedInfo').textContent = 'ASN ' + rec.asnNo + '，共 ' + rec.materialCount + ' 种物料、' + rec.palletCount + ' 托' +
-          (overLimit ? '，超出当日剩余容量 ' + (rec.palletCount - remaining) + ' 托' : '');
+        $('appointmentSelectedInfo').textContent = 'ASN ' + rec.asnNo + '，共 ' + rec.materialCount + ' 种物料、预约数量 ' + formatNumber(currentAppointmentQty) +
+          (overLimit ? '，超出当日剩余数量 ' + formatNumber(currentAppointmentQty - remaining) : '');
       }
 
       function openAppointment(asnNo) {
@@ -729,7 +763,7 @@
           '<td>' + escapeHtml(item.materialCode || '—') + '</td>' +
           '<td>' + escapeHtml(item.voucher || '—') + '</td>' +
           '<td class="amount">' + formatNumber(item.confirmQty ?? item.promisedQty) + '</td>' +
-          '<td class="center">' + itemPallets(item) + '</td></tr>').join('');
+          '<td class="amount">' + formatNumber(appointmentQty(item)) + '</td></tr>').join('');
         $('appointmentDate').value = rec.appointmentDate || rec.commitArriveDate || '';
         $('appointmentPlate').value = rec.vehiclePlate || '';
         $('appointmentDriver').value = rec.driverName || '';
@@ -756,14 +790,16 @@
         if (!date) { toast('请选择预约送货日期'); $('appointmentDate').focus(); return; }
         if (!plate) { toast('请填写送货车牌号'); $('appointmentPlate').focus(); return; }
         const rec = state.records.find(r => r.asnNo === asnNo);
-        const capacity = capacityForDate(date);
-        const afterBooked = bookedPallets(date, asnNo) + Number(rec?.palletCount || 0);
-        if (afterBooked > capacity) { toast('所选日期剩余托位不足，请选择其他日期'); return; }
+        const areas = appointmentAreas(rec);
+        const capacity = areas.reduce((sum, area) => sum + capacityForWarehouseArea(area, date), 0);
+        const afterBooked = bookedAppointmentQty(date, areas, asnNo) + appointmentQty(rec);
+        if (afterBooked > capacity) { toast('所选日期剩余数量不足，请选择其他日期'); return; }
         const rows = LogisticsFlow.loadRows();
         let changed = 0;
         rows.forEach(row => {
           if (row.asnNo !== asnNo || LogisticsFlow.deliveryText(row.deliveryMode) !== '自提' || row.status !== 'pending_shipment') return;
           row.deliveryAppointmentDate = date;
+          row.deliveryAppointmentQty = appointmentQty(row);
           row.logisticsAppointmentAt = LogisticsFlow.now();
           row.logisticsProvider = row.logisticsProvider || row.logistics || '';
           row.vehiclePlate = plate;

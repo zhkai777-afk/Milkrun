@@ -217,7 +217,8 @@
       pickupPerson: r.pickupPerson || pickupByAsn.get(r.asnNo)?.driver || '', pickupPhone: r.pickupPhone || '',
       vehiclePlate: r.vehiclePlate || r.plate || pickupByAsn.get(r.asnNo)?.plate || '',
       actionHistory: Array.isArray(r.actionHistory) ? r.actionHistory : [],
-      deliveryAppointmentDate: r.deliveryAppointmentDate || pickupByAsn.get(r.asnNo)?.eta || '', actualShipQty: r.actualShipQty
+      deliveryAppointmentDate: r.deliveryAppointmentDate || pickupByAsn.get(r.asnNo)?.eta || '', actualShipQty: r.actualShipQty,
+      batchDetails: Array.isArray(r.batchDetails) ? r.batchDetails : []
     }));
   }
   function saveSupplierRecords(records) {
@@ -240,6 +241,7 @@
       row.pickupPerson = r.pickupPerson || row.pickupPerson || ''; row.pickupPhone = r.pickupPhone || row.pickupPhone || '';
       row.vehiclePlate = r.vehiclePlate || row.vehiclePlate || '';
       row.deliveryAppointmentDate = r.deliveryAppointmentDate || row.deliveryAppointmentDate || '';
+      if (Array.isArray(r.batchDetails)) row.batchDetails = r.batchDetails;
       if (Array.isArray(r.actionHistory)) row.actionHistory = r.actionHistory;
       row.status = r.status === 'platformPending' ? 'platform_pending' : r.status === 'pending' ? 'supplier_pending' : ['confirmed', 'awaitPickup'].includes(r.status) ? 'pending_shipment' : r.status === 'shipped' ? 'in_transit' : r.status;
       if (r.status === 'confirmed' && !row.supplierConfirmedAt) row.supplierConfirmedAt = now();
