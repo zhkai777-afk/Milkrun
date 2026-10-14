@@ -136,19 +136,22 @@
     r.deliveryAppointmentDate = r.deliveryAppointmentDate || '';
     r.actualShipQty = hasValue(r.actualShipQty) ? Number(r.actualShipQty) : null;
     r.actualArrivalQty = hasValue(r.actualArrivalQty) ? Number(r.actualArrivalQty) : null;
-    if (!r.asnNo || !hasValue(r.promisedQty) || ['cancelled', 'in_transit', 'received', 'pending_shipment', 'planner_adjustment'].includes(r.status)) return r;
-    // ASN 导入后：数量一致直接待供应商确认；有差异必须先经工厂确认。
-    if (!r.factoryConfirmedAt) r.status = Number(r.planQty) === Number(r.promisedQty) ? 'supplier_pending' : 'platform_pending';
+    if (!r.asnNo || !hasValue(r.promisedQty) || ['cancelled', 'in_transit', 'received', 'pending_shipment', 'planner_adjustment', 'factory_pending'].includes(r.status)) return r;
+    // SAP ASN 导入后统一先等待供应商确认；历史“待工厂确认”记录必须回到供应商确认，
+    // 不允许在供应商尚未确认前跳过该环节。
+    if (r.status === 'platform_pending') r.status = 'supplier_pending';
+    else if (!r.supplierConfirmedAt) r.status = 'supplier_pending';
     return r;
   }
 
   function loadRows() {
     const rows = read(PLAN_KEY, []);
     if (!Array.isArray(rows)) return [];
+    const original = JSON.stringify(rows);
     const migrated = rows.map(migrateRow);
     const changed = migrateLegacyDemoAsns(migrated);
     normalizeAsnGroups(migrated);
-    if (changed) write(PLAN_KEY, migrated);
+    if (changed || JSON.stringify(migrated) !== original) write(PLAN_KEY, migrated);
     return migrated;
   }
   function saveRows(rows) { write(PLAN_KEY, normalizeAsnGroups(rows.map(r=>applySupplier(r)))); }
@@ -208,7 +211,7 @@
       commitQtyNum: Number(hasValue(r.confirmQty) ? r.confirmQty : r.promisedQty || 0),
       commitShipDate: r.commitShipDate || r.shipDate || '', commitArriveDate: r.commitArriveDate || r.arrivalDate || '',
       boxCount: Number(r.boxCount || 0), palletCount: Number(r.palletCount || 0), updateTime: r.updatedAt || '',
-      status: r.status === 'platform_pending' ? 'platformPending' : r.status === 'supplier_pending' ? 'pending' : r.status === 'pending_shipment' ? (r.stockReadyTime ? 'awaitPickup' : 'confirmed') : r.status === 'in_transit' ? 'shipped' : r.status,
+      status: ['platform_pending', 'factory_pending'].includes(r.status) ? 'factoryPending' : r.status === 'supplier_pending' ? 'pending' : r.status === 'pending_shipment' ? (r.stockReadyTime ? 'awaitPickup' : 'confirmed') : r.status === 'in_transit' ? 'shipped' : r.status,
       deliveryMethod: deliveryCode(r.deliveryMode), designatedLogistics: r.logistics || '', warehouseArea: r.warehouseArea || '1号库区',
       appointmentStatus: r.appointmentStatus || 'none', appointmentDate: r.appointmentDate || '', appointmentSlot: r.appointmentSlot || '',
       appointmentQty: hasValue(r.appointmentQty) ? Number(r.appointmentQty) : null,
@@ -243,8 +246,8 @@
       row.deliveryAppointmentDate = r.deliveryAppointmentDate || row.deliveryAppointmentDate || '';
       if (Array.isArray(r.batchDetails)) row.batchDetails = r.batchDetails;
       if (Array.isArray(r.actionHistory)) row.actionHistory = r.actionHistory;
-      row.status = r.status === 'platformPending' ? 'platform_pending' : r.status === 'pending' ? 'supplier_pending' : ['confirmed', 'awaitPickup'].includes(r.status) ? 'pending_shipment' : r.status === 'shipped' ? 'in_transit' : r.status;
-      if (r.status === 'confirmed' && !row.supplierConfirmedAt) row.supplierConfirmedAt = now();
+      row.status = ['platformPending', 'factoryPending'].includes(r.status) ? 'factory_pending' : r.status === 'pending' ? 'supplier_pending' : ['confirmed', 'awaitPickup'].includes(r.status) ? 'pending_shipment' : r.status === 'shipped' ? 'in_transit' : r.status;
+      if (['confirmed', 'factoryPending'].includes(r.status) && !row.supplierConfirmedAt) row.supplierConfirmedAt = now();
       row.updatedAt = r.updateTime || now();
     });
     saveRows(rows);

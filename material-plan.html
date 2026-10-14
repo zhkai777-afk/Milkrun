@@ -410,6 +410,12 @@
     .summary-bar { display: flex; gap: 24px; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; color: var(--text-2); }
     .summary-bar b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
     .pr-meta .cal-promise { width: 84px; padding: 2px 6px; }
+    .import-workspace[hidden]{display:none}
+    .import-workspace{height:100dvh;display:flex;flex-direction:column;background:var(--canvas)}
+    .import-workspace-head{display:flex;align-items:center;gap:16px;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);flex:none}
+    .import-workspace-head h2{margin:0;font-size:18px}
+    .import-workspace iframe{width:100%;flex:1;min-height:0;border:0;background:var(--canvas)}
+    @media(max-width:600px){.import-workspace-head{padding:12px;gap:12px;flex-wrap:wrap}.import-workspace-head .btn{min-height:44px}}
   </style>
 </head>
 <body>
@@ -566,6 +572,14 @@
       </div>
     </section>
   </main>
+  <section class="import-workspace" id="importWorkspace" hidden aria-labelledby="importWorkspaceTitle">
+    <header class="import-workspace-head">
+      <button class="btn" type="button" id="returnPlanBtn">返回物料计划</button>
+      <h2 id="importWorkspaceTitle" tabindex="-1">物料计划导入</h2>
+      <span id="importWorkspaceStatus" role="status" style="color:var(--text-2);font-size:13px">正在打开导入页面…</span>
+    </header>
+    <iframe id="importWorkspaceFrame" title="物料计划导入流程"></iframe>
+  </section>
 
   <!-- 编辑弹窗 -->
   <div class="modal-layer" id="formModal" role="presentation">
@@ -831,7 +845,8 @@
       const STATUS_MAP = {
         awaiting_asn: { label: '待导入ASN', class: 'status-platform-pending' },
         supplier_pending: { label: '待供应商确认', class: 'status-supplier-pending' },
-        platform_pending: { label: '待工厂确认差异', class: 'status-platform-pending' },
+        factory_pending: { label: '待工厂确认差异', class: 'status-platform-pending' },
+        platform_pending: { label: '待供应商确认', class: 'status-supplier-pending' },
         planner_adjustment: { label: '待计划员调整', class: 'status-platform-pending' },
         confirming: { label: '待供应商确认', class: 'status-supplier-pending' },
         pending_shipment: { label: '待发货', class: 'status-pending_shipment' },
@@ -841,14 +856,14 @@
       };
 
       const TABS = [
-        { key: 'confirming', label: '确认中', statuses: ['awaiting_asn', 'supplier_pending', 'platform_pending', 'planner_adjustment', 'confirming'] },
+        { key: 'confirming', label: '确认中', statuses: ['awaiting_asn', 'supplier_pending', 'factory_pending', 'platform_pending', 'planner_adjustment', 'confirming'] },
         { key: 'pending_shipment', label: '待发货', statuses: ['pending_shipment'] },
         { key: 'in_transit', label: '运输中', statuses: ['in_transit'] },
         { key: 'received', label: '已收货', statuses: ['received'] },
         { key: 'cancelled', label: '已作废', statuses: ['cancelled'] }
       ];
 
-      const CONFIRMING_STATUSES = ['awaiting_asn', 'supplier_pending', 'platform_pending', 'planner_adjustment', 'confirming'];
+      const CONFIRMING_STATUSES = ['awaiting_asn', 'supplier_pending', 'factory_pending', 'platform_pending', 'planner_adjustment', 'confirming'];
       function isConfirmingStatus(status) { return CONFIRMING_STATUSES.includes(status); }
 
       function uuid() {
@@ -948,10 +963,10 @@
           if (s && nr.asnSource !== 'sap' && /^ASN\d{4}$/.test(String(nr.asnNo || '')) && nr.asnNo !== s.asnNo) { nr.asnNo = s.asnNo; migrated = true; }
           if (nr.shipmentRegDate === null || nr.shipmentRegDate === undefined) { nr.shipmentRegDate = ''; migrated = true; }
           if (nr.asnNo === null || nr.asnNo === undefined) { nr.asnNo = ''; migrated = true; }
-          if (!['pending_shipment', 'in_transit', 'received', 'cancelled'].includes(nr.status)) {
+          if (!['pending_shipment', 'in_transit', 'received', 'cancelled', 'factory_pending', 'planner_adjustment'].includes(nr.status)) {
             const nextStatus = (nr.promisedQty === null || nr.promisedQty === undefined || nr.promisedQty === '')
               ? 'awaiting_asn'
-              : (nr.factoryConfirmedAt || Number(nr.planQty) === Number(nr.promisedQty) ? 'supplier_pending' : 'platform_pending');
+              : 'supplier_pending';
             if (nr.status !== nextStatus) { nr.status = nextStatus; migrated = true; }
           }
           return nr;
@@ -1144,20 +1159,19 @@
       }
 
       function autoConfirm() {
-        let direct = 0, factory = 0;
+        let supplier = 0;
         state.rows.forEach(row => {
           if (['pending_shipment', 'in_transit', 'received', 'cancelled'].includes(row.status)) return;
           LogisticsFlow.applySupplier(row, true);
-          if(row.confirmationSource==='supplier-asn-switch' && row.status==='pending_shipment'){direct++;return;}
+          if(row.confirmationSource==='supplier-asn-switch' && row.status==='pending_shipment') return;
           const diff = getDiff(row);
           if (diff === null) row.status = 'awaiting_asn';
-          else if (diff === 0) { row.status = 'supplier_pending'; row.confirmQty = null; direct++; }
-          else { row.status = 'platform_pending'; row.confirmQty = null; factory++; }
+          else { row.status = 'supplier_pending'; row.confirmQty = null; supplier++; }
           row.updatedAt = formatNow();
         });
-        if (direct || factory) {
+        if (supplier) {
           savePlans();
-          toast(`ASN对比完成：${direct} 条已推送供应商，${factory} 条差异待工厂确认`);
+          toast(`ASN 对比完成：${supplier} 条已进入待供应商确认`);
         }
       }
 
@@ -1219,7 +1233,7 @@
             else diffHtml = `<span class="diff-tag diff">${diff > 0 ? '+' : ''}${formatNumber(diff)}</span>`;
 
             const gap = getGap(r);
-            const canConfirm = r.status === 'platform_pending';
+            const canConfirm = r.status === 'factory_pending';
             const canAdjust = r.status === 'planner_adjustment';
             const canWithdraw = r.status === 'supplier_pending';
             const isViewOnly = !(canConfirm || canAdjust || canWithdraw);
@@ -1264,7 +1278,7 @@
           }).join('');
         }
 
-        const visibleIds = pageRows.filter(r => r.status === 'platform_pending').map(r => r.id);
+        const visibleIds = pageRows.filter(r => r.status === 'factory_pending').map(r => r.id);
         const checkedVisible = visibleIds.filter(id => state.checkedIds.has(id)).length;
         els.selectAll.checked = visibleIds.length > 0 && checkedVisible === visibleIds.length;
         els.selectAll.indeterminate = checkedVisible > 0 && checkedVisible < visibleIds.length;
@@ -1645,7 +1659,7 @@
             toast('计划已更新');
           }
         } else {
-          state.rows.unshift({ id: uuid(), materialCode, sapSupplierCode, supplierName, planner, voucher, asnNo, planQty, promisedQty, confirmQty: null, perBoxQty, perPalletQty, deliveryMode, logistics, planCode: '202', status: promisedQty === null ? 'awaiting_asn' : (planQty === promisedQty ? 'supplier_pending' : 'platform_pending'), shipDate, arrivalDate, actualArrivalQty, shipmentRegDate, createdAt: now, updatedAt: now });
+          state.rows.unshift({ id: uuid(), materialCode, sapSupplierCode, supplierName, planner, voucher, asnNo, planQty, promisedQty, confirmQty: null, perBoxQty, perPalletQty, deliveryMode, logistics, planCode: '202', status: promisedQty === null ? 'awaiting_asn' : 'supplier_pending', shipDate, arrivalDate, actualArrivalQty, shipmentRegDate, createdAt: now, updatedAt: now });
           toast('计划新增成功');
         }
         normalizePlanAsnGroups(state.rows);
@@ -1654,11 +1668,11 @@
         renderAll();
       }
 
-      // 工厂确认仅用于计划与 ASN 承诺不一致的主单；通过后才推送供应商。
+      // 只有供应商已确认且存在数量差异的 ASN 才需要工厂确认。
       function advanceConfirm(id, silent = false) {
         const row = state.rows.find(r => r.id === id);
         if (!row) return false;
-        if (row.status !== 'platform_pending') {
+        if (row.status !== 'factory_pending') {
           if (!silent) openModal('platformConfirmNoticeModal');
           return false;
         }
@@ -1666,10 +1680,16 @@
       }
 
       function platformConfirm(row, silent = false) {
-        const sameAsn = state.rows.filter(r => r.asnNo === row.asnNo && r.status === 'platform_pending');
+        const sameAsn = state.rows.filter(r => r.asnNo === row.asnNo && r.status === 'factory_pending');
         const ts = formatNow();
-        sameAsn.forEach(r => { r.factoryConfirmedAt = ts; r.status = 'supplier_pending'; r.updatedAt = ts; });
-        if (!silent) toast(`工厂已确认 ASN ${row.asnNo} 的 ${sameAsn.length} 条差异明细，已推送供应商`);
+        sameAsn.forEach(r => {
+          r.factoryConfirmedAt = ts;
+          r.status = 'pending_shipment';
+          r.updatedAt = ts;
+          if (!r.actionHistory) r.actionHistory = [];
+          r.actionHistory.push({ type: 'factory_confirmed_difference', label: '工厂确认差异', byRole: '工厂计划员', by: r.planner || '计划员', time: ts, fromStatus: 'factory_pending', toStatus: 'pending_shipment', revisionNo: Number(r.revisionNo || 0) });
+        });
+        if (!silent) toast(`工厂已确认 ASN ${row.asnNo} 的 ${sameAsn.length} 条差异明细，已进入待发货`);
         return true;
       }
 
@@ -1855,7 +1875,7 @@
             ensureAsnNo(row, null, state.rows); // 承诺有数据则 ASN号 必须存在
             updated++;
           } else {
-            const newRow = { id: uuid(), ...item, status: item.promisedQty === null ? 'awaiting_asn' : (Number(item.planQty) === Number(item.promisedQty) ? 'supplier_pending' : 'platform_pending'), createdAt: now, updatedAt: now };
+          const newRow = { id: uuid(), ...item, status: item.promisedQty === null ? 'awaiting_asn' : 'supplier_pending', createdAt: now, updatedAt: now };
             LogisticsFlow.applySupplier(newRow,true);
             ensureAsnNo(newRow, null, state.rows);
             state.rows.unshift(newRow);
@@ -2351,8 +2371,36 @@
         });
       }
 
-      $('importPlanBtn').addEventListener('click', () => openImportModal('plan'));
-      $('importAsnBtn').addEventListener('click', () => openImportModal('asn'));
+      // 完整导入子页：保留列表DOM与内存现场，旧简版导入弹窗不再由工具栏触发。
+      let importReturnFocus=null,importReturnScroll=0,importPageReady=false;
+      const importWorkspace=$('importWorkspace'),importFrame=$('importWorkspaceFrame');
+      function openImportWorkspace(type){
+        importReturnFocus=document.activeElement;importReturnScroll=window.scrollY;
+        importPageReady=false;$('importWorkspaceStatus').textContent='正在打开导入页面…';
+        const title=type==='plan'?'物料计划导入':'SAP ASN导入';
+        $('importWorkspaceTitle').textContent=title;importFrame.title=title+'流程';
+        document.querySelector('main.app-shell').hidden=true;
+        importWorkspace.hidden=false;document.body.style.overflow='hidden';
+        importFrame.src=(type==='plan'?'material-plan-import.html':'asn-import.html')+'?embedded=1';
+        $('importWorkspaceTitle').focus();
+      }
+      function returnFromImport(){
+        importWorkspace.hidden=true;importFrame.removeAttribute('src');
+        document.querySelector('main.app-shell').hidden=false;document.body.style.overflow='';
+        window.scrollTo(0,importReturnScroll);importReturnFocus?.focus({preventScroll:true});
+      }
+      $('returnPlanBtn').addEventListener('click',()=>{
+        if(!importPageReady){returnFromImport();return;}
+        importFrame.contentWindow?.postMessage({type:'bw-import-request-exit'},'*');
+      });
+      window.addEventListener('message',event=>{
+        if(event.source!==importFrame.contentWindow||importWorkspace.hidden)return;
+        if(event.data?.type==='bw-import-page-ready'){importPageReady=true;$('importWorkspaceStatus').textContent='';}
+        if(event.data?.type==='bw-import-exit-ready')returnFromImport();
+      });
+      importFrame.addEventListener('load',()=>{if(!importWorkspace.hidden&&!importPageReady)$('importWorkspaceStatus').textContent='页面未完成加载，可返回后重试。';});
+      $('importPlanBtn').addEventListener('click', () => openImportWorkspace('plan'));
+      $('importAsnBtn').addEventListener('click', () => openImportWorkspace('asn'));
       $('importPlanTpl').addEventListener('click', () => downloadTemplate('plan'));
       $('exportPlanBtn').addEventListener('click', exportPlans);
       $('importAsnTpl').addEventListener('click', () => downloadTemplate('asn'));
@@ -2368,7 +2416,7 @@
 
       els.selectAll.addEventListener('change', e => {
         const pageRows = getFilteredRows().slice((state.page - 1) * state.pageSize, (state.page - 1) * state.pageSize + state.pageSize);
-        pageRows.filter(r => r.status === 'platform_pending').forEach(r => e.target.checked ? state.checkedIds.add(r.id) : state.checkedIds.delete(r.id));
+        pageRows.filter(r => r.status === 'factory_pending').forEach(r => e.target.checked ? state.checkedIds.add(r.id) : state.checkedIds.delete(r.id));
         renderAll();
       });
 

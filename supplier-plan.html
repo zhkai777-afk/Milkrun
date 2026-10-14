@@ -811,7 +811,7 @@
           commitQty: '—', commitQtyNum: 0,
           commitShipDate: '', commitArriveDate: '',
           boxCount: 0, palletCount: 0,
-          updateTime: '2026-07-22 16:50:00', status: 'platformPending',
+          updateTime: '2026-07-22 16:50:00', status: 'factoryPending',
           deliveryMethod: '', designatedLogistics: '',
           warehouseArea: '2号库区',
           appointmentStatus: 'none', appointmentDate: '',
@@ -857,10 +857,10 @@
           id: r.id, asnNo: r.asnNo, materialName: r.materialName, materialCode: r.materialCode,
           voucher: r.poNumber, sapSupplierCode: r.supplierCode, supplierName: r.supplierName,
           shipDate: r.shipDate, arrivalDate: r.arriveDate, planQty: r.planQtyNum,
-          promisedQty: r.commitQtyNum || (r.status === 'platformPending' ? Math.max(0, r.planQtyNum - 300) : r.planQtyNum), confirmQty: r.commitQtyNum || null,
+          promisedQty: r.commitQtyNum || (r.status === 'factoryPending' ? Math.max(0, r.planQtyNum - 300) : r.planQtyNum), confirmQty: r.commitQtyNum || null,
           perBoxQty: r.stdBoxQty, perPalletQty: r.stdPalletQty,
           deliveryMode: LogisticsFlow.deliveryText(r.deliveryMethod || 'direct'), logistics: r.designatedLogistics,
-          status: r.status === 'platformPending' ? 'platform_pending' : r.status === 'pending' ? 'supplier_pending' : ['confirmed','awaitPickup'].includes(r.status) ? 'pending_shipment' : r.status,
+          status: r.status === 'factoryPending' ? 'factory_pending' : r.status === 'pending' ? 'supplier_pending' : ['confirmed','awaitPickup'].includes(r.status) ? 'pending_shipment' : r.status,
           stockReadyTime: r.status === 'awaitPickup' ? r.updateTime : '', appointmentStatus: r.appointmentStatus,
           appointmentDate: r.appointmentDate, updatedAt: r.updateTime, createdAt: r.updateTime
         })));
@@ -926,7 +926,7 @@
       function getTabFiltered() {
         let f = [...state.records];
         const t = state.activeTab;
-        if (t === 'planConfirm') f = f.filter(r => r.status === 'pending' || r.status === 'platformPending');
+        if (t === 'planConfirm') f = f.filter(r => r.status === 'pending' || r.status === 'factoryPending');
         else if (t === 'directDelivery') f = f.filter(r => r.status === 'confirmed' && r.deliveryMethod === 'direct');
         else if (t === 'selfPickup') f = f.filter(r => r.deliveryMethod === 'self' && (r.status === 'confirmed' || r.status === 'awaitPickup' || r.status === 'shipped' || r.status === 'received'));
         const mc = $('filterMaterialCode').value.trim().toLowerCase();
@@ -986,7 +986,7 @@
       function statusCell(r, isPC, isDD, isSP) {
         if (isPC) {
           if (r.status === 'pending') return badge('pending', '待供应商确认');
-          if (r.status === 'platformPending') return badge('info', '待工厂确认差异');
+          if (r.status === 'factoryPending') return badge('info', '待工厂确认差异');
         }
         if (isDD) {
           return r.appointmentStatus === 'scheduled' ? badge('confirmed', '已预约') : badge('pending', '待预约');
@@ -1007,7 +1007,7 @@
         const truck = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 21 13 21 21 16 21 16 8"/><line x1="5" y1="12" x2="10" y2="12"/><line x1="4" y1="7" x2="8" y2="7"/></svg>';
         if (isPC) {
           if (r.status === 'pending') return '<button class="row-action" data-id="' + r.id + '">' + check + '确认</button>';
-          if (r.status === 'platformPending') return '<span style="color:var(--text-3);font-size:12px;">等待工厂端处理</span>';
+          if (r.status === 'factoryPending') return '<span style="color:var(--text-3);font-size:12px;">等待工厂端确认差异</span>';
         }
         if (isDD) {
           if (r.appointmentStatus === 'scheduled') return '<button class="row-action cancel" data-cancel-id="' + r.id + '">取消预约</button>';
@@ -1048,11 +1048,11 @@
           if (r.arriveDate < g.arriveDate) g.arriveDate = r.arriveDate;
           if (r.updateTime > g.updateTime) g.updateTime = r.updateTime;
         }
-        const order = { pending:0, platformPending:1, confirmed:2, awaitPickup:3, shipped:4, received:5 };
+        const order = { pending:0, factoryPending:1, confirmed:2, awaitPickup:3, shipped:4, received:5 };
         return [...map.values()].map(g => {
           const minStage = Math.min(...g.statuses.map(s => order[s] != null ? order[s] : 99));
-          // 任一物料存在数量差异时，整张 ASN 必须先等待工厂确认。
-          g.status = g.statuses.includes('platformPending') ? 'platformPending' : (Object.keys(order).find(k => order[k] === minStage) || g.statuses[0]);
+          // 供应商已确认的差异明细必须等待工厂确认，整张 ASN 不得提前进入预约。
+          g.status = g.statuses.includes('factoryPending') ? 'factoryPending' : (Object.keys(order).find(k => order[k] === minStage) || g.statuses[0]);
           g.deliveryMethod = g.methods.size === 1 ? [...g.methods][0] : (g.materials[0].deliveryMethod || '');
           g.poNumber = g.poNumbers.size === 1 ? [...g.poNumbers][0] : `${g.poNumbers.size} 个采购凭证`;
           g.appointmentStatus = g.apptAll ? 'scheduled' : 'none';
@@ -1064,7 +1064,7 @@
 
       function asnStatusBadge(g) {
         if (g.status === 'pending') return badge('pending', '待供应商确认');
-        if (g.status === 'platformPending') return badge('info', '待工厂确认差异');
+        if (g.status === 'factoryPending') return badge('info', '待工厂确认差异');
         if (g.status === 'confirmed' && g.deliveryMethod === 'direct')
           return g.appointmentStatus === 'scheduled' ? badge('confirmed', '已预约') : badge('pending', '待预约');
         if (g.status === 'confirmed' && g.deliveryMethod === 'self') return badge('pending', '待备货');
@@ -1172,7 +1172,7 @@
 
       function updateStats() {
         $('statPending').textContent = state.records.filter(r => r.status === 'pending').length;
-        $('statPlatform').textContent = state.records.filter(r => r.status === 'platformPending').length;
+        $('statPlatform').textContent = state.records.filter(r => r.status === 'factoryPending').length;
         $('statSelf').textContent = state.records.filter(r => r.deliveryMethod === 'self' && r.status === 'confirmed').length;
         $('statLogistics').textContent = state.records.filter(r => r.deliveryMethod === 'self' && r.status === 'awaitPickup').length;
       }
@@ -1251,6 +1251,31 @@
         card.querySelector('.pallet-val').innerHTML = (palletCount > 0 ? formatInt(palletCount) : '—') + '<span>托</span>';
       }
 
+      function completeSupplierConfirmation(ids, ts) {
+        const asnNos = new Set(ids.map(id => state.records.find(r => r.id === id)?.asnNo).filter(Boolean));
+        let factoryPending = 0, confirmed = 0;
+        asnNos.forEach(asnNo => {
+          const items = state.records.filter(r => r.asnNo === asnNo && r.status === 'pending');
+          const hasDifference = items.some(r => Number(r.planQtyNum) !== Number(r.commitQtyNum));
+          items.forEach(r => {
+            const nextStatus = hasDifference ? 'factoryPending' : 'confirmed';
+            r.status = nextStatus;
+            r.updateTime = ts;
+            r.actionHistory = Array.isArray(r.actionHistory) ? r.actionHistory : [];
+            r.actionHistory.push({
+              type: 'supplier_confirmed_plan',
+              label: hasDifference ? '供应商确认计划，等待工厂确认差异' : '供应商确认计划',
+              byRole: '供应商', by: r.supplierName || '供应商', time: ts,
+              fromStatus: 'supplier_pending',
+              toStatus: hasDifference ? 'factory_pending' : 'pending_shipment'
+            });
+          });
+          if (hasDifference) factoryPending += items.length;
+          else confirmed += items.length;
+        });
+        return { factoryPending, confirmed };
+      }
+
       function submitConfirm(e) {
         e.preventDefault();
         const now = new Date(), ts = fmtDt(now);
@@ -1281,18 +1306,20 @@
           r.palletCount = Math.ceil(r.commitQtyNum / (r.stdPalletQty||1));
           r.commitShipDate = r.shipDate;
           r.commitArriveDate = r.arriveDate;
-          r.status = 'confirmed'; r.updateTime = ts;
         }
 
+        const result = completeSupplierConfirmation(ids, ts);
         const confirmed = ids.map(id => state.records.find(r => r.id === id)).filter(Boolean);
-        const directCount = confirmed.filter(r => r.deliveryMethod === 'direct').length;
-        const selfCount = confirmed.filter(r => r.deliveryMethod === 'self').length;
+        const directCount = confirmed.filter(r => r.status === 'confirmed' && r.deliveryMethod === 'direct').length;
+        const selfCount = confirmed.filter(r => r.status === 'confirmed' && r.deliveryMethod === 'self').length;
         closeModal('confirmModal');
         state.confirmingIds = []; state.selectedIds.clear();
         persistRecords();
         updateStats();
         applyFilter();
-        toast('ASN 已确认：' + directCount + ' 项进入直送预约，' + selfCount + ' 项进入自提预约');
+        toast(result.factoryPending
+          ? '供应商已确认：' + result.factoryPending + ' 项存在差异，等待工厂确认'
+          : 'ASN 已确认：' + directCount + ' 项进入直送预约，' + selfCount + ' 项进入自提预约');
       }
 
       // ===== 批量确认弹窗（左右分栏） =====
@@ -1436,19 +1463,18 @@
         }
         const now = new Date(), ts = fmtDt(now);
         const ids = state.batchItems.map(r => r.id);
-        for (const id of ids) {
-          const r = state.records.find(x => x.id === id);
-          if (r) { r.status = 'confirmed'; r.updateTime = ts; }
-        }
+        const result = completeSupplierConfirmation(ids, ts);
         closeModal('batchConfirmModal');
         state.batchItems = []; state.batchConfirmedSet = new Set(); state.batchActiveId = null;
         state.selectedIds.clear();
         persistRecords();
         updateStats(); applyFilter();
         const confirmed = ids.map(id => state.records.find(r => r.id === id)).filter(Boolean);
-        const directCount = confirmed.filter(r => r.deliveryMethod === 'direct').length;
-        const selfCount = confirmed.filter(r => r.deliveryMethod === 'self').length;
-        toast('已确认 ' + ids.length + ' 项：' + directCount + ' 项进入直送预约，' + selfCount + ' 项进入自提预约');
+        const directCount = confirmed.filter(r => r.status === 'confirmed' && r.deliveryMethod === 'direct').length;
+        const selfCount = confirmed.filter(r => r.status === 'confirmed' && r.deliveryMethod === 'self').length;
+        toast(result.factoryPending
+          ? '已确认 ' + ids.length + ' 项：' + result.factoryPending + ' 项存在差异，等待工厂确认'
+          : '已确认 ' + ids.length + ' 项：' + directCount + ' 项进入直送预约，' + selfCount + ' 项进入自提预约');
       }
 
       // ===== 批量预约弹窗（按 ASN 维度） =====
@@ -1692,24 +1718,6 @@
         toast('已取消 ASN ' + asn + ' 的发货预约');
       }
 
-      // ===== 平台确认（供应商确认后，平台审核并流转） =====
-      function platformConfirm(ids) {
-        if (!Array.isArray(ids)) ids = [ids];
-        const now = new Date(), ts = fmtDt(now);
-        let changed = 0, method = '';
-        for (const id of ids) {
-          const r = state.records.find(x => x.id === id);
-          if (!r || r.status !== 'platformPending') continue;
-          r.status = 'confirmed';
-          r.platformConfirmTime = ts; r.updateTime = ts;
-          method = r.deliveryMethod; changed++;
-        }
-        if (!changed) return;
-        persistRecords();
-        updateStats(); applyFilter();
-        toast('平台已确认 ' + changed + ' 条计划，已流转至' + (method === 'self' ? '自提预约' : '直送预约'));
-      }
-
       // ===== 自提预约：完成备货（供应商操作，推送物流商端） =====
       function markStockReady(ids) {
         if (!Array.isArray(ids)) ids = [ids];
@@ -1803,7 +1811,7 @@
       }
 
       // ===== ASN 详情抽屉（主从结构：查看该 ASN 下全部物料） =====
-      const STAGE_ORDER = { pending:0, platformPending:1, confirmed:2, awaitPickup:3, shipped:4, received:5 };
+      const STAGE_ORDER = { pending:0, factoryPending:1, confirmed:2, awaitPickup:3, shipped:4, received:5 };
 
       function deriveAsn(asnNo, routeMethod) {
         const mats = state.records.filter(x => x.asnNo === asnNo && (!routeMethod || x.deliveryMethod === routeMethod));
@@ -1871,8 +1879,8 @@
         let foot = '';
         if (g.status === 'pending') {
           foot = '<button class="btn btn-primary" data-act="confirm" data-ids=\'' + JSON.stringify(ids) + '\'>' + check + '确认计划</button>';
-        } else if (g.status === 'platformPending') {
-          foot = '<span class="asn-foot-hint">计划与 ASN 承诺存在差异，需工厂端确认后才可操作</span>';
+        } else if (g.status === 'factoryPending') {
+          foot = '<span class="asn-foot-hint">供应商已确认计划；计划与 ASN 承诺存在差异，等待工厂端确认后才可操作</span>';
         } else if (g.status === 'confirmed' && g.deliveryMethod === 'self') {
           foot = '<button class="btn btn-primary" data-act="stock" data-ids=\'' + JSON.stringify(ids) + '\'>' + box + '完成备货</button>';
         } else if (g.status === 'awaitPickup') {
@@ -2029,7 +2037,6 @@
         const act = btn.dataset.act;
         const ids = btn.dataset.ids ? JSON.parse(btn.dataset.ids) : [];
         if (act === 'confirm') { closeModal('asnDetailModal'); openConfirmModal(ids); }
-        else if (act === 'platform') { platformConfirm(ids); closeModal('asnDetailModal'); }
         else if (act === 'stock') { if (markStockReady(ids) !== false) closeModal('asnDetailModal'); }
         else if (act === 'logistics') { closeModal('asnDetailModal'); openLogisticsModal(btn.dataset.asn); }
         else if (act === 'receive') { factoryReceive(ids); closeModal('asnDetailModal'); }

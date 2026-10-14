@@ -116,20 +116,18 @@
 
     /* ── Filter Tabs ── */
     .filter-tabs {
-      display: flex; gap: 6px; background: var(--muted); padding: 4px;
-      border-radius: 10px; margin-bottom: 14px; overflow-x: auto;
+      display:flex;gap:28px;background:transparent;padding:0;
+      border-bottom:1px solid var(--border);border-radius:0;margin-bottom:20px;overflow-x:auto;
     }
     .filter-tab {
-      flex: 1; white-space: nowrap; padding: 8px 10px; border-radius: 7px;
-      font-size: 13px; font-weight: 500; color: var(--text-2);
-      transition: background .15s, color .15s;
+      flex:0 0 auto;white-space:nowrap;padding:12px 4px;min-height:44px;border-radius:0;
+      border-bottom:2px solid transparent;font-size:14px;font-weight:500;color:var(--text-2);
+      transition:color .15s,border-color .15s;
     }
-    .filter-tab.active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow-sm); }
-    .filter-tab .t-count {
-      display: inline-block; min-width: 18px; margin-left: 4px;
-      font-size: 11px; color: var(--text-3); font-weight: 600;
-    }
-    .filter-tab.active .t-count { color: var(--primary); }
+    .filter-tab:hover {color:var(--primary)}
+    .filter-tab.active {background:transparent;color:var(--primary);box-shadow:none;border-bottom-color:var(--primary);font-weight:600}
+    .filter-tab .t-count {display:inline-block;min-width:20px;margin-left:6px;padding:0 6px;border-radius:10px;background:var(--muted);font-size:12px;color:var(--text-3)}
+    .filter-tab.active .t-count {color:var(--primary);background:var(--primary-soft)}
 
     /* ── Receipt List ── */
     .receipt-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
@@ -275,7 +273,10 @@
       font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 100;
     }
     .toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-  .page-body{max-width:none;width:auto;padding:24px}.receipt-workspace{display:grid;grid-template-columns:minmax(460px,42%) minmax(0,1fr);gap:20px;align-items:start}.receipt-view{background:white;padding:24px;border:1px solid var(--border);border-radius:8px;min-height:480px}.receipt-list{overflow:auto}.receipt-list table{width:100%;border-collapse:collapse;background:white}.receipt-list th,.receipt-list td{padding:14px 10px;text-align:left;border-bottom:1px solid var(--border)}.receipt-list tr[data-asn]{cursor:pointer}.receipt-list tr[data-asn]:hover{background:#eef9f9}.receipt-view input{padding:7px;border:1px solid var(--border);border-radius:4px}.receipt-view h2,.receipt-view p{margin:0 0 16px}.rate-row{padding:12px 0}.rate-track{height:9px;background:#eef2f5;border-radius:8px;margin:8px 0}.rate-fill{height:9px;background:#07868d;border-radius:8px}.receipt-view .btn-confirm{background:#07868d;color:white;padding:12px 20px;border-radius:4px;margin-top:16px}@media(max-width:1000px){.receipt-workspace{grid-template-columns:1fr}.page-body{padding:16px}}
+  .page-body{max-width:none;width:auto;padding:24px}.receipt-workspace{display:grid;grid-template-columns:minmax(320px,30%) minmax(0,1fr);gap:20px;align-items:start}.receipt-view{background:white;padding:24px;border:1px solid var(--border);border-radius:8px;min-height:480px}.receipt-list{overflow:auto}.receipt-list table{width:100%;border-collapse:collapse;background:white}.receipt-list th,.receipt-list td{padding:14px 10px;text-align:left;border-bottom:1px solid var(--border)}.receipt-list tr[data-asn]{cursor:pointer}.receipt-list tr[data-asn]:hover{background:#eef9f9}.receipt-view input{padding:7px;border:1px solid var(--border);border-radius:4px}.receipt-view h2,.receipt-view p{margin:0 0 16px}.rate-row{padding:12px 0}.rate-track{height:9px;background:#eef2f5;border-radius:8px;margin:8px 0}.rate-fill{height:9px;background:#07868d;border-radius:8px}.receipt-view .btn-confirm{background:#07868d;color:white;padding:12px 20px;border-radius:4px;margin-top:16px}@media(max-width:1000px){.receipt-workspace{grid-template-columns:1fr}.page-body{padding:16px}}
+
+.receipt-list,.receipt-view{min-width:0}.receipt-list{background:white;border:1px solid var(--border);border-radius:8px;max-height:65vh}.receipt-list th,.material-scroll th{position:sticky;top:0;background:var(--muted);z-index:1}.receipt-list tr.selected{background:var(--primary-soft)}.receipt-list input[type=checkbox]{accent-color:var(--primary);width:16px;height:16px}.receipt-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}.receipt-toolbar button{background:var(--primary);color:white;border:0;border-radius:6px;padding:10px 16px;min-height:38px;cursor:pointer}.receipt-toolbar button:disabled{opacity:.5;cursor:not-allowed}.material-scroll,.import-results{overflow:auto;max-height:55vh}.material-scroll table{min-width:950px;width:100%;border-collapse:collapse}.material-scroll td,.material-scroll th,.import-results td,.import-results th{padding:12px;border-bottom:1px solid var(--border);text-align:left}.receipt-tag{display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;white-space:nowrap;background:#fff4df;color:#91621e}.receipt-tag.done{background:#edf8ef;color:#287b46}.receipt-metrics{margin-bottom:16px;background:white;padding:12px;border:1px solid var(--border);border-radius:8px}.receipt-metrics summary{cursor:pointer}.receipt-help{color:var(--text-2);font-size:13px}button:focus-visible,input:focus-visible,tr:focus-visible{outline:3px solid #07868d55;outline-offset:2px}
+.page-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}.page-heading #importReceipts{background:var(--primary);color:white;border:0;border-radius:6px;padding:10px 16px;min-height:38px;cursor:pointer;white-space:nowrap}.page-heading #importReceipts:hover{background:var(--primary-dark)}.page-heading #importReceipts:disabled{opacity:.5;cursor:wait}.welcome .receipt-help{margin:12px 0 0;line-height:1.6}
 </style>
 </head>
 <body>
@@ -304,7 +305,7 @@
 
     <!-- Welcome -->
     <div class="welcome">
-      <div class="welcome-greeting">收货管理台</div>
+      <div class="page-heading"><div class="welcome-greeting">收货管理台</div><button id="importReceipts" type="button">导入收货明细</button></div>
       <div class="welcome-meta" id="welcomeMeta">
         <span>宁波博格华纳</span>
         <span class="dot"></span>
@@ -312,20 +313,8 @@
         <span class="dot"></span>
         <strong id="pendingStrong">待收货 0 笔</strong>
       </div>
-      <button onclick="document.getElementById('receiptImport').click()" style="margin-top:12px;border:0;border-radius:8px;background:#0f766e;color:#fff;padding:10px 16px;font-weight:600;cursor:pointer;min-height:44px">导入收货记录</button>
+      <p class="receipt-help">支持一次导入多个 ASN 的收货明细，无需先勾选 ASN。CSV必填：ASN号、物料编号、实际收货数量；同物料多行时须提供采购凭证。</p>
       <input id="receiptImport" type="file" accept=".csv" hidden>
-    </div>
-
-    <!-- Stats -->
-    <div class="stats-row">
-      <div class="stat-item">
-        <div class="stat-num" id="statPending">0</div>
-        <div class="stat-label warning">待收货</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num" id="statOk">0</div>
-        <div class="stat-label">已收货</div>
-      </div>
     </div>
 
     <!-- Filter Tabs -->
@@ -336,7 +325,7 @@
     </div>
 
     <!-- Receipt List -->
-    <div class="receipt-workspace"><div class="receipt-list" id="receiptList"></div><section id="receiptView" class="receipt-view"><h2>交付统计</h2><div id="deliveryMetrics"></div><p>选择左侧ASN查看明细并确认收货。</p></section></div>
+    <div class="receipt-workspace"><div class="receipt-list" id="receiptList"></div><section id="receiptView" class="receipt-view"><p>请选择左侧 ASN 查看物料。</p></section></div>
 
   </div>
 
@@ -358,7 +347,7 @@
   <script>
     const SUP_KEY = 'bw_supplier_deliveries';
     const CAR_KEY = 'bw_carrier_pickups';
-    const PLAN_KEY = 'material-plan-v5';
+    const PLAN_KEY = 'material-plan-v8';
 
     const SEED_SUP = [
       { no:'SHP-20260812-101', supplier:'博世汽车部件（苏州）有限公司',
@@ -453,39 +442,34 @@
     }
 
     /* ── Render ── */
-    let receiptDraft={},selectedAsn='';
+    let receiptDraft={},selectedAsn=''; // 旧详情兼容变量；首页使用多选集合
+    const selectedAsns=new Set();
+    let lastImport=[],importBusy=false;
+    function readPlans(){const rows=JSON.parse(localStorage.getItem(PLAN_KEY)||'[]');if(!Array.isArray(rows))throw new Error('计划数据格式错误');return rows;}
+    function identityMatch(a,b){return a.materialCode===b.materialCode&&(!a.voucher||a.voucher===b.voucher);}
     function asnReceipts(){
-      const groups=new Map(),plans=JSON.parse(localStorage.getItem(PLAN_KEY)||'[]');
-      mergeReceipts().forEach(rec=>{const asn=rec.asnNo||rec.no;if(!groups.has(asn))groups.set(asn,{asnNo:asn,records:[],items:[]});const g=groups.get(asn);g.records.push(rec);rec.items.forEach(it=>g.items.push({...it,asnNo:asn}));});
-      return [...groups.values()].map(g=>{const linked=plans.filter(p=>p.asnNo===g.asnNo&&p.status!=='cancelled');g.items=g.items.map(it=>{const matches=linked.filter(p=>p.materialCode===it.materialCode);return {...it,expected:matches.length===1?Number(matches[0].actualShipQty??matches[0].promisedQty??matches[0].planQty):Number(it.actualShipQty??it.promisedQty??it.planQty),plan:matches[0]};});g.complete=g.records.every(r=>r.status==='ok')&&(!linked.length||linked.every(p=>p.status==='received'));return g;});
-    }
-    function metricsHtml(groups){
-      const date=v=>{const text=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(text)?Date.parse(text+'T00:00:00Z'):NaN};
-      const rates=[['准时发货率','shipDate','shipmentRegDate'],['准时到货率','arrivalDate','receivedTime']];
-      return rates.map(([label,planned,actual])=>{const eligible=groups.map(g=>g.items.map(i=>[date(i.plan?.[planned]),date(i.plan?.[actual])])).filter(a=>a.length&&a.every(([p,t])=>Number.isFinite(p)&&Number.isFinite(t)));const ok=eligible.filter(a=>a.every(([p,t])=>Math.abs(t-p)<=86400000)).length;const percent=eligible.length?Math.round(ok/eligible.length*100):null;return '<div class="rate-row">'+label+' <strong>'+(percent===null?'—':percent+'%')+'</strong><div class="rate-track"><div class="rate-fill" style="width:'+(percent||0)+'%"></div></div><small>准时 '+ok+' / 有效ASN '+eligible.length+'；缺少日期 '+(groups.length-eligible.length)+'</small></div>';}).join('')+'<p style="color:#8b95a1;margin-top:16px">计划日期±1天（含边界）。暂按ASN等权、全部明细准时统计；缺少实际日期不计入分母。图表为临时展示，待客户样式。</p>';
+      const groups=new Map(),plans=readPlans();
+      mergeReceipts().forEach(rec=>{const asn=rec.asnNo||rec.no;if(!groups.has(asn))groups.set(asn,{asnNo:asn,records:[],items:[]});const g=groups.get(asn);g.records.push(rec);rec.items.forEach((it,index)=>g.items.push({...it,asnNo:asn,recordNo:rec.no,kind:rec.kind,itemIndex:index,recordComplete:rec.status==='ok'}));});
+      return [...groups.values()].map(g=>{const linked=plans.filter(p=>p.asnNo===g.asnNo&&p.status!=='cancelled');g.items=g.items.map(it=>{const matches=linked.filter(p=>identityMatch(it,p)),plan=matches.length===1?matches[0]:null;return {...it,expected:Number(plan?.actualShipQty??plan?.promisedQty??plan?.planQty??it.actualShipQty??it.promisedQty??it.planQty),plan,ambiguous:matches.length>1,complete:it.receiptStatus==='received'||(it.recordComplete&&(!plan||plan.status==='received')),actualQty:it.actualQty??plan?.actualArrivalQty};});g.complete=g.items.length>0&&g.items.every(i=>i.complete)&&linked.every(p=>p.status==='received');return g;});
     }
     function renderAll(){
       const groups=asnReceipts(),ok=groups.filter(g=>g.complete).length,pending=groups.length-ok;
-      [['cAll',groups.length],['cPending',pending],['cOk',ok],['statPending',pending],['statOk',ok]].forEach(([id,v])=>document.getElementById(id).textContent=v);
+      [['cAll',groups.length],['cPending',pending],['cOk',ok]].forEach(([id,v])=>document.getElementById(id).textContent=v);
       document.getElementById('pendingStrong').textContent='待收货 '+pending+' 笔';
-      const shown=groups.filter(g=>curFilter==='all'||(curFilter==='ok')===g.complete);
-      const wrap=document.getElementById('receiptList');wrap.innerHTML='<table><thead><tr><th>ASN / 供应商</th><th>物料项数</th><th>状态</th></tr></thead><tbody>'+shown.map(g=>'<tr data-asn="'+esc(g.asnNo)+'"><td><strong>'+esc(g.asnNo)+'</strong><br>'+esc(g.records[0].supplier||g.records[0].relSupplier||'—')+'</td><td>'+g.items.length+'</td><td>'+(g.complete?'已收货':'待收货')+'</td></tr>').join('')+'</tbody></table>'+(shown.length?'':'<p class="empty-state">暂无记录</p>');
-      wrap.querySelectorAll('[data-asn]').forEach(tr=>tr.onclick=()=>showAsn(tr.dataset.asn));
-      if(selectedAsn)showAsn(selectedAsn);else document.getElementById('deliveryMetrics').innerHTML=metricsHtml(groups);
+      const shown=groups.filter(g=>curFilter==='all'||(curFilter==='ok')===g.complete),visible=new Set(shown.map(g=>g.asnNo));
+      [...selectedAsns].forEach(asn=>{if(!visible.has(asn))selectedAsns.delete(asn);});
+      const wrap=document.getElementById('receiptList');wrap.innerHTML='<table><thead><tr><th><input id="selectAllAsns" type="checkbox" aria-label="选择当前列表全部ASN"></th><th>ASN / 供应商</th><th>收货进度</th><th>状态</th></tr></thead><tbody>'+shown.map(g=>'<tr tabindex="0" data-asn="'+esc(g.asnNo)+'" class="'+(selectedAsns.has(g.asnNo)?'selected':'')+'"><td><input type="checkbox" aria-label="选择 '+esc(g.asnNo)+'" '+(selectedAsns.has(g.asnNo)?'checked':'')+'></td><td><strong>'+esc(g.asnNo)+'</strong><br>'+esc(g.records[0].supplier||g.records[0].relSupplier||'—')+'</td><td>'+g.items.filter(i=>i.complete).length+'/'+g.items.length+'项</td><td><span class="receipt-tag '+(g.complete?'done':'')+'">'+(g.complete?'已收货':'待收货')+'</span></td></tr>').join('')+'</tbody></table>'+(shown.length?'':'<p class="empty-state">暂无记录</p>');
+      wrap.querySelectorAll('[data-asn]').forEach(tr=>{tr.onclick=e=>{if(e.target.type==='checkbox'){e.target.checked?selectedAsns.add(tr.dataset.asn):selectedAsns.delete(tr.dataset.asn);}else{selectedAsns.clear();selectedAsns.add(tr.dataset.asn);}renderAll();};tr.onkeydown=e=>{if(e.target!==tr)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();tr.click();}};});
+      const all=document.getElementById('selectAllAsns');all.checked=shown.length>0&&shown.every(g=>selectedAsns.has(g.asnNo));all.indeterminate=selectedAsns.size>0&&!all.checked;all.disabled=!shown.length;all.onchange=()=>{shown.forEach(g=>all.checked?selectedAsns.add(g.asnNo):selectedAsns.delete(g.asnNo));renderAll();};
+      const importButton=document.getElementById('importReceipts');importButton.disabled=importBusy;importButton.textContent=importBusy?'导入处理中…':'导入收货明细';
+      showMaterials(groups);
     }
-    function showAsn(asn){
-      selectedAsn=asn;const g=asnReceipts().find(g=>g.asnNo===asn);if(!g)return;
-      const draft=receiptDraft[asn]||{};
-      document.getElementById('receiptView').innerHTML='<h2>'+esc(asn)+'</h2>'+metricsHtml(asnReceipts())+'<table class="mat-table"><thead><tr><th>物料</th><th>系统数量</th><th>导入实收</th><th>比对</th></tr></thead><tbody>'+g.items.map(i=>{const q=draft[i.materialCode];return '<tr><td>'+esc(i.materialCode)+'</td><td>'+fmt(i.expected)+'</td><td>'+(q===undefined?(g.complete?fmt(i.actualQty):'未导入'):fmt(q))+'</td><td>'+(q===undefined?'—':q===i.expected?'一致':'不一致')+'</td></tr>';}).join('')+'</tbody></table><p>导入CSV：ASN号、物料编号、实际收货数量。全部物料比对一致后确认。</p><button id="confirmAsnReceipt" class="btn-confirm" '+(g.complete?'disabled':'')+'>'+(g.complete?'已收货':'确认收货')+'</button>';
-      document.getElementById('confirmAsnReceipt').onclick=()=>{
-        const plans=JSON.parse(localStorage.getItem(PLAN_KEY)||'[]').filter(p=>p.asnNo===asn&&p.status!=='cancelled');
-        if(new Set(g.items.map(i=>i.materialCode)).size!==g.items.length||plans.some(p=>!g.items.some(i=>i.materialCode===p.materialCode))||plans.some(p=>plans.filter(x=>x.materialCode===p.materialCode).length>1)){toast('ASN明细存在重复或缺失，无法确认，请核对数据');return;}
-        if(!g.items.length||g.items.some(i=>draft[i.materialCode]===undefined||draft[i.materialCode]!==i.expected)){toast('所有物料需先导入且与系统数量一致');return;}
-        g.records.forEach(rec=>{rec.items.forEach(it=>{it.actualQty=draft[it.materialCode];it.asnNo=asn;});rec.status='ok';rec.receivedTime=nowStr();saveByKind(rec.kind,rec);syncPlanReceipt(rec.items);});delete receiptDraft[asn];renderAll();toast('ASN全部物料已确认收货');
-      };
+    function showMaterials(groups){
+      const chosen=groups.filter(g=>selectedAsns.has(g.asnNo)),items=chosen.flatMap(g=>g.items);
+      document.getElementById('receiptView').innerHTML='<div class="receipt-toolbar"><div><h2>物料列表</h2>已选择 '+chosen.length+' 个 ASN，共 '+items.length+' 条物料</div></div><p class="receipt-help">左侧选择仅控制物料展示；顶部全局导入按文件中的 ASN 匹配收货，数量一致后直接完成收货。</p>'+(!items.length?'<p class="empty-state">请选择左侧 ASN 查看物料。</p>':'<div class="material-scroll"><table><thead><tr><th>ASN号</th><th>物料编号 / 描述</th><th>采购凭证</th><th>系统数量</th><th>实收数量</th><th>匹配结果</th><th>收货状态</th></tr></thead><tbody>'+items.map(i=>'<tr><td>'+esc(i.asnNo)+'</td><td>'+esc(i.materialCode)+'<br>'+esc(i.plan?.materialDesc||i.plan?.materialName||i.materialDesc||'—')+'</td><td>'+esc(i.voucher||'—')+'</td><td>'+fmt(i.expected)+'</td><td>'+(i.actualQty==null?'—':fmt(i.actualQty))+'</td><td>'+esc(lastImport.findLast(r=>r.asnNo===i.asnNo&&r.materialCode===i.materialCode&&(!r.voucher||r.voucher===i.voucher))?.reason||(i.complete?'已核对':'未导入'))+'</td><td><span class="receipt-tag '+(i.complete?'done':'')+'">'+(i.complete?'已收货':'待收货')+'</span></td></tr>').join('')+'</tbody></table></div>')+(lastImport.length?'<h3>最近导入结果：成功 '+lastImport.filter(r=>r.result==='成功').length+'，跳过 '+lastImport.filter(r=>r.result==='跳过').length+'，失败 '+lastImport.filter(r=>r.result==='失败').length+'</h3><div class="import-results"><table><thead><tr><th>文件行</th><th>ASN / 物料</th><th>结果</th><th>原因</th></tr></thead><tbody>'+lastImport.map(r=>'<tr><td>'+r.line+'</td><td>'+esc(r.asnNo)+' / '+esc(r.materialCode)+'</td><td>'+r.result+'</td><td>'+esc(r.reason)+'</td></tr>').join('')+'</tbody></table></div>':'');
+
     }
 
-    /* ── Detail ── */
     function findReceipt(id){
       const [kind, no] = id.split('|');
       return mergeReceipts().find(r=>r.kind===kind && r.no===no) || null;
@@ -814,24 +798,51 @@
       renderAll();
     });
 
-    // CSV 字段：ASN号,物料编号,实际收货数量。导入后按 ASN+物料回写，部分收货保持“待收货”。
-    document.getElementById('receiptImport').addEventListener('change', e=>{
-      const file=e.target.files[0]; if(!file) return;
-      const reader=new FileReader();
-      reader.onload=()=>{
-        const lines=String(reader.result||'').replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);
-        const headers=(lines.shift()||'').split(',').map(x=>x.trim());
-        const ai=headers.findIndex(x=>['ASN号','asnNo','ASN'].includes(x));
-        const mi=headers.findIndex(x=>['物料编号','materialCode'].includes(x));
-        const qi=headers.findIndex(x=>['实际收货数量','actualArrivalQty','actualQty'].includes(x));
-        if(ai<0||mi<0||qi<0){ toast('导入失败：需要 ASN号、物料编号、实际收货数量'); return; }
-        const imported=lines.map(line=>{const c=line.split(',');return{asnNo:(c[ai]||'').trim(),materialCode:(c[mi]||'').trim(),qty:c[qi]?.trim()?Number(c[qi]):NaN}});
-        const groups=asnReceipts(),keys=new Set();
-        for(const item of imported){const key=item.asnNo+'|'+item.materialCode;const g=groups.find(g=>g.asnNo===item.asnNo);if(keys.has(key)||!Number.isFinite(item.qty)||item.qty<0||!g||g.items.filter(i=>i.materialCode===item.materialCode).length!==1){toast('导入失败：存在重复、未知物料或非法数量，未写入数据');e.target.value='';return;}keys.add(key);}
-        imported.forEach(it=>{(receiptDraft[it.asnNo]??={})[it.materialCode]=it.qty;});
-        selectedAsn=imported[0]?.asnNo||selectedAsn;renderAll();toast('导入比对完成，请核对后点击确认收货');e.target.value='';
-      };
-      reader.readAsText(file,'utf-8');
+    function parseReceiptCsv(text){
+      const rows=[];let row=[],cell='',quoted=false;
+      text=String(text).replace(/^\uFEFF/,'');
+      for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}else if(c===','&&!quoted){row.push(cell.trim());cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell.trim());rows.push(row);row=[];cell='';}else cell+=c;}
+      if(quoted)throw new Error('CSV引号未闭合');if(cell||row.length){row.push(cell.trim());rows.push(row);}return rows;
+    }
+    function importReceiptText(text){
+      const csv=parseReceiptCsv(text),headers=csv.shift()||[],col=names=>headers.findIndex(h=>names.includes(h));
+      const ai=col(['ASN号','asnNo','ASN']),mi=col(['物料编号','materialCode']),qi=col(['实际收货数量','actualArrivalQty','actualQty']),vi=col(['采购凭证','voucher']);
+      if(ai<0||mi<0||qi<0)throw new Error('需要 ASN号、物料编号、实际收货数量');
+      const rows=csv.map((c,index)=>({line:index+2,asnNo:c[ai]||'',materialCode:c[mi]||'',voucher:vi<0?'':c[vi]||'',qty:c[qi]?Number(c[qi]):NaN})).filter((r,index)=>csv[index].some(Boolean));
+      if(!rows.length)throw new Error('文件没有收货明细');
+      const groups=asnReceipts(),plans=readPlans(),sup=loadSup(),car=loadCar(),time=nowStr();
+      const counts=new Map();rows.forEach(r=>{const k=JSON.stringify([r.asnNo,r.materialCode,r.voucher]);counts.set(k,(counts.get(k)||0)+1);});
+      const claimed=new Set();
+      const results=rows.map(r=>{
+        const fail=reason=>({...r,result:'失败',reason});
+        if(!r.asnNo||!r.materialCode)return fail('ASN号和物料编号必填');
+        if(!Number.isFinite(r.qty)||r.qty<0)return fail('实收数量必须为非负数字');
+        if(counts.get(JSON.stringify([r.asnNo,r.materialCode,r.voucher]))>1)return fail('文件存在重复明细');
+        const g=groups.find(g=>g.asnNo===r.asnNo);if(!g)return fail('系统不存在该ASN');
+        const candidates=g.items.filter(i=>i.materialCode===r.materialCode&&(!r.voucher||i.voucher===r.voucher));
+        if(candidates.length!==1)return fail(candidates.length?'物料无法唯一匹配，请提供采购凭证':'ASN下不存在对应物料/采购凭证');
+        const item=candidates[0],key=JSON.stringify([item.kind,item.recordNo,item.itemIndex]);
+        if(claimed.has(key))return fail('文件多行指向同一系统明细');claimed.add(key);
+        if(item.ambiguous)return fail('共享计划存在重复明细，无法唯一回写');
+        if(item.complete)return r.qty===Number(item.actualQty)?{...r,result:'跳过',reason:'已收货且数量相同'}:fail('已收货数量冲突，不覆盖');
+        if(!Number.isFinite(item.expected)||r.qty!==item.expected)return fail('数量不一致，系统数量 '+item.expected);
+        const record=(item.kind==='supplier'?sup:car).find(x=>x.no===item.recordNo),target=record.items[item.itemIndex];
+        target.actualQty=r.qty;target.receiptStatus='received';target.receivedTime=time;
+        const matched=plans.filter(p=>p.asnNo===r.asnNo&&p.status!=='cancelled'&&identityMatch(item,p));
+        matched.forEach(p=>{p.actualArrivalQty=r.qty;p.status='received';p.receivedTime=time;});
+        return {...r,result:'成功',reason:'匹配一致，已收货'};
+      });
+      if(results.some(r=>r.result==='成功')){
+        [...sup,...car].forEach(rec=>{const asn=rec.asnNo||rec.no,linked=plans.filter(p=>p.asnNo===asn&&p.status!=='cancelled');if(rec.items.length&&rec.items.every(i=>i.receiptStatus==='received'||rec.status==='ok')&&linked.every(p=>p.status==='received')){rec.status='ok';rec.receivedTime=rec.receivedTime||time;}});
+        const keys=[SUP_KEY,CAR_KEY,PLAN_KEY],before=keys.map(k=>localStorage.getItem(k));
+        try{localStorage.setItem(SUP_KEY,JSON.stringify(sup));localStorage.setItem(CAR_KEY,JSON.stringify(car));localStorage.setItem(PLAN_KEY,JSON.stringify(plans));}catch(e){keys.forEach((k,i)=>{try{before[i]===null?localStorage.removeItem(k):localStorage.setItem(k,before[i]);}catch(ignore){}});throw new Error('保存失败，请重试；本次未确认成功');}
+      }
+      lastImport=results;return results;
+    }
+    document.getElementById('importReceipts').onclick=()=>{if(!importBusy)document.getElementById('receiptImport').click();};
+    document.getElementById('receiptImport').addEventListener('change',e=>{
+      const file=e.target.files[0];if(!file||importBusy)return;importBusy=true;renderAll();
+      const reader=new FileReader();reader.onload=()=>{try{const results=importReceiptText(reader.result);toast('导入完成：成功 '+results.filter(r=>r.result==='成功').length+'，失败 '+results.filter(r=>r.result==='失败').length);}catch(error){toast('导入失败：'+error.message);}finally{importBusy=false;e.target.value='';renderAll();}};reader.onerror=()=>{toast('读取文件失败，请重试');importBusy=false;e.target.value='';renderAll();};reader.readAsText(file,'utf-8');
     });
 
     seedIfEmpty();
