@@ -138,6 +138,37 @@
     .recent-status.ok      { background: var(--success-soft); color: var(--success); }
     .recent-status.danger  { background: var(--danger-soft); color: var(--danger); }
 
+    .asn-summary { background: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; }
+    .asn-summary-code { color: var(--primary-dark); font-size: 15px; font-weight: 700; }
+    .asn-summary-supplier { color: var(--text-2); font-size: 13px; margin-top: 3px; }
+    .asn-summary-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .asn-summary-meta span { color: var(--text-3); font-size: 11px; }
+    .asn-summary-meta b { display: block; color: var(--text); font-size: 13px; font-weight: 600; margin-top: 2px; }
+    .material-section { margin-bottom: 16px; }
+    .material-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .material-head h3 { font-size: 14px; font-weight: 650; }
+    .material-head span { color: var(--text-3); font-size: 12px; }
+    .material-list { display: flex; flex-direction: column; gap: 10px; }
+    .material-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; background: var(--surface); }
+    .material-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .material-code { font-size: 14px; font-weight: 650; color: var(--text); overflow-wrap: anywhere; }
+    .material-index { flex-shrink: 0; color: var(--text-3); font-size: 11px; background: var(--muted); padding: 2px 7px; border-radius: 8px; }
+    .material-voucher { color: var(--text-3); font-size: 11px; margin-top: 8px; overflow-wrap: anywhere; }
+    .material-qty-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .qty-readonly span, .qty-input label { display: block; color: var(--text-3); font-size: 11px; margin-bottom: 4px; }
+    .qty-readonly strong { display: block; min-height: 44px; line-height: 44px; color: var(--text); font-size: 15px; }
+    .batch-section { border-top: 1px dashed var(--border); margin-top: 10px; padding-top: 10px; }
+    .batch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .batch-head span { color: var(--text-3); font-size: 11px; }
+    .detail-record { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+    .detail-record-item { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; background: var(--muted); min-width: 0; }
+    .detail-record-item.full { grid-column: 1 / -1; }
+    .detail-record-item span { display: block; color: var(--text-3); font-size: 11px; }
+    .detail-record-item b { display: block; color: var(--text); font-size: 13px; font-weight: 600; margin-top: 4px; overflow-wrap: anywhere; }
+
+    .search-fields { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+    .search-fields input { flex:1; min-width:140px; width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:8px; background:var(--surface); color:var(--text); font:inherit; }
+    .search-fields input:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
     .empty-state { padding: 36px 20px; text-align: center; color: var(--text-3); background: var(--surface); border-radius: var(--radius); }
 
     /* ── Bottom Action Bar ── */
@@ -236,6 +267,7 @@
       <button class="tab" data-tab="shipped">已取货</button>
     </div>
 
+    <div class="field"><label for="asnSearch">ASN号</label><input id="asnSearch" type="search" placeholder="输入 ASN 号查询"></div>
     <!-- Pending panel -->
     <div class="tab-panel active" id="tabPending">
       <div class="pend-toolbar">
@@ -270,7 +302,7 @@
     <div class="sheet-body">
       <div class="sel-summary">
         <div class="ss-head"><span>ASN 物料明细（取货数量）</span><span id="ssCount"></span></div>
-        <div class="ss-list" id="ssList"></div>
+        <div class="field-row" style="margin-top:10px"><div class="field"><label for="materialSearch">物料编号</label><input id="materialSearch" type="search" placeholder="输入物料编号"></div><div class="field"><label for="voucherSearch">采购凭证</label><input id="voucherSearch" type="search" placeholder="输入采购凭证"></div></div><div id="materialSearchEmpty" hidden>无匹配物料</div><div class="ss-list" id="ssList"></div>
       </div>
       <div class="field">
         <label>ASN号<span class="req">*</span></label>
@@ -321,6 +353,27 @@
     </div>
     <div class="sheet-foot">
       <button class="action-btn" onclick="submitPick()">确认提交</button>
+    </div>
+  </div>
+
+  <!-- Shipped record detail sheet -->
+  <div class="sheet-mask" id="detailMask" onclick="closeShippedDetail()"></div>
+  <div class="sheet" id="detailSheet" aria-labelledby="detailTitle">
+    <div class="sheet-head">
+      <div class="sheet-title" id="detailTitle">取货详情</div>
+      <button class="sheet-close" onclick="closeShippedDetail()" aria-label="关闭">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="asn-summary" id="detailSummary"></div>
+      <div class="material-section">
+        <div class="material-head"><h3>取货物料</h3><span id="detailCount"></span></div>
+        <div class="search-fields"><input id="detailMaterialSearch" type="search" placeholder="物料编号" aria-label="物料编号模糊查询"><input id="detailVoucherSearch" type="search" placeholder="采购凭证" aria-label="采购凭证模糊查询"></div>
+        <div id="detailSearchEmpty" class="empty-state" hidden>没有符合条件的物料</div>
+        <div class="material-list" id="detailList"></div>
+      </div>
+      <div class="detail-record" id="detailRecord"></div>
     </div>
   </div>
 
@@ -412,14 +465,24 @@
     }
     function formatNum(n) { return Number(n).toLocaleString('en-US'); }
 
+    function asnQuery() { return document.getElementById('asnSearch').value.trim().toLowerCase(); }
+    function matchesAsn(value) { return String(value || '').toLowerCase().includes(asnQuery()); }
+    document.getElementById('asnSearch').addEventListener('input', () => { renderPending(); renderShipped(); });
+    function filterPickupMaterials() {
+      const material = document.getElementById('materialSearch').value.trim().toLowerCase(), voucher = document.getElementById('voucherSearch').value.trim().toLowerCase();
+      let visible = 0;
+      document.querySelectorAll('#ssList .ss-item').forEach(row => { row.hidden = !row.dataset.material.toLowerCase().includes(material) || !row.dataset.voucher.toLowerCase().includes(voucher); row.style.display = row.hidden ? 'none' : ''; if (!row.hidden) visible++; });
+      document.getElementById('materialSearchEmpty').hidden = visible > 0;
+    }
+    ['materialSearch','voucherSearch'].forEach(id => document.getElementById(id).addEventListener('input', filterPickupMaterials));
     function renderPending() {
-      const pending = getPending();
-      const validAsns = new Set(pending.map(g => g.asnNo));
+      const pending = getPending().filter(g => matchesAsn(g.asnNo));
+      const validAsns = new Set(getPending().map(g => g.asnNo));
       [...selected].forEach(asnNo => { if (!validAsns.has(asnNo)) selected.delete(asnNo); });
       const list = document.getElementById('pendList');
       document.getElementById('pendCount').textContent = pending.length ? '(' + pending.length + ')' : '';
       if (!pending.length) {
-        list.innerHTML = `<div class="empty-state">暂无可取货 ASN<br><span style="display:block;margin-top:6px;font-size:12px;">需先由物流商完成自提送货预约，并由供应商完成备货。</span></div>`;
+        list.innerHTML = `<div class="empty-state">${asnQuery() ? '无匹配 ASN' : '暂无可取货 ASN'}<br><span style="display:block;margin-top:6px;font-size:12px;">需先由物流商完成自提送货预约，并由供应商完成备货。</span></div>`;
       } else {
         list.innerHTML = pending.map(g => `
           <label class="pend-item">
@@ -444,7 +507,7 @@
       document.getElementById('confirmBtn').disabled = n === 0;
     }
     function updateSelectAll() {
-      const pending = getPending();
+      const pending = getPending().filter(g => matchesAsn(g.asnNo));
       const sa = document.getElementById('selectAll');
       sa.checked = pending.length > 0 && selected.has(pending[0].asnNo);
     }
@@ -455,7 +518,7 @@
       }
     });
     document.getElementById('selectAll').addEventListener('change', e => {
-      const pending = getPending();
+      const pending = getPending().filter(g => matchesAsn(g.asnNo));
       selected.clear(); if (e.target.checked && pending[0]) selected.add(pending[0].asnNo);
       renderPending();
     });
@@ -474,15 +537,16 @@
       document.getElementById('carrier').value = logistics.length === 1 ? logistics[0] : '';
       document.getElementById('relSupplier').value = items[0].supplierName || '';
       document.getElementById('plate').value = group.vehiclePlate || '';
-      document.getElementById('driver').value = [group.pickupPerson, group.pickupPhone].filter(Boolean).join(' ');
+      document.getElementById('driver').value = Array.isArray(group.drivers) ? group.drivers.map(d => [d.name,d.phone].filter(Boolean).join(' ')).join('；') : [group.pickupPerson, group.pickupPhone].filter(Boolean).join(' ');
       document.getElementById('trackNo').value = '';
       document.getElementById('deliveryDate').value = group.deliveryAppointmentDate || group.arrivalDate || '';
       document.getElementById('pickDate').value = group.shipDate || '';
       document.getElementById('pickTime').value = '';
       document.getElementById('remark').value = '';
+      document.getElementById('materialSearch').value = ''; document.getElementById('voucherSearch').value = ''; document.getElementById('materialSearchEmpty').hidden = true;
       document.getElementById('ssCount').textContent = items.length + ' 种物料';
-      document.getElementById('ssList').innerHTML = items.map((i, index) => `
-        <div class="ss-item"><span>${escapeHtml(i.materialCode)} · 承诺 ${escapeHtml(formatNum(i.promisedQty))}<br><span style="color:var(--text-3)">批次：${escapeHtml(displayBatchDetails(i) || '暂未维护')}</span></span><input id="actual_${index}" type="number" min="0" value="${Number(i.promisedQty)||0}" aria-label="${escapeHtml(i.materialCode)} 取货数量" style="width:110px;padding:7px;border:1px solid #d9e2dc;border-radius:6px;text-align:right"></div>`).join('');
+      document.getElementById('ssList').innerHTML = items.map((i, index) => (Array.isArray(i.batchDetails) && i.batchDetails.length ? i.batchDetails : [{ batchNo:'', quantity:'' }]).map((detail, batchIndex) => `
+        <div class="ss-item" data-material="${escapeHtml(i.materialCode || '')}" data-voucher="${escapeHtml(i.voucher || '')}"><span>${escapeHtml(i.materialCode)} · 采购凭证 ${escapeHtml(i.voucher || '—')} · 批次 ${escapeHtml(detail.batchNo || '暂未维护')}<br><span style="color:var(--text-3)">批次数量：${escapeHtml(formatNum(detail.quantity))}</span></span><input id="actual_${index}_${batchIndex}" type="number" min="0" step="any" value="${Number(detail.quantity)||0}" aria-label="${escapeHtml(i.materialCode)} ${escapeHtml(detail.batchNo || '未维护批次')} 实际取货数量" style="width:110px;padding:7px;border:1px solid #d9e2dc;border-radius:6px;text-align:right"></div>`).join('')).join('');
       document.getElementById('sheetMask').classList.add('show');
       document.getElementById('sheet').classList.add('show');
     }
@@ -504,13 +568,32 @@
       if (!deliveryDate) { toast('请选择预约送货日期'); return; }
       if (!pickDate) { toast('请选择实际取货日期'); return; }
       const pickTime = document.getElementById('pickTime').value;
-      const quantities = items.map((i, index) => Number(document.getElementById('actual_' + index).value || 0));
+      const quantities = [];
+      const savedBatchDetails = [];
+      for (let index = 0; index < items.length; index++) {
+        const details = Array.isArray(items[index].batchDetails) ? items[index].batchDetails : [];
+        if (!details.length || details.some(detail => !String(detail.batchNo || '').trim() || !Number.isFinite(Number(detail.quantity)) || Number(detail.quantity) < 0)) {
+          toast('请由供应商先维护完整的批次明细'); return;
+        }
+        const actualDetails = [];
+        for (let batchIndex = 0; batchIndex < details.length; batchIndex++) {
+          const input = document.getElementById('actual_' + index + '_' + batchIndex);
+          const value = Number(input.value);
+          if (input.value === '' || !Number.isFinite(value) || value < 0) {
+            input.focus(); toast('请填写有效的批次实际取货数量'); return;
+          }
+          actualDetails.push({ batchNo: details[batchIndex].batchNo, quantity: Number(details[batchIndex].quantity), actualShipQty: value });
+        }
+        quantities[index] = actualDetails.reduce((sum, detail) => sum + detail.actualShipQty, 0);
+        savedBatchDetails[index] = actualDetails;
+      }
       const rec = {
         no: group.asnNo, asnNo: group.asnNo, pickupNo: genNo('PUP'),
         carrier,
         relSupplier: document.getElementById('relSupplier').value.trim(),
-        items: items.map((i, index) => ({ id:i.id, asnNo:i.asnNo, materialCode: i.materialCode, voucher: i.voucher, planQty: i.planQty, promisedQty:i.promisedQty, actualShipQty:quantities[index], batchDetails:i.batchDetails || [], arrivalDate: i.arrivalDate, supplierName:i.supplierName })),
+        items: items.map((i, index) => ({ id:i.id, asnNo:i.asnNo, materialCode: i.materialCode, voucher: i.voucher, planQty: i.planQty, promisedQty:i.promisedQty, actualShipQty:quantities[index], batchDetails:savedBatchDetails[index], arrivalDate: i.arrivalDate, supplierName:i.supplierName })),
         plate,
+        drivers: Array.isArray(group.drivers) ? group.drivers.map(d => ({ ...d })) : [{name:group.pickupPerson || '', phone:group.pickupPhone || ''}],
         driver: document.getElementById('driver').value.trim(),
         trackNo: document.getElementById('trackNo').value.trim(),
         eta: deliveryDate, pickupAt: (pickDate || '') + (pickTime ? (' ' + pickTime) : ''),
@@ -543,7 +626,7 @@
       return 'shipped';
     }
     function displayBatchDetails(item) {
-      return Array.isArray(item.batchDetails) ? item.batchDetails.map(detail => `${detail.batchNo || '-'}：${formatNum(detail.quantity)}`).join('；') : '';
+      return Array.isArray(item.batchDetails) ? item.batchDetails.map(detail => detail.actualShipQty != null ? `${detail.batchNo || '-'}：实取 ${formatNum(detail.actualShipQty)}（批次数量 ${formatNum(detail.quantity)}）` : `${detail.batchNo || '-'}：${formatNum(detail.quantity)}`).join('；') : '';
     }
     function statusText(status) {
       if (status === 'ok') return '已签收';
@@ -552,21 +635,96 @@
     }
     function recordRowHtml(r) {
       return `
-        <div class="recent-item">
+        <div class="recent-item" role="button" tabindex="0" data-pickup-no="${escapeHtml(r.pickupNo || '')}" data-asn-no="${escapeHtml(r.asnNo || r.no || '')}" aria-label="查看 ${escapeHtml(r.asnNo || r.no || '-')} 的取货详情">
           <div class="recent-dot"></div>
           <div class="recent-info">
             <div class="recent-type">物流商取货 · ${escapeHtml(r.carrier)}</div>
             <div class="recent-code">ASN ${escapeHtml(r.asnNo || r.no)}</div>
             <div class="recent-meta">物料 ${r.items.length} 项 · 车牌 ${escapeHtml(r.plate || '未登记')} · 取货单 ${escapeHtml(r.pickupNo || '-')} · 送货预约 ${escapeHtml(r.eta || '-')}</div>
           </div>
+
           <span class="recent-status ${statusClass(r.status)}">${statusText(r.status)}</span>
         </div>`;
     }
+    function loadDeliveries() {
+      try {
+        const arr = JSON.parse(localStorage.getItem(CAR_KEY) || '[]');
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) { return []; }
+    }
+    function displayQty(value) {
+      return value == null || value === '' || !Number.isFinite(Number(value)) ? '-' : formatNum(value);
+    }
+    function openShippedDetail(pickupNo, asnNo) {
+      const rec = loadDeliveries().find(item => String(item.pickupNo || '') === String(pickupNo || '') && String(item.asnNo || item.no || '') === String(asnNo || ''));
+      if (!rec) { toast('未找到该取货记录'); return; }
+      const items = Array.isArray(rec.items) ? rec.items : [];
+      document.getElementById('detailTitle').textContent = '取货详情 · ' + (rec.asnNo || rec.no || '-');
+      document.getElementById('detailSummary').innerHTML = `
+        <div class="asn-summary-code">${escapeHtml(rec.asnNo || rec.no || '-')}</div>
+        <div class="asn-summary-supplier">${escapeHtml(rec.relSupplier || items[0]?.supplierName || '-')}</div>`;
+      document.getElementById('detailCount').textContent = items.length + ' 种物料';
+      document.getElementById('detailList').innerHTML = items.length ? items.map((item, index) => `
+        <div class="material-card">
+          <div class="material-card-head"><div class="material-code">${escapeHtml(item.materialCode || '-')}</div><span class="material-index">${index + 1}/${items.length}</span></div>
+          <div class="material-voucher">采购凭证：${escapeHtml(item.voucher || '-')}</div>
+          <div class="material-qty-row">
+            <div class="qty-readonly"><span>承诺发货数量</span><strong>${escapeHtml(displayQty(item.promisedQty))}</strong></div>
+            <div class="qty-readonly"><span>实际取货数量</span><strong>${escapeHtml(displayQty(item.actualShipQty))}</strong></div>
+          </div>
+          <div class="batch-section"><div class="batch-head"><span>批次号 / 批次数量</span></div><div class="material-voucher">${escapeHtml(displayBatchDetails(item) || '-')}</div></div>
+        </div>`).join('') : '<div class="empty-state">该记录未保存物料明细</div>';
+      document.getElementById('detailRecord').innerHTML = `
+        <div class="detail-record-item"><span>取货单号</span><b>${escapeHtml(rec.pickupNo || '-')}</b></div>
+        <div class="detail-record-item"><span>登记时间</span><b>${escapeHtml(rec.time || '-')}</b></div>
+        <div class="detail-record-item full"><span>备注</span><b>${escapeHtml(rec.remark || '-')}</b></div>`;
+      document.getElementById('detailMask').classList.add('show');
+      document.getElementById('detailSheet').classList.add('show');
+      setupMaterialSearch('detail', items);
+    }
+    function fuzzyMatch(value, query) {
+      return String(value ?? '').toLowerCase().includes(String(query ?? '').trim().toLowerCase());
+    }
+    function setupMaterialSearch(mode, items) {
+      const list = document.getElementById(mode === 'ship' ? 'ssList' : 'detailList');
+      [...list.querySelectorAll('.material-card')].forEach((card, index) => {
+        card.dataset.materialCode = items[index].materialCode || '';
+        card.dataset.voucher = items[index].voucher || '';
+      });
+      document.getElementById(mode+'MaterialSearch').value = '';
+      document.getElementById(mode+'VoucherSearch').value = '';
+      filterMaterialCards(mode);
+    }
+    function filterMaterialCards(mode) {
+      const list = document.getElementById(mode === 'ship' ? 'ssList' : 'detailList');
+      const material = document.getElementById(mode+'MaterialSearch').value;
+      const voucher = document.getElementById(mode+'VoucherSearch').value;
+      let visible = 0;
+      list.querySelectorAll('.material-card').forEach(card => {
+        const match = fuzzyMatch(card.dataset.materialCode, material) && fuzzyMatch(card.dataset.voucher, voucher);
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      document.getElementById(mode+'SearchEmpty').hidden = visible > 0 || !list.querySelector('.material-card');
+    }
+    ['Material','Voucher'].forEach(field => document.getElementById('detail'+field+'Search').addEventListener('input', () => filterMaterialCards('detail')));
+    function closeShippedDetail() {
+      document.getElementById('detailMask').classList.remove('show');
+      document.getElementById('detailSheet').classList.remove('show');
+    }
+    document.getElementById('shippedGroups').addEventListener('click', e => {
+      const item = e.target.closest('.recent-item');
+      if (item) openShippedDetail(item.dataset.pickupNo, item.dataset.asnNo);
+    });
+    document.getElementById('shippedGroups').addEventListener('keydown', e => {
+      const item = e.target.closest('.recent-item');
+      if (item && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openShippedDetail(item.dataset.pickupNo, item.dataset.asnNo); }
+    });
     function renderShipped() {
-      const arr = JSON.parse(localStorage.getItem(CAR_KEY) || '[]');
+      const arr = JSON.parse(localStorage.getItem(CAR_KEY) || '[]').filter(r => matchesAsn(r.asnNo || r.no));
       const wrap = document.getElementById('shippedGroups');
       if (!arr.length) {
-        wrap.innerHTML = `<div class="empty-state">暂无取货记录</div>`;
+        wrap.innerHTML = `<div class="empty-state">${asnQuery() ? '无匹配 ASN' : '暂无取货记录'}</div>`;
         return;
       }
       const todayArr = arr.filter(r => isToday(r.time));

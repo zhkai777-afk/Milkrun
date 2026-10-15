@@ -8,6 +8,9 @@
   <meta name="color-scheme" content="light">
   <title>博格华纳 · 供应商发货登记</title>
   <style>
+    .search-fields { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+    .search-fields input { flex:1; min-width:140px; width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:8px; background:var(--surface); color:var(--text); font:inherit; }
+    .search-fields input:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
     :root {
       --primary: #07868d;
       --primary-dark: #046b71;
@@ -272,6 +275,7 @@
       <button class="tab" data-tab="shipped">已发货</button>
     </div>
 
+    <div class="search-fields"><input id="asnSearch" type="search" placeholder="输入 ASN 号查询" aria-label="ASN号模糊查询"></div>
     <!-- Pending panel -->
     <div class="tab-panel active" id="tabPending">
       <div class="pend-toolbar">
@@ -307,6 +311,8 @@
       <div class="asn-summary" id="asnSummary"></div>
       <div class="material-section">
         <div class="material-head"><h3>ASN 物料清单</h3><span id="ssCount"></span></div>
+        <div class="search-fields"><input id="shipMaterialSearch" type="search" placeholder="物料编号" aria-label="物料编号模糊查询"><input id="shipVoucherSearch" type="search" placeholder="采购凭证" aria-label="采购凭证模糊查询"></div>
+        <div id="shipSearchEmpty" class="empty-state" hidden>没有符合条件的物料</div>
         <div class="material-list" id="ssList"></div>
       </div>
       <div class="field">
@@ -332,6 +338,8 @@
       <div class="asn-summary" id="detailSummary"></div>
       <div class="material-section">
         <div class="material-head"><h3>发货物料</h3><span id="detailCount"></span></div>
+        <div class="search-fields"><input id="detailMaterialSearch" type="search" placeholder="物料编号" aria-label="物料编号模糊查询"><input id="detailVoucherSearch" type="search" placeholder="采购凭证" aria-label="采购凭证模糊查询"></div>
+        <div id="detailSearchEmpty" class="empty-state" hidden>没有符合条件的物料</div>
         <div class="material-list" id="detailList"></div>
       </div>
       <div class="detail-record" id="detailRecord"></div>
@@ -422,7 +430,7 @@
     }
 
     function renderPending() {
-      const pending = getPending();
+      const pending = getPending().filter(g => fuzzyMatch(g.asnNo, document.getElementById('asnSearch').value));
       const list = document.getElementById('pendList');
       document.getElementById('pendCount').textContent = pending.length ? '(' + pending.length + ')' : '';
       if (!pending.length) {
@@ -495,18 +503,25 @@
             <span class="material-index">${index + 1}/${items.length}</span>
           </div>
           <div class="material-voucher">采购凭证：${escapeHtml(i.voucher || '-')}</div>
-          <div class="material-qty-row">
-            <div class="qty-readonly"><span>承诺发货数量</span><strong>${escapeHtml(formatNum(i.promisedQty))}</strong></div>
-            <div class="qty-input"><label for="actual_${index}">实际发货数量</label><input id="actual_${index}" data-item-index="${index}" type="number" min="0" step="any" inputmode="decimal" value="${Number(i.promisedQty) || 0}" aria-label="${escapeHtml(i.materialCode)} 实际发货数量"></div>
-          </div>
-          <div class="batch-section"><div class="batch-head"><span>批次明细（供应商工作台维护）</span></div><div class="material-voucher">${escapeHtml(displayBatchDetails(i) || '暂未维护')}</div></div>
+          <div class="batch-section"><div class="batch-head"><span>批次发货明细</span></div>${shipmentBatchRows(i).map((detail, batchIndex) => `
+            <div class="material-qty-row">
+              <div class="qty-readonly"><span>批次号</span><strong>${escapeHtml(detail.batchNo || '暂未维护')}</strong><small>批次数量 ${escapeHtml(formatNum(detail.quantity))}</small></div>
+              <div class="qty-input"><label for="actual_${index}_${batchIndex}">实际发货数量</label><input id="actual_${index}_${batchIndex}" data-item-index="${index}" data-batch-index="${batchIndex}" type="number" min="0" step="any" inputmode="decimal" value="${Number(detail.quantity) || 0}" aria-label="${escapeHtml(i.materialCode)} ${escapeHtml(detail.batchNo || '未维护批次')} 实际发货数量"></div>
+            </div>`).join('')}</div>
         </div>`).join('');
       document.getElementById('sheetMask').classList.add('show');
       document.getElementById('sheet').classList.add('show');
+      setupMaterialSearch('ship', items);
     }
     function closeSheet() {
       document.getElementById('sheetMask').classList.remove('show');
       document.getElementById('sheet').classList.remove('show');
+    }
+
+    function shipmentBatchRows(item) {
+      if (Array.isArray(item.batchDetails) && item.batchDetails.length) return item.batchDetails;
+      const confirmed = LogisticsFlow.hasValue(item.confirmQty) ? item.confirmQty : item.promisedQty;
+      return [{ batchNo: '', quantity: Number(confirmed) || 0 }];
     }
 
 
@@ -515,28 +530,41 @@
       if (!group) return;
       const items = group.items;
       const quantities = [];
+      const savedBatchDetails = [];
       for (let index = 0; index < items.length; index++) {
-        const input = document.getElementById('actual_' + index);
-        const value = Number(input.value);
-        if (input.value === '' || !Number.isFinite(value) || value < 0) {
-          input.focus();
-          toast('请填写有效的实际发货数量');
-          return;
-        }
-        quantities[index] = value;
         const details = Array.isArray(items[index].batchDetails) ? items[index].batchDetails : [];
-        const batchTotal = details.reduce((total, detail) => total + Number(detail.quantity || 0), 0);
+        if (!details.length) {
+          const input = document.getElementById('actual_' + index + '_0');
+          const value = Number(input.value);
+          if (input.value === '' || !Number.isFinite(value) || value < 0) {
+            input.focus(); toast('请填写有效的实际发货数量'); return;
+          }
+          quantities[index] = value;
+          savedBatchDetails[index] = [];
+          continue;
+        }
         const batchValid = details.every(detail => detail && String(detail.batchNo || '').trim() && Number.isFinite(Number(detail.quantity)) && Number(detail.quantity) >= 0);
-        if (!details.length || !batchValid || !Number.isFinite(batchTotal) || Math.abs(batchTotal - value) > 1e-9) {
-          toast('请返回供应商工作台维护完整且与实际发货数量一致的批次明细');
+        if (!batchValid) {
+          toast('请返回供应商工作台维护完整的批次明细');
           return;
         }
+        const actualDetails = [];
+        for (let batchIndex = 0; batchIndex < details.length; batchIndex++) {
+          const input = document.getElementById('actual_' + index + '_' + batchIndex);
+          const value = Number(input.value);
+          if (input.value === '' || !Number.isFinite(value) || value < 0) {
+            input.focus(); toast('请填写有效的批次实际发货数量'); return;
+          }
+          actualDetails.push({ batchNo: details[batchIndex].batchNo, quantity: Number(details[batchIndex].quantity), actualShipQty: value });
+        }
+        quantities[index] = actualDetails.reduce((total, detail) => total + detail.actualShipQty, 0);
+        savedBatchDetails[index] = actualDetails;
       }
       const shipmentNo = genNo('SHP');
       const rec = {
         no: group.asnNo, asnNo: group.asnNo, shipmentNo,
         supplier: items[0].supplierName,
-        items: items.map((i, index) => { const batchDetails = i.batchDetails; const batches = batchDetails.map(detail => detail.batchNo); return { id:i.id, asnNo:i.asnNo, materialCode: i.materialCode, materialName:i.materialName || i.materialCode, voucher: i.voucher, planQty: i.planQty, promisedQty:i.promisedQty, actualShipQty:quantities[index], batchDetails, batches, batchNo:batches[0] || '', arrivalDate: i.arrivalDate, supplierName:i.supplierName }; }),
+        items: items.map((i, index) => { const batchDetails = savedBatchDetails[index]; const batches = batchDetails.map(detail => detail.batchNo); return { id:i.id, asnNo:i.asnNo, materialCode: i.materialCode, materialName:i.materialName || i.materialCode, voucher: i.voucher, planQty: i.planQty, promisedQty:i.promisedQty, actualShipQty:quantities[index], batchDetails, batches, batchNo:batches[0] || '', arrivalDate: i.arrivalDate, supplierName:i.supplierName }; }),
         mode: '供应商直送',
         remark: document.getElementById('remark').value.trim(),
         time: nowStr(),
@@ -584,7 +612,7 @@
         </div>`;
     }
     function renderShipped() {
-      const arr = JSON.parse(localStorage.getItem(SUP_KEY) || '[]');
+      const arr = JSON.parse(localStorage.getItem(SUP_KEY) || '[]').filter(r => fuzzyMatch(r.asnNo || r.no, document.getElementById('asnSearch').value));
       const wrap = document.getElementById('shippedGroups');
       if (!arr.length) {
         wrap.innerHTML = `<div class="empty-state">暂无发货记录</div>`;
@@ -638,9 +666,39 @@
         <div class="detail-record-item full"><span>备注</span><b>${escapeHtml(rec.remark || '-')}</b></div>`;
       document.getElementById('detailMask').classList.add('show');
       document.getElementById('detailSheet').classList.add('show');
+      setupMaterialSearch('detail', items);
     }
+    function fuzzyMatch(value, query) {
+      return String(value ?? '').toLowerCase().includes(String(query ?? '').trim().toLowerCase());
+    }
+    function setupMaterialSearch(mode, items) {
+      const list = document.getElementById(mode === 'ship' ? 'ssList' : 'detailList');
+      [...list.querySelectorAll('.material-card')].forEach((card, index) => {
+        card.dataset.materialCode = items[index].materialCode || '';
+        card.dataset.voucher = items[index].voucher || '';
+      });
+      document.getElementById(mode+'MaterialSearch').value = '';
+      document.getElementById(mode+'VoucherSearch').value = '';
+      filterMaterialCards(mode);
+    }
+    function filterMaterialCards(mode) {
+      const list = document.getElementById(mode === 'ship' ? 'ssList' : 'detailList');
+      const material = document.getElementById(mode+'MaterialSearch').value;
+      const voucher = document.getElementById(mode+'VoucherSearch').value;
+      let visible = 0;
+      list.querySelectorAll('.material-card').forEach(card => {
+        const match = fuzzyMatch(card.dataset.materialCode, material) && fuzzyMatch(card.dataset.voucher, voucher);
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      document.getElementById(mode+'SearchEmpty').hidden = visible > 0 || !list.querySelector('.material-card');
+    }
+    document.getElementById('asnSearch').addEventListener('input', () => { renderPending(); renderShipped(); });
+    ['ship','detail'].forEach(mode => ['Material','Voucher'].forEach(field => {
+      document.getElementById(mode+field+'Search').addEventListener('input', () => filterMaterialCards(mode));
+    }));
     function displayBatchDetails(item) {
-      if (Array.isArray(item.batchDetails) && item.batchDetails.length) return item.batchDetails.map(detail => `${detail.batchNo || '-'}：${displayQty(detail.quantity)}`).join('；');
+      if (Array.isArray(item.batchDetails) && item.batchDetails.length) return item.batchDetails.map(detail => detail.actualShipQty != null ? `${detail.batchNo || '-'}：实发 ${displayQty(detail.actualShipQty)}（批次数量 ${displayQty(detail.quantity)}）` : `${detail.batchNo || '-'}：${displayQty(detail.quantity)}`).join('；');
       return (Array.isArray(item.batches) ? item.batches : (item.batchNo ? [item.batchNo] : [])).filter(Boolean).join('、');
     }
     function closeShippedDetail() {

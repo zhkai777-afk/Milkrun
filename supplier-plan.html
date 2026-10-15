@@ -321,7 +321,7 @@
     .confirm-plan-table .qty-col { width: 125px; text-align: right; }
     .confirm-plan-table .method-col { width: 118px; }
     .confirm-plan-table .logistics-col { width: 158px; }
-    .confirm-plan-table .calc-col { width: 108px; }
+    .confirm-plan-table .calc-col { width: 148px; }
     .confirm-plan-table .batch-col { width: 112px; }
     .confirm-plan-table .action-col { width: 94px; }
     .confirm-material-code { padding: 0; border: 0; background: transparent; color: var(--primary-dark); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
@@ -337,6 +337,10 @@
     .confirm-calc-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .confirm-calc-value { padding: 7px 5px; border-radius: 6px; background: var(--primary-soft); text-align: center; color: var(--primary); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
     .confirm-calc-value span { display: block; margin-top: 2px; color: var(--text-3); font-size: 10px; font-weight: 400; }
+    .confirm-calc-input { width: 100%; min-width: 0; min-height: 34px; padding: 6px 7px; border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text); font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; text-align: center; outline: none; }
+    .confirm-calc-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); }
+    .confirm-calc-input.input-error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(233,93,98,.12); }
+    .confirm-calc-label { display: block; margin: 3px 0 4px; color: var(--text-3); font-size: 10px; text-align: center; }
     .confirm-plan-help { margin-top: 9px; color: var(--text-3); font-size: 12px; line-height: 1.5; }
     .batch-summary { color: var(--text-2); font-size: 12px; line-height: 1.5; }
     .batch-summary.is-empty { color: var(--text-3); }
@@ -437,7 +441,10 @@
       padding: 0 24px 16px;
     }
     .appointment-form-row .filter-field input { width: 220px; }
-    .appointment-schedule-row { align-items: stretch; }
+    .appointment-schedule-row { align-items: stretch; flex-direction: column; }
+    .appointment-schedule-row .appointment-capacity-card { min-width: 0; width: 100%; }
+    .appointment-batches summary { cursor: pointer; color: var(--primary-dark); white-space: nowrap; }
+    .appointment-batches ul { margin-top: 8px; padding-left: 16px; min-width: 160px; }
     .appointment-date-box { display: flex; flex-direction: column; justify-content: center; }
     .appointment-date-box input { min-height: 40px; }
     .appointment-date-hint { margin-top: 6px; color: var(--text-3); font-size: 12px; line-height: 1.45; }
@@ -447,8 +454,18 @@
       border-radius: 8px; background: var(--primary-soft);
     }
     .appointment-capacity-card.over-limit { border-color: #f3c9c9; background: var(--danger-soft); }
+    .appointment-capacity-summary { display: flex; align-items: center; gap: 10px; min-height: 28px; }
+    .appointment-capacity-summary .title { color: var(--text); font-size: 13px; font-weight: 600; }
+    .appointment-capacity-summary .meta { color: var(--text-2); font-size: 12px; }
+    .appointment-capacity-summary .status { margin-left: auto; color: var(--success); font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .appointment-capacity-summary .status.over-limit { color: var(--danger); }
+    .appointment-capacity-toggle { flex: 0 0 auto; min-height: 28px; padding: 3px 8px; border: 1px solid var(--border-strong); border-radius: 5px; background: var(--surface); color: var(--primary-dark); font-size: 12px; cursor: pointer; }
+    .appointment-capacity-toggle:hover { background: var(--primary-soft); }
+    .appointment-capacity-details { margin-top: 9px; max-height: 176px; overflow: auto; border-top: 1px solid rgba(160,180,180,.32); }
+    .appointment-capacity-details[hidden] { display: none; }
     .appointment-capacity-head, .appointment-capacity-row { display: grid; grid-template-columns: minmax(90px, 1.2fr) repeat(4, minmax(86px, 1fr)); gap: 0; }
-    .appointment-capacity-head { padding-bottom: 6px; color: var(--text-3); font-size: 11px; }
+    .appointment-capacity-head { position: sticky; top: 0; z-index: 1; padding: 8px 0 6px; background: var(--primary-soft); color: var(--text-3); font-size: 11px; }
+    .appointment-capacity-card.over-limit .appointment-capacity-head { background: var(--danger-soft); }
     .appointment-capacity-row { padding: 8px 0; border-top: 1px solid rgba(160,180,180,.32); color: var(--text); font-size: 12px; }
     .appointment-capacity-row span { padding: 0 9px; border-right: 1px solid rgba(160,180,180,.28); font-variant-numeric: tabular-nums; }
     .appointment-capacity-row span:last-child { border-right: none; }
@@ -513,6 +530,8 @@
       .confirm-asn-summary { grid-template-columns: 1fr; margin: 12px 16px; }
       .confirm-plan-section { padding: 0 16px 16px; }
       .appointment-capacity-card { min-width: 0; overflow-x: auto; }
+      .appointment-capacity-summary { flex-wrap: wrap; }
+      .appointment-capacity-summary .status { margin-left: 0; }
       .appointment-capacity-head, .appointment-capacity-row { min-width: 520px; }
       .top-bar .company { display: none; }
       .confirm-info-header { flex-direction: column; gap: 12px; }
@@ -698,7 +717,7 @@
               <tr id="apptBatchHead"><th class="col-check"><input type="checkbox" id="apptSelectAll"></th>
               <th>ASN号</th><th>物料项数</th><th>配送方式</th><th class="amount">预约数量</th>
               <th class="amount">计划发货数量</th><th class="amount">承诺发货数量</th></tr>
-              <tr id="apptSingleHead" style="display:none;"><th>物料编号</th><th>物料名称</th><th>库区</th><th>采购凭证</th><th class="amount">计划发货数量</th><th class="amount">承诺发货数量</th><th class="amount">标准装箱数</th><th class="amount">标准装托数</th><th class="amount">实际箱数</th><th class="amount">实际托数</th></tr>
+              <tr id="apptSingleHead" style="display:none;"><th>物料编号</th><th>物料名称</th><th>库区</th><th>采购凭证</th><th>批次明细</th><th class="amount">计划发货数量</th><th class="amount">承诺发货数量</th><th class="amount">标准装箱数</th><th class="amount">标准装托数</th><th class="amount">实际箱数</th><th class="amount">实际托数</th></tr>
             </thead>
             <tbody id="apptTableBody"></tbody>
           </table>
@@ -877,7 +896,7 @@
         toggleOn: false, activeTab: 'planConfirm', confirmingIds: [],
         batchItems: [], batchConfirmedSet: new Set(), batchActiveId: null,
         selectedAsns: new Set(), apptSelectedAsns: new Set(),
-        apptFilterAsnVal: '', apptFilterMatVal: '', apptMode: 'batch', apptSingleAsn: '',
+        apptFilterAsnVal: '', apptFilterMatVal: '', apptMode: 'batch', apptSingleAsn: '', apptCapacityExpanded: false,
         logisticsActiveId: null, logisticsActiveAsn: null,
         asnTotal: 0,
       };
@@ -1181,6 +1200,7 @@
       function openConfirmModal(ids) {
         const items = state.records.filter(r => ids.includes(r.id));
         if (!items.length) return;
+        const showSelfPickupFields = items.some(r => r.deliveryMethod === 'self');
         state.confirmingIds = items.map(r => r.id);
         $('submitCount').textContent = items.length + ' 条数据';
         $('confirmModalTitle').textContent = '确认 ASN 物料计划 · ' + items[0].asnNo;
@@ -1198,8 +1218,8 @@
             '<div class="confirm-plan-table-wrap"><table class="confirm-plan-table">' +
               '<thead><tr>' +
                 '<th class="material-col">物料信息</th><th class="date-col">计划发货日期</th><th class="date-col">计划到货日期</th>' +
-                '<th class="qty-col">计划发货数量</th><th class="qty-col">SAP 承诺发货数量</th><th class="method-col">配送方式</th>' +
-                '<th class="logistics-col">自提物流商</th><th class="calc-col">自动计算</th><th class="batch-col">批次</th><th class="action-col">操作</th>' +
+                '<th class="qty-col">计划发货数量</th><th class="qty-col">SAP 承诺发货数量</th>' +
+                (showSelfPickupFields ? '<th class="method-col">配送方式</th><th class="logistics-col">自提物流商</th>' : '') + '<th class="calc-col">实际装箱/装托数量</th>' +
               '</tr></thead><tbody>' +
               items.map(r => {
           const dm = r.deliveryMethod || '';
@@ -1210,16 +1230,13 @@
             '<td>'+r.arriveDate+'</td>' +
             '<td class="qty-col">'+formatNumber(r.planQtyNum)+'</td>' +
             '<td class="qty-col"><span class="commit-qty confirm-display-value qty" data-value="'+cQ+'">'+formatNumber(cQ)+'</span></td>' +
-            '<td><span class="delivery-method-value '+(dm ? '' : 'is-empty')+'" aria-label="'+r.materialCode+' 配送方式">'+(dm==='self'?'自提':dm==='direct'?'直送':'未配置')+'</span></td>' +
-            '<td><span class="confirm-display-value '+(dm==='self' ? '' : 'muted')+'">'+(dm==='self' ? (r.designatedLogistics || '未维护物流商') : '直送无需选择')+'</span></td>' +
-            '<td><div class="confirm-calc-pair"><div class="confirm-calc-value box-val">—<span>箱</span></div><div class="confirm-calc-value pallet-val">—<span>托</span></div></div>' +
-              '<div class="confirm-pack-standard">'+formatInt(r.stdBoxQty)+'/箱 · '+formatInt(r.stdPalletQty)+'/托</div></td>' +
+            (showSelfPickupFields ? '<td><span class="delivery-method-value '+(dm ? '' : 'is-empty')+'" aria-label="'+r.materialCode+' 配送方式">'+(dm==='self'?'自提':dm==='direct'?'直送':'未配置')+'</span></td><td><span class="confirm-display-value '+(dm==='self' ? '' : 'muted')+'">'+(dm==='self' ? (r.designatedLogistics || '未维护物流商') : '—')+'</span></td>' : '') +
+            '<td>'+packagingEditorHtml(r)+'</td>' +
           '</tr>';
         }).join('') +
               '</tbody></table></div>' +
-            '<div class="confirm-plan-help">SAP 承诺数量不可在此修改；箱数和托数根据承诺数量及标准装箱、装托数自动向上取整。配送方式及指定物流商由供应商管理维护，预约时不可修改。</div>' +
+            '<div class="confirm-plan-help">SAP 承诺数量不可在此修改；实际装箱、装托数量默认按承诺数量及标准向上取整，供应商可按实际装运修改为非负整数。配送方式及指定物流商由供应商管理维护，预约时不可修改。</div>' +
           '</div>';
-        b.querySelectorAll('.confirm-record-card').forEach(card => updateAutoCalc(card));
         openModal('confirmModal');
       }
 
@@ -1238,17 +1255,44 @@
         openModal('materialDescModal');
       }
 
-      function updateAutoCalc(card) {
-        const qty = parseFloat(card.querySelector('.commit-qty')?.dataset.value) || 0;
-        const rid = card.dataset.id;
-        const rec = state.records.find(r => r.id === rid);
-        if (!rec) return;
-        const stdBoxQty = rec.stdBoxQty || 1;
-        const stdPalletQty = rec.stdPalletQty || 1;
-        const boxCount = qty > 0 ? Math.ceil(qty / stdBoxQty) : 0;
-        const palletCount = qty > 0 ? Math.ceil(qty / stdPalletQty) : 0;
-        card.querySelector('.box-val').innerHTML = (boxCount > 0 ? formatInt(boxCount) : '—') + '<span>箱</span>';
-        card.querySelector('.pallet-val').innerHTML = (palletCount > 0 ? formatInt(palletCount) : '—') + '<span>托</span>';
+      function suggestedPackagingCounts(rec, qty = rec.commitQtyNum) {
+        const amount = Number(qty) || 0;
+        return {
+          boxCount: amount > 0 ? Math.ceil(amount / (Number(rec.stdBoxQty) || 1)) : 0,
+          palletCount: amount > 0 ? Math.ceil(amount / (Number(rec.stdPalletQty) || 1)) : 0
+        };
+      }
+
+      function actualPackagingValue(rec, key, suggested) {
+        const value = Number(rec[key]);
+        return ((rec.actualPackagingSet && Number.isSafeInteger(value) && value >= 0) || value > 0) ? value : suggested;
+      }
+
+      function packagingEditorHtml(rec) {
+        const suggested = suggestedPackagingCounts(rec);
+        const boxCount = actualPackagingValue(rec, 'boxCount', suggested.boxCount);
+        const palletCount = actualPackagingValue(rec, 'palletCount', suggested.palletCount);
+        return '<div class="confirm-calc-pair">' +
+          '<div><label class="confirm-calc-label" for="actualBox-'+rec.id+'">实际箱数</label><input class="confirm-calc-input actual-box-count" id="actualBox-'+rec.id+'" type="number" min="0" step="1" inputmode="numeric" value="'+boxCount+'" aria-label="'+rec.materialCode+' 实际箱数"></div>' +
+          '<div><label class="confirm-calc-label" for="actualPallet-'+rec.id+'">实际托数</label><input class="confirm-calc-input actual-pallet-count" id="actualPallet-'+rec.id+'" type="number" min="0" step="1" inputmode="numeric" value="'+palletCount+'" aria-label="'+rec.materialCode+' 实际托数"></div>' +
+          '</div><div class="confirm-pack-standard">建议 '+formatInt(suggested.boxCount)+' 箱 · '+formatInt(suggested.palletCount)+' 托；标准 '+formatInt(rec.stdBoxQty)+'/箱 · '+formatInt(rec.stdPalletQty)+'/托</div>';
+      }
+
+      function readActualPackaging(container, materialCode) {
+        const boxInput = container.querySelector('.actual-box-count');
+        const palletInput = container.querySelector('.actual-pallet-count');
+        const boxRaw = boxInput?.value.trim() ?? '';
+        const palletRaw = palletInput?.value.trim() ?? '';
+        const boxCount = Number(boxRaw);
+        const palletCount = Number(palletRaw);
+        [boxInput, palletInput].forEach(input => input?.classList.remove('input-error'));
+        if (boxRaw === '' || palletRaw === '' || !Number.isSafeInteger(boxCount) || boxCount < 0 || !Number.isSafeInteger(palletCount) || palletCount < 0) {
+          if (boxRaw === '' || !Number.isSafeInteger(boxCount) || boxCount < 0) boxInput?.classList.add('input-error');
+          if (palletRaw === '' || !Number.isSafeInteger(palletCount) || palletCount < 0) palletInput?.classList.add('input-error');
+          toast('物料 '+materialCode+' 的实际箱数和实际托数需为非负整数');
+          return null;
+        }
+        return { boxCount, palletCount };
       }
 
       function completeSupplierConfirmation(ids, ts) {
@@ -1290,6 +1334,7 @@
           if (!method) { toast('物料 '+r.materialCode+' 未配置配送方式，请先在供应商管理中维护'); return; }
           const cq = parseFloat(card.querySelector('.commit-qty')?.dataset.value);
           if (isNaN(cq)||cq<0) { toast('物料 '+r.materialCode+' 承诺发货数量不能小于0'); return; }
+          if (!readActualPackaging(card, r.materialCode)) return;
           if (method === 'self') {
             const logistics = r.designatedLogistics;
             if (!logistics) { toast('自提物料 '+r.materialCode+' 请选择取货物流商'); return; }
@@ -1302,8 +1347,11 @@
           const card = document.querySelector('.confirm-record-card[data-id="'+id+'"]');
           r.commitQtyNum = parseFloat(card.querySelector('.commit-qty').dataset.value);
           r.commitQty = formatNumber(r.commitQtyNum);
-          r.boxCount = Math.ceil(r.commitQtyNum / (r.stdBoxQty||1));
-          r.palletCount = Math.ceil(r.commitQtyNum / (r.stdPalletQty||1));
+          const actualPackaging = readActualPackaging(card, r.materialCode);
+          if (!actualPackaging) return;
+          r.boxCount = actualPackaging.boxCount;
+          r.palletCount = actualPackaging.palletCount;
+          r.actualPackagingSet = true;
           r.commitShipDate = r.shipDate;
           r.commitArriveDate = r.arriveDate;
         }
@@ -1395,8 +1443,8 @@
               '<div class="confirm-field delivery-date-field'+(dm?' show':'')+'"><label><span class="required">*</span>承诺到货日期</label><input type="date" class="commit-arrive-date batch-commit-arrive-date" value="'+(r.commitArriveDate||r.arriveDate)+'" '+(isConfirmed?'readonly':'')+'></div>' +
             '</div>' +
             '<div class="auto-calc-row">' +
-              '<div class="auto-calc-item"><span class="label">箱数（自动计算）</span><span class="value box-val batch-box-val">—</span></div>' +
-              '<div class="auto-calc-item"><span class="label">托数（自动计算）</span><span class="value pallet-val batch-pallet-val">—</span></div>' +
+              '<div class="auto-calc-item"><label class="label" for="batchActualBox">实际箱数</label><input id="batchActualBox" class="confirm-calc-input actual-box-count batch-actual-box-count" type="number" min="0" step="1" inputmode="numeric" value="'+actualPackagingValue(r, 'boxCount', suggestedPackagingCounts(r).boxCount)+'" '+(isConfirmed?'readonly':'')+'></div>' +
+              '<div class="auto-calc-item"><label class="label" for="batchActualPallet">实际托数</label><input id="batchActualPallet" class="confirm-calc-input actual-pallet-count batch-actual-pallet-count" type="number" min="0" step="1" inputmode="numeric" value="'+actualPackagingValue(r, 'palletCount', suggestedPackagingCounts(r).palletCount)+'" '+(isConfirmed?'readonly':'')+'></div>' +
             '</div>' +
           '</div>' +
           '<div class="batch-right-footer">' +
@@ -1406,22 +1454,6 @@
               : '<button class="btn btn-primary" type="button" id="btnConfirmThisItem">确认此项</button>')
             +
           '</div>';
-        // 初始计算
-        if (!isConfirmed) updateAutoCalcBatch();
-      }
-
-      function updateAutoCalcBatch() {
-        const id = state.batchActiveId;
-        if (!id) return;
-        const rec = state.records.find(r => r.id === id);
-        if (!rec) return;
-        const qty = parseFloat($('batchRight').querySelector('.batch-commit-qty')?.value) || 0;
-        const boxCount = qty > 0 ? Math.ceil(qty / (rec.stdBoxQty||1)) : 0;
-        const palletCount = qty > 0 ? Math.ceil(qty / (rec.stdPalletQty||1)) : 0;
-        const boxEl = $('batchRight').querySelector('.batch-box-val');
-        const palEl = $('batchRight').querySelector('.batch-pallet-val');
-        if (boxEl) boxEl.textContent = boxCount > 0 ? formatInt(boxCount) : '—';
-        if (palEl) palEl.textContent = palletCount > 0 ? formatInt(palletCount) : '—';
       }
 
       function confirmBatchItem() {
@@ -1433,13 +1465,16 @@
         if (!r.deliveryMethod) { toast('未配置配送方式，请先在供应商管理中维护'); return; }
         const cq = parseFloat(container.querySelector('.batch-commit-qty').value);
         if (isNaN(cq)||cq<0) { toast('承诺发货数量不能小于0'); return; }
+        const actualPackaging = readActualPackaging(container, r.materialCode);
+        if (!actualPackaging) return;
         // 存储暂存数据到 record
         r.commitQtyNum = cq;
         r.commitQty = formatNumber(cq);
         r.commitShipDate = container.querySelector('.batch-commit-ship-date').value;
         r.commitArriveDate = container.querySelector('.batch-commit-arrive-date').value;
-        r.boxCount = Math.ceil(cq / (r.stdBoxQty||1));
-        r.palletCount = Math.ceil(cq / (r.stdPalletQty||1));
+        r.boxCount = actualPackaging.boxCount;
+        r.palletCount = actualPackaging.palletCount;
+        r.actualPackagingSet = true;
         // 标记已确认
         state.batchConfirmedSet.add(id);
         updateBatchProgress();
@@ -1490,6 +1525,7 @@
         }
         state.apptFilterAsnVal = '';
         state.apptFilterMatVal = '';
+        state.apptCapacityExpanded = false;
         $('apptFilterAsn').value = '';
         $('apptFilterMaterial').value = '';
         $('apptModalTitle').textContent = isSingle ? '预约送货 · ' + state.apptSingleAsn : '批量预约送货';
@@ -1517,6 +1553,7 @@
         const qty = recordAppointmentQty(r);
         const saved = Number(r.boxCount);
         if (qty === 0) return 0;
+        if (r.actualPackagingSet && Number.isSafeInteger(saved) && saved >= 0) return saved;
         return Number.isFinite(saved) && saved > 0 ? saved : Math.ceil(qty / (Number(r.stdBoxQty) || 1));
       }
 
@@ -1524,6 +1561,7 @@
         const qty = recordAppointmentQty(r);
         const saved = Number(r.palletCount);
         if (qty === 0) return 0;
+        if (r.actualPackagingSet && Number.isSafeInteger(saved) && saved >= 0) return saved;
         return Number.isFinite(saved) && saved > 0 ? saved : Math.ceil(qty / (Number(r.stdPalletQty) || 1));
       }
 
@@ -1583,11 +1621,18 @@
         $('apptCapacityCard').classList.toggle('over-limit', overLimit);
         $('apptCapacityCard').innerHTML = !stats.length
           ? '<div class="appointment-capacity-empty">请选择待预约 ASN 后查看各库区的当日容量。</div>'
-          : '<div class="appointment-capacity-head"><span>库区</span><span>当日可约数量</span><span>已预约数量</span><span>本次预约数量</span><span>剩余可约数量</span></div>' + stats.map(item =>
+          : '<div class="appointment-capacity-summary">' +
+              '<span class="title">涉及 '+stats.length+' 个库区</span>' +
+              '<span class="meta">本次预约数量 '+formatNumber(stats.reduce((sum, item) => sum + item.selected, 0))+'</span>' +
+              '<span class="status '+(overLimit ? 'over-limit' : '')+'">'+(overLimit ? '存在库区容量不足' : '各库区容量充足')+'</span>' +
+              '<button type="button" class="appointment-capacity-toggle" id="btnApptCapacityToggle" aria-expanded="'+state.apptCapacityExpanded+'">'+(state.apptCapacityExpanded ? '收起明细' : '查看明细')+'</button>' +
+            '</div>' +
+            '<div class="appointment-capacity-details" '+(state.apptCapacityExpanded ? '' : 'hidden')+'>' +
+              '<div class="appointment-capacity-head"><span>库区</span><span>当日可约数量</span><span>已预约数量</span><span>本次预约数量</span><span>剩余可约数量</span></div>' + stats.map(item =>
             '<div class="appointment-capacity-row '+(date && item.selected > item.remaining ? 'over-limit' : '')+'">' +
               '<span class="area">'+item.area+'</span><span>'+ (date ? formatNumber(item.total) : '—') +'</span><span>'+ (date ? formatNumber(item.used) : '—') +'</span><span>'+formatNumber(item.selected)+'</span><span class="remaining">'+(date ? formatNumber(item.remaining) : '—')+'</span>' +
             '</div>'
-          ).join('');
+            ).join('') + '</div>';
         return { items: stats, overLimit };
       }
 
@@ -1618,7 +1663,7 @@
         if (state.apptMode === 'single') {
           const materials = state.records.filter(r => r.asnNo === state.apptSingleAsn && r.deliveryMethod === 'direct' && r.appointmentStatus !== 'scheduled');
           if (!materials.length) {
-            b.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px 16px;color:var(--text-3);">当前 ASN 暂无待预约的直送物料</td></tr>';
+            b.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px 16px;color:var(--text-3);">当前 ASN 暂无待预约的直送物料</td></tr>';
           } else {
             b.innerHTML = materials.map(r =>
               '<tr>' +
@@ -1626,6 +1671,7 @@
                 '<td>' + (r.materialName || '—') + '</td>' +
                 '<td>' + (r.warehouseArea || '未设置库区') + '</td>' +
                 '<td>' + (r.poNumber || '—') + '</td>' +
+                '<td>' + appointmentBatchDetailsHtml(r) + '</td>' +
                 '<td class="amount">' + formatNumber(r.planQtyNum) + '</td>' +
                 '<td class="amount">' + formatNumber(r.commitQtyNum) + '</td>' +
                 '<td class="amount">' + formatNumber(r.stdBoxQty) + '</td>' +
@@ -1836,6 +1882,7 @@
         state.activeAsnDetail = asnNo;
         $('asnDetailTitle').textContent = 'ASN 发货计划详情 · ' + asnNo;
         const first = g.materials[0];
+        const showSelfPickupFields = g.materials.some(r => r.deliveryMethod === 'self');
         $('asnDetailContent').innerHTML =
           '<div class="confirm-asn-summary">' +
             '<div class="confirm-summary-item"><span class="label">ASN号</span><span class="value asn-no">'+asnNo+'</span></div>' +
@@ -1848,28 +1895,29 @@
             '<div class="confirm-plan-table-wrap"><table class="confirm-plan-table">' +
               '<thead><tr>' +
                 '<th class="material-col">物料信息</th><th class="date-col">计划发货日期</th><th class="date-col">计划到货日期</th>' +
-                '<th class="qty-col">计划发货数量</th><th class="qty-col">SAP 承诺发货数量</th><th class="method-col">配送方式</th>' +
-                '<th class="logistics-col">自提物流商</th><th class="calc-col">自动计算</th>' +
+                '<th class="qty-col">计划发货数量</th><th class="qty-col">SAP 承诺发货数量</th>' +
+                (showSelfPickupFields ? '<th class="method-col">配送方式</th><th class="logistics-col">自提物流商</th>' : '') +
+                '<th class="calc-col">实际装箱/装托数量</th><th class="batch-col">批次号</th><th class="action-col">操作</th>' +
               '</tr></thead><tbody>' + g.materials.map(r => {
           const cq = r.commitQtyNum;
           const dmCur = r.deliveryMethod || '';
-          const boxCount = cq > 0 ? Math.ceil(cq / (r.stdBoxQty || 1)) : 0;
-          const palletCount = cq > 0 ? Math.ceil(cq / (r.stdPalletQty || 1)) : 0;
+          const suggested = suggestedPackagingCounts(r, cq);
+          const boxCount = actualPackagingValue(r, 'boxCount', suggested.boxCount);
+          const palletCount = actualPackagingValue(r, 'palletCount', suggested.palletCount);
           return '<tr>' +
             '<td><button type="button" class="confirm-material-code" data-material-desc="'+r.id+'" aria-label="查看物料 '+r.materialCode+' 的描述">'+r.materialCode+'</button><div class="confirm-material-po">采购凭证 '+(r.poNumber || '—')+'</div></td>' +
             '<td>'+r.shipDate+'</td>' +
             '<td>'+r.arriveDate+'</td>' +
             '<td class="qty-col">'+formatNumber(r.planQtyNum)+'</td>' +
             '<td class="qty-col"><span class="confirm-display-value qty">'+formatNumber(cq)+'</span></td>' +
-            '<td><span class="delivery-method-value '+(dmCur ? '' : 'is-empty')+'">'+(dmCur==='self'?'自提':dmCur==='direct'?'直送':'未配置')+'</span></td>' +
-            '<td><span class="confirm-display-value '+(dmCur==='self' ? '' : 'muted')+'">'+(dmCur==='self' ? (r.designatedLogistics || '未维护物流商') : '直送无需选择')+'</span></td>' +
-            '<td><div class="confirm-calc-pair"><div class="confirm-calc-value">'+(boxCount > 0 ? formatInt(boxCount) : '—')+'<span>箱</span></div><div class="confirm-calc-value">'+(palletCount > 0 ? formatInt(palletCount) : '—')+'<span>托</span></div></div><div class="confirm-pack-standard">'+formatInt(r.stdBoxQty)+'/箱 · '+formatInt(r.stdPalletQty)+'/托</div></td>' +
+            (showSelfPickupFields ? '<td><span class="delivery-method-value '+(dmCur ? '' : 'is-empty')+'">'+(dmCur==='self'?'自提':dmCur==='direct'?'直送':'未配置')+'</span></td><td><span class="confirm-display-value '+(dmCur==='self' ? '' : 'muted')+'">'+(dmCur==='self' ? (r.designatedLogistics || '未维护物流商') : '—')+'</span></td>' : '') +
+            '<td><div class="confirm-calc-pair"><div class="confirm-calc-value">'+formatInt(boxCount)+'<span>实际箱数</span></div><div class="confirm-calc-value">'+formatInt(palletCount)+'<span>实际托数</span></div></div><div class="confirm-pack-standard">标准 '+formatInt(r.stdBoxQty)+'/箱 · '+formatInt(r.stdPalletQty)+'/托</div></td>' +
             '<td><span class="batch-summary '+(Array.isArray(r.batchDetails) && r.batchDetails.length ? '' : 'is-empty')+'">'+batchSummary(r)+'</span></td>' +
             '<td><button type="button" class="batch-action" data-batch-edit="'+r.id+'">'+(r.status === 'confirmed' ? '维护批次' : '查看批次')+'</button></td>' +
           '</tr>';
         }).join('') +
               '</tbody></table></div>' +
-            '<div class="confirm-plan-help">SAP 承诺数量不可在此修改；箱数和托数根据承诺数量及标准装箱、装托数自动向上取整。配送方式及指定物流商由供应商管理维护，预约时不可修改。</div>' +
+            '<div class="confirm-plan-help">SAP 承诺数量不可在此修改；实际装箱、装托数量由供应商确认时维护，标准装箱、装托数仅供核对。配送方式及指定物流商由供应商管理维护，预约时不可修改。</div>' +
           '</div>';
 
         const ids = g.materials.map(r => r.id);
@@ -1908,8 +1956,14 @@
           : '<div class="batch-detail-readonly">'+(detail.batchNo || '—')+'：'+formatNumber(detail.quantity)+'</div>').join('');
       }
       function batchSummary(r) {
-        if (!Array.isArray(r.batchDetails) || !r.batchDetails.length) return '未维护';
-        return r.batchDetails.length + ' 个批次';
+        if (!Array.isArray(r.batchDetails) || !r.batchDetails.length) return r.batchNo || '未维护';
+        return r.batchDetails.length > 1 ? '多批次' : (r.batchDetails[0].batchNo || '未维护');
+      }
+      function appointmentBatchDetailsHtml(r) {
+        const details = Array.isArray(r.batchDetails) ? r.batchDetails : [];
+        const escape = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        if (!details.length) return '<span class="confirm-display-value muted">0 个批次 · 未维护</span>';
+        return '<details class="appointment-batches"><summary>'+details.length+' 个批次 · 查看</summary><ul>'+details.map(d => '<li>'+escape(d.batchNo || '—')+'：'+formatNumber(d.quantity)+'</li>').join('')+'</ul></details>';
       }
       function batchModalHtml(r, editable) {
         const details = defaultBatchDetails(r);
@@ -2120,11 +2174,6 @@
         if (id && id !== state.batchActiveId) switchBatchItem(id);
       });
 
-      // 批量弹窗：右侧——数量输入自动计算
-      $('batchRight').addEventListener('input', e => {
-        if (e.target.classList.contains('batch-commit-qty')) updateAutoCalcBatch();
-      });
-
       // 批量弹窗：右侧——确认此项按钮
       $('batchRight').addEventListener('click', e => {
         if (e.target.id === 'btnConfirmThisItem') confirmBatchItem();
@@ -2158,6 +2207,13 @@
         const date = $('apptDateInput').value;
         $('apptDateHint').textContent = date ? '当前预约日期：' + date + '，容量已实时更新' : '请选择预约送货日期';
         updateApptSubmitButton();
+      });
+
+      // 预约弹窗：按需展开库区容量明细，避免多库区占据主布局
+      $('apptCapacityCard').addEventListener('click', e => {
+        if (e.target.id !== 'btnApptCapacityToggle') return;
+        state.apptCapacityExpanded = !state.apptCapacityExpanded;
+        updateAppointmentCapacity();
       });
 
       // 预约弹窗：查询/重置

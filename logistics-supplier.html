@@ -215,6 +215,7 @@
       border-radius: 5px; background: #fff; color: var(--primary); font-size: 12px; font-weight: 500;
     }
     .row-action:hover { background: var(--primary-soft); }
+    .row-action + .row-action { margin-left: 6px; }
 
     .modal-layer {
       position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center;
@@ -241,21 +242,41 @@
     }
     .section-title-bar::before { content: ""; width: 4px; height: 16px; border-radius: 2px; background: var(--primary); }
     .appointment-form-row { display: flex; align-items: flex-end; gap: 16px; padding: 0 24px 16px; }
-    .appointment-schedule-row { align-items: stretch; }
+    .appointment-schedule-row { align-items: stretch; flex-direction: column; }
+    .appointment-schedule-row .appointment-date-box { flex: 0 0 auto; }
+    .appointment-schedule-row .appointment-capacity-card { min-width: 0; width: 100%; }
+    .appointment-batches summary { cursor: pointer; color: var(--primary-dark); white-space: nowrap; }
+    .appointment-batches ul { margin-top: 8px; padding-left: 16px; min-width: 160px; }
     .appointment-date-box { width: 220px; flex: 0 0 220px; display: flex; flex-direction: column; justify-content: center; }
     .appointment-date-hint { margin-top: 6px; color: var(--text-3); font-size: 12px; line-height: 1.45; }
     .appointment-capacity-card {
-      flex: 1; min-width: 420px; display: grid; grid-template-columns: repeat(3,1fr);
-      gap: 8px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--primary-soft);
+      flex: 1; min-width: 520px; display: block;
+      gap: 8px; padding: 12px 14px; border: 1px solid var(--border);
+      border-radius: 8px; background: var(--primary-soft);
     }
     .appointment-capacity-card.over-limit { border-color: #f3c9c9; background: var(--danger-soft); }
-    .appointment-capacity-item { display: flex; flex-direction: column; gap: 4px; padding: 2px 10px; border-right: 1px solid var(--border); }
-    .appointment-capacity-item:last-child { border-right: 0; }
-    .appointment-capacity-item .label { color: var(--text-2); font-size: 12px; }
-    .appointment-capacity-item .value { color: var(--text); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .appointment-capacity-item.remaining .value { color: var(--success); }
-    .appointment-capacity-card.over-limit .appointment-capacity-item.remaining .value { color: var(--danger); }
-    .appointment-capacity-item .unit { margin-left: 3px; color: var(--text-3); font-size: 11px; font-weight: 400; }
+    .appointment-capacity-summary { display: flex; align-items: center; gap: 10px; min-height: 28px; }
+    .appointment-capacity-summary .title { color: var(--text); font-size: 13px; font-weight: 600; }
+    .appointment-capacity-summary .meta { color: var(--text-2); font-size: 12px; }
+    .appointment-capacity-summary .status { margin-left: auto; color: var(--success); font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .appointment-capacity-summary .status.over-limit { color: var(--danger); }
+    .appointment-capacity-toggle { flex: 0 0 auto; min-height: 28px; padding: 3px 8px; border: 1px solid var(--border-strong); border-radius: 5px; background: var(--surface); color: var(--primary-dark); font-size: 12px; cursor: pointer; }
+    .appointment-capacity-toggle:hover { background: var(--primary-soft); }
+    .appointment-capacity-details { margin-top: 9px; max-height: 176px; overflow: auto; border-top: 1px solid rgba(160,180,180,.32); }
+    .appointment-capacity-details[hidden] { display: none; }
+    .appointment-capacity-head, .appointment-capacity-row { display: grid; grid-template-columns: minmax(90px, 1.2fr) repeat(4, minmax(86px, 1fr)); gap: 0; }
+    .appointment-capacity-head { position: sticky; top: 0; z-index: 1; padding: 8px 0 6px; background: var(--primary-soft); color: var(--text-3); font-size: 11px; }
+    .appointment-capacity-card.over-limit .appointment-capacity-head { background: var(--danger-soft); }
+    .appointment-capacity-row { padding: 8px 0; border-top: 1px solid rgba(160,180,180,.32); color: var(--text); font-size: 12px; }
+    .appointment-capacity-row span { padding: 0 9px; border-right: 1px solid rgba(160,180,180,.28); font-variant-numeric: tabular-nums; }
+    .appointment-capacity-row span:last-child { border-right: none; }
+    .appointment-capacity-row .area { font-weight: 600; }
+    .appointment-capacity-row .remaining { color: var(--success); font-weight: 700; }
+    .appointment-capacity-row.over-limit .remaining { color: var(--danger); }
+    .appointment-capacity-empty { padding: 9px 0 2px; color: var(--text-3); font-size: 12px; }
+    #asnDetailMaterialBody tr[hidden] { display: none; }
+    .driver-entry { margin: 0 24px; align-items: end; }
+    #addAppointmentDriver { margin: 0 24px 12px; }
     .appointment-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
     .appointment-field label { color: var(--text-2); font-size: 12px; font-weight: 500; }
     .appointment-field input { width: 100%; min-height: 40px; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 6px; }
@@ -346,7 +367,10 @@
       .modal-info { grid-template-columns: 1fr; }
       .calendar-day { min-height: 50px; padding: 4px; }
       .calendar-day-load { font-size: 9px; }
-      .appointment-capacity-card { grid-template-columns: 1fr; }
+      .appointment-capacity-card { min-width: 0; overflow-x: auto; }
+      .appointment-capacity-summary { flex-wrap: wrap; }
+      .appointment-capacity-summary .status { margin-left: 0; }
+      .appointment-capacity-head, .appointment-capacity-row { min-width: 520px; }
       .appointment-capacity-item { border-right: 0; border-bottom: 1px solid var(--border); padding: 6px 4px 10px; }
       .appointment-capacity-item:last-child { border-bottom: 0; }
     }
@@ -443,6 +467,7 @@
                 <th>计划发货日期</th>
                 <th>计划到货日期</th>
                 <th>物料项数</th>
+                <th class="center">箱数</th>
                 <th class="center">托数</th>
                 <th>预约送货日期</th>
                 <th>状态</th>
@@ -487,11 +512,7 @@
             <input type="date" id="appointmentDate" aria-describedby="appointmentDateHelp">
             <div class="appointment-date-hint" id="appointmentDateHelp">默认选中计划到货日期，可直接修改日期</div>
           </div>
-          <div class="appointment-capacity-card" id="logisticsCapacityCard" aria-live="polite">
-            <div class="appointment-capacity-item"><span class="label">库区当日可预约数量</span><span class="value"><span id="logisticsCapacityTotal">—</span></span></div>
-            <div class="appointment-capacity-item"><span class="label">已预约数量</span><span class="value"><span id="logisticsCapacityUsed">—</span></span></div>
-            <div class="appointment-capacity-item remaining"><span class="label">剩余可预约数量</span><span class="value"><span id="logisticsCapacityRemaining">—</span></span></div>
-          </div>
+          <div class="appointment-capacity-card" id="logisticsCapacityCard" aria-live="polite"></div>
         </div>
         <div class="section-title-bar">车辆与司机信息</div>
         <div class="appointment-form-row vehicle-form-row">
@@ -499,20 +520,14 @@
             <label for="appointmentPlate"><span style="color:var(--danger);">*</span> 送货车牌号</label>
             <input type="text" id="appointmentPlate" placeholder="如 浙B·12345" autocomplete="off">
           </div>
-          <div class="appointment-field">
-            <label for="appointmentDriver">司机姓名（选填）</label>
-            <input type="text" id="appointmentDriver" placeholder="请输入司机姓名" autocomplete="name">
-          </div>
-          <div class="appointment-field">
-            <label for="appointmentPhone">司机联系电话（选填）</label>
-            <input type="tel" id="appointmentPhone" placeholder="请输入联系电话" autocomplete="tel">
-          </div>
         </div>
+        <div id="appointmentDrivers"></div>
+        <button type="button" class="btn" id="addAppointmentDriver">添加司机</button>
         <div class="vehicle-hint">确认预约后，预约日期、车牌号及已填写的司机信息将按 ASN 同步至供应商端，并带入后续取货登记。</div>
         <div class="section-title-bar">ASN 物料明细</div>
         <div class="appointment-table-wrap">
           <table>
-            <thead><tr><th>物料编号</th><th>采购凭证</th><th class="amount">承诺发货数量</th><th class="amount">预约数量</th></tr></thead>
+            <thead><tr><th>物料编号</th><th>采购凭证</th><th>批次明细</th><th class="amount">承诺发货数量</th><th class="amount">预约数量</th></tr></thead>
             <tbody id="appointmentMaterialBody"></tbody>
           </table>
         </div>
@@ -522,6 +537,19 @@
         <button class="btn" type="button" id="appointmentCancel">关闭</button>
         <button class="btn btn-primary" type="button" id="appointmentSubmit">确认预约</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="asnDetailModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="asnDetailModalTitle">
+      <div class="modal-head"><h3 id="asnDetailModalTitle">ASN 物料详情</h3><button class="modal-close" type="button" id="asnDetailModalClose" aria-label="关闭">&times;</button></div>
+      <div class="modal-body" style="padding:20px 24px 0;">
+        <div class="modal-info" id="asnDetailSummary"></div>
+        <div class="modal-section-title">物料确认信息</div>
+        <div class="appointment-form-row"><div class="appointment-field"><label for="detailMaterialFilter">物料编号</label><input id="detailMaterialFilter" placeholder="输入物料编号查询"></div><div class="appointment-field"><label for="detailVoucherFilter">采购凭证</label><input id="detailVoucherFilter" placeholder="输入采购凭证查询"></div></div><div id="detailFilterEmpty" hidden>无匹配物料</div>
+        <div class="appointment-table-wrap" style="margin:0 0 16px;"><table style="min-width:1040px"><thead><tr><th>物料信息</th><th>计划发货日期</th><th>计划到货日期</th><th class="amount">计划发货数量</th><th class="amount">SAP 承诺发货数量</th><th>配送方式</th><th>自提物流商</th><th>实际装箱/装托数量</th><th>批次号</th></tr></thead><tbody id="asnDetailMaterialBody"></tbody></table></div>
+      </div>
+      <div class="modal-foot"><button class="btn" type="button" id="asnDetailClose">关闭</button></div>
     </div>
   </div>
 
@@ -544,6 +572,10 @@
         return Number(num).toLocaleString('zh-CN');
       }
 
+      function formatCapacityNumber(num) {
+        return Number(num).toLocaleString('zh-CN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+      }
+
       function escapeHtml(value) {
         return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       }
@@ -551,6 +583,13 @@
       function itemPallets(row) {
         const qty = Number(row.confirmQty ?? row.promisedQty ?? 0);
         return qty > 0 ? Math.ceil(qty / Math.max(1, Number(row.perPalletQty || 1))) : 0;
+      }
+
+      function itemBoxes(row) {
+        const actual = Number(row.boxCount);
+        if (row.boxCount != null && row.boxCount !== '' && Number.isFinite(actual) && actual >= 0) return actual;
+        const qty = Number(row.confirmQty ?? row.promisedQty ?? 0);
+        return qty > 0 ? Math.ceil(qty / Math.max(1, Number(row.perBoxQty || 1))) : 0;
       }
 
       function appointmentQty(row) {
@@ -602,10 +641,11 @@
             return {
               id:g.asnNo, asnNo:g.asnNo, commitShipDate:g.shipDate, commitArriveDate:g.arrivalDate,
               supplierName:g.supplierName, supplierCode:g.supplierCode, materialCode:g.asnNo,
+              boxCount:g.items.reduce((s,r)=>s+itemBoxes(r),0),
               palletCount:g.items.reduce((s,r)=>s+itemPallets(r),0), materialCount:g.items.length,
               poNumber:g.voucher, planQty:g.planQty, commitQty:g.promisedQty, items:g.items,
               appointmentDate, stockReady, statusCode, flowStatus:picked?'picked':'pending',
-              vehiclePlate:g.vehiclePlate || '', driverName:g.pickupPerson || '', driverPhone:g.pickupPhone || ''
+              vehiclePlate:g.vehiclePlate || '', driverName:g.pickupPerson || '', driverPhone:g.pickupPhone || '', drivers:g.drivers
             };
           });
       }
@@ -663,7 +703,7 @@
         const b = $('tableBody');
 
         if (!pg.length) {
-          b.innerHTML = '<tr class="empty-row"><td colspan="9"><div style="font-size:15px;margin-bottom:6px;">暂无数据</div><div style="font-size:12px;">没有符合条件的计划记录</div></td></tr>';
+          b.innerHTML = '<tr class="empty-row"><td colspan="10"><div style="font-size:15px;margin-bottom:6px;">暂无数据</div><div style="font-size:12px;">没有符合条件的计划记录</div></td></tr>';
         } else {
           b.innerHTML = pg.map(r => `
             <tr>
@@ -672,10 +712,11 @@
               <td>${escapeHtml(r.commitShipDate || '—')}</td>
               <td>${escapeHtml(r.commitArriveDate || '—')}</td>
               <td>${r.materialCount} 种</td>
+              <td class="center">${formatNumber(r.boxCount)}</td>
               <td class="center">${r.palletCount}</td>
               <td>${escapeHtml(r.appointmentDate || '待预约')}</td>
               <td>${statusCell(r)}</td>
-              <td>${r.flowStatus === 'pending'
+              <td><button class="row-action" data-detail-asn="${escapeHtml(r.asnNo)}">查看详情</button>${r.flowStatus === 'pending'
                 ? '<button class="row-action" data-appoint-asn="' + escapeHtml(r.asnNo) + '">' + (r.appointmentDate ? '调整预约' : '预约送货') + '</button>'
                 : '<button class="row-action" type="button" onclick="location.href=\'carrier-pickup.html\'">查看取货记录</button>'}</td>
             </tr>
@@ -731,9 +772,7 @@
         const rec = state.records.find(r => r.asnNo === state.activeAppointmentAsn);
         const date = $('appointmentDate').value;
         if (!rec || !date) {
-          $('logisticsCapacityTotal').textContent = '—';
-          $('logisticsCapacityUsed').textContent = '—';
-          $('logisticsCapacityRemaining').textContent = '—';
+          $('logisticsCapacityCard').innerHTML = '<div class="appointment-capacity-empty">请选择预约日期后查看各库区的当日容量。</div>';
           $('logisticsCapacityCard').classList.remove('over-limit');
           $('appointmentSubmit').disabled = true;
           return;
@@ -744,35 +783,93 @@
         const remaining = Math.max(0, capacity - bookedWithoutCurrent);
         const currentAppointmentQty = appointmentQty(rec);
         const overLimit = currentAppointmentQty > remaining;
-        $('logisticsCapacityTotal').textContent = capacity;
-        $('logisticsCapacityUsed').textContent = bookedWithoutCurrent;
-        $('logisticsCapacityRemaining').textContent = remaining;
-        $('logisticsCapacityCard').classList.toggle('over-limit', overLimit);
+        const stats = areas.map(area => {
+          const total = capacityForWarehouseArea(area, date);
+          const areaQty = record => (record.items || []).filter(item => (item.warehouseArea || '1号库区') === area).reduce((sum, item) => sum + appointmentQty(item), 0);
+          const used = state.records.filter(record => record.appointmentDate === date && record.asnNo !== rec.asnNo).reduce((sum, record) => sum + areaQty(record), 0);
+          return { area, total, used, selected: areaQty(rec), remaining: Math.max(0, total - used) };
+        });
+        const areaShortage = stats.some(item => item.selected > item.remaining);
+        $('logisticsCapacityCard').innerHTML = '<div class="appointment-capacity-summary">' +
+          '<span class="title">涉及 '+stats.length+' 个库区</span>' +
+          '<span class="meta">本次预约数量 '+formatCapacityNumber(currentAppointmentQty)+'</span>' +
+          '<span class="status '+(areaShortage ? 'over-limit' : '')+'">'+(areaShortage ? '存在库区容量不足' : '各库区容量充足')+'</span>' +
+          '<button type="button" class="appointment-capacity-toggle" id="btnLogisticsCapacityToggle" aria-expanded="'+!!state.capacityExpanded+'">'+(state.capacityExpanded ? '收起明细' : '查看明细')+'</button></div>' +
+          '<div class="appointment-capacity-details" '+(state.capacityExpanded ? '' : 'hidden')+'><div class="appointment-capacity-head"><span>库区</span><span>当日可约数量</span><span>已预约数量</span><span>本次预约数量</span><span>剩余可约数量</span></div>' +
+          stats.map(item => '<div class="appointment-capacity-row '+(item.selected > item.remaining ? 'over-limit' : '')+'"><span class="area">'+escapeHtml(item.area)+'</span><span>'+formatCapacityNumber(item.total)+'</span><span>'+formatCapacityNumber(item.used)+'</span><span>'+formatCapacityNumber(item.selected)+'</span><span class="remaining">'+formatCapacityNumber(item.remaining)+'</span></div>').join('') + '</div>';
+        $('logisticsCapacityCard').classList.toggle('over-limit', areaShortage);
         $('appointmentSubmit').disabled = overLimit;
         $('appointmentSubmit').title = overLimit ? '请更换预约日期' : '';
         $('appointmentSelectedInfo').textContent = 'ASN ' + rec.asnNo + '，共 ' + rec.materialCount + ' 种物料、预约数量 ' + formatNumber(currentAppointmentQty) +
           (overLimit ? '，超出当日剩余数量 ' + formatNumber(currentAppointmentQty - remaining) : '');
       }
 
+      function addDriverRow(driver = {}) {
+        const el = document.createElement('div');
+        el.className = 'appointment-form-row driver-entry';
+        el.style.marginBottom = '10px';
+        el.innerHTML = '<div class="appointment-field"><label>司机姓名（选填）<input data-driver-name type="text" placeholder="请输入司机姓名" value="'+escapeHtml(driver.name || '')+'"></label></div><div class="appointment-field"><label>司机联系电话（选填）<input data-driver-phone type="tel" placeholder="请输入联系电话" value="'+escapeHtml(driver.phone || '')+'"></label></div><button class="btn" type="button" data-remove-driver>移除司机</button>';
+        $('appointmentDrivers').appendChild(el);
+      }
+      $('addAppointmentDriver').addEventListener('click', () => addDriverRow());
+      $('appointmentDrivers').addEventListener('click', e => {
+        if (!e.target.closest('[data-remove-driver]')) return;
+        e.target.closest('.driver-entry').remove();
+        if (!$('appointmentDrivers').children.length) addDriverRow();
+      });
       function openAppointment(asnNo) {
         const rec = state.records.find(r => r.asnNo === asnNo && r.flowStatus === 'pending');
         if (!rec) return;
         state.activeAppointmentAsn = asnNo;
+        state.capacityExpanded = false;
         $('appointmentModalTitle').textContent = '自提送货预约 · ' + asnNo;
         $('appointmentMaterialBody').innerHTML = rec.items.map(item => '<tr>' +
           '<td>' + escapeHtml(item.materialCode || '—') + '</td>' +
           '<td>' + escapeHtml(item.voucher || '—') + '</td>' +
+          '<td>' + appointmentBatchDetailsHtml(item) + '</td>' +
           '<td class="amount">' + formatNumber(item.confirmQty ?? item.promisedQty) + '</td>' +
           '<td class="amount">' + formatNumber(appointmentQty(item)) + '</td></tr>').join('');
         $('appointmentDate').value = rec.appointmentDate || rec.commitArriveDate || '';
         $('appointmentPlate').value = rec.vehiclePlate || '';
-        $('appointmentDriver').value = rec.driverName || '';
-        $('appointmentPhone').value = rec.driverPhone || '';
+        $('appointmentDrivers').innerHTML = '';
+        const drivers = Array.isArray(rec.drivers) ? rec.drivers : [{ name: rec.driverName, phone: rec.driverPhone }];
+        (drivers.length ? drivers : [{}]).forEach(addDriverRow);
         $('appointmentDateHelp').textContent = '已默认选中计划到货日期 ' + (rec.commitArriveDate || '—') + '，可根据实际运力调整。';
         updateSelectedCapacity();
         $('appointmentModal').classList.add('show');
         document.body.style.overflow = 'hidden';
       }
+
+      function batchSummary(item) {
+        const details = Array.isArray(item.batchDetails) ? item.batchDetails : [];
+        if (!details.length) return item.batchNo || '未维护';
+        return details.length > 1 ? '多批次' : (details[0].batchNo || '未维护');
+      }
+      function appointmentBatchDetailsHtml(item) {
+        const details = Array.isArray(item.batchDetails) ? item.batchDetails : [];
+        if (!details.length) return '<span style="color:var(--text-3)">0 个批次 · 未维护</span>';
+        return '<details class="appointment-batches"><summary>'+details.length+' 个批次 · 查看</summary><ul>'+details.map(d => '<li>'+escapeHtml(d.batchNo || '—')+'：'+formatNumber(d.quantity)+'</li>').join('')+'</ul></details>';
+      }
+      function openAsnDetail(asnNo) {
+        const rec = state.records.find(r => r.asnNo === asnNo);
+        if (!rec) return;
+        $('detailMaterialFilter').value = ''; $('detailVoucherFilter').value = ''; $('detailFilterEmpty').hidden = true;
+        $('asnDetailModalTitle').textContent = 'ASN 物料详情 · ' + rec.asnNo;
+        $('asnDetailSummary').innerHTML = '<div><span>ASN号</span><strong>'+escapeHtml(rec.asnNo)+'</strong></div><div><span>供应商</span><strong>'+escapeHtml(rec.supplierName)+'</strong></div><div><span>工厂计划到货日期</span><strong>'+escapeHtml(rec.commitArriveDate || '—')+'</strong></div><div><span>物料项数</span><strong>'+rec.materialCount+' 项</strong></div>';
+        $('asnDetailMaterialBody').innerHTML = rec.items.map(item => {
+          const box = Number(item.boxCount || 0), pallet = Number(item.palletCount || 0);
+          return '<tr data-material="'+escapeHtml(item.materialCode || '')+'" data-voucher="'+escapeHtml(item.voucher || '')+'"><td><strong>'+escapeHtml(item.materialCode || '—')+'</strong><br><span style="font-size:12px;color:var(--text-3)">采购凭证 '+escapeHtml(item.voucher || '—')+'</span></td><td>'+escapeHtml(item.shipDate || '—')+'</td><td>'+escapeHtml(item.arrivalDate || '—')+'</td><td class="amount">'+formatNumber(item.planQty)+'</td><td class="amount">'+formatNumber(item.confirmQty ?? item.promisedQty)+'</td><td><span class="status-pill ready">自提</span></td><td>'+escapeHtml(item.logisticsProvider || item.logistics || '未维护物流商')+'</td><td>'+formatNumber(box)+' 箱 / '+formatNumber(pallet)+' 托</td><td>'+escapeHtml(batchSummary(item))+'</td></tr>';
+        }).join('');
+        $('asnDetailModal').classList.add('show'); document.body.style.overflow = 'hidden';
+      }
+      function filterDetailMaterials() {
+        const material = $('detailMaterialFilter').value.trim().toLowerCase(), voucher = $('detailVoucherFilter').value.trim().toLowerCase();
+        let visible = 0;
+        [...$('asnDetailMaterialBody').rows].forEach(row => { row.hidden = !row.dataset.material.toLowerCase().includes(material) || !row.dataset.voucher.toLowerCase().includes(voucher); if (!row.hidden) visible++; });
+        $('detailFilterEmpty').hidden = visible > 0;
+      }
+      ['detailMaterialFilter','detailVoucherFilter'].forEach(id => $(id).addEventListener('input', filterDetailMaterials));
+      function closeAsnDetail() { $('asnDetailModal').classList.remove('show'); document.body.style.overflow = ''; }
 
       function closeAppointment() {
         $('appointmentModal').classList.remove('show');
@@ -784,8 +881,9 @@
         const asnNo = state.activeAppointmentAsn;
         const date = $('appointmentDate').value;
         const plate = $('appointmentPlate').value.trim().toUpperCase();
-        const driver = $('appointmentDriver').value.trim();
-        const phone = $('appointmentPhone').value.trim();
+        const drivers = [...$('appointmentDrivers').querySelectorAll('.driver-entry')].map(el => ({ name: el.querySelector('[data-driver-name]').value.trim(), phone: el.querySelector('[data-driver-phone]').value.trim() })).filter(d => d.name || d.phone);
+        const driver = drivers.map(d => d.name || '未填写姓名').join(' / ');
+        const phone = drivers.map(d => d.phone || '未填写电话').join(' / ');
         if (!asnNo) return;
         if (!date) { toast('请选择预约送货日期'); $('appointmentDate').focus(); return; }
         if (!plate) { toast('请填写送货车牌号'); $('appointmentPlate').focus(); return; }
@@ -803,6 +901,7 @@
           row.logisticsAppointmentAt = LogisticsFlow.now();
           row.logisticsProvider = row.logisticsProvider || row.logistics || '';
           row.vehiclePlate = plate;
+          row.drivers = drivers.map(d => ({ ...d }));
           row.pickupPerson = driver;
           row.pickupPhone = phone;
           row.updatedAt = LogisticsFlow.now();
@@ -839,14 +938,24 @@
       $('tableBody').addEventListener('click', e => {
         const btn = e.target.closest('[data-appoint-asn]');
         if (btn) openAppointment(btn.dataset.appointAsn);
+        const detail = e.target.closest('[data-detail-asn]');
+        if (detail) openAsnDetail(detail.dataset.detailAsn);
       });
 
       $('appointmentModalClose').addEventListener('click', closeAppointment);
       $('appointmentCancel').addEventListener('click', closeAppointment);
       $('appointmentSubmit').addEventListener('click', submitAppointment);
+      $('logisticsCapacityCard').addEventListener('click', e => {
+        if (e.target.id !== 'btnLogisticsCapacityToggle') return;
+        state.capacityExpanded = !state.capacityExpanded;
+        updateSelectedCapacity();
+      });
       $('appointmentDate').addEventListener('change', updateSelectedCapacity);
       $('appointmentModal').addEventListener('click', e => { if (e.target === $('appointmentModal')) closeAppointment(); });
-      document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('appointmentModal').classList.contains('show')) closeAppointment(); });
+      $('asnDetailModalClose').addEventListener('click', closeAsnDetail);
+      $('asnDetailClose').addEventListener('click', closeAsnDetail);
+      $('asnDetailModal').addEventListener('click', e => { if (e.target === $('asnDetailModal')) closeAsnDetail(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('appointmentModal').classList.contains('show')) closeAppointment(); if ($('asnDetailModal').classList.contains('show')) closeAsnDetail(); } });
 
       $('pageControls').addEventListener('click', e => {
         const btn = e.target.closest('.page-btn');

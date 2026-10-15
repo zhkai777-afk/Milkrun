@@ -1236,7 +1236,8 @@
             const canConfirm = r.status === 'factory_pending';
             const canAdjust = r.status === 'planner_adjustment';
             const canWithdraw = r.status === 'supplier_pending';
-            const isViewOnly = !(canConfirm || canAdjust || canWithdraw);
+            const canVoidAwaiting = r.status === 'awaiting_asn';
+            const isViewOnly = !(canConfirm || canAdjust || canWithdraw || canVoidAwaiting);
             return `
               <tr class="${diff !== null && diff !== 0 ? 'diff' : ''}" data-id="${r.id}" data-status="${r.status}">
                 <td class="col-check"><input class="check row-check" type="checkbox" data-id="${r.id}" aria-label="选择${escapeHtml(r.materialCode)}" ${state.checkedIds.has(r.id) ? 'checked' : ''} ${isViewOnly ? 'disabled' : ''}></td>
@@ -1270,19 +1271,20 @@
                       : `${canAdjust ? `<button class="link-btn edit" data-edit="${r.id}" type="button">${svg.edit}调整</button>` : ''}
                          ${canWithdraw ? `<button class="link-btn delete" data-reverse="${r.id}" type="button">${svg.trash}撤回</button>` : ''}
                          ${canConfirm ? `<button class="link-btn confirm" data-confirm="${r.id}" type="button">${svg.check}确认ASN差异</button>` : ''}
+                         ${canVoidAwaiting ? `<button class="link-btn delete" data-cancel="${r.id}" type="button">${svg.trash}作废</button>` : ''}
                          <button class="link-btn edit" data-inspect="${r.id}" type="button">${svg.search}查看</button>
-                         ${(r.actionHistory || []).length ? `<button class="link-btn edit" data-history="${r.id}" type="button">历史</button>` : ''}`}
+                         `}
                   </div>
                 </td>
               </tr>`;
           }).join('');
         }
 
-        const visibleIds = pageRows.filter(r => r.status === 'factory_pending').map(r => r.id);
+        const visibleIds = pageRows.filter(r => ['factory_pending','awaiting_asn'].includes(r.status)).map(r => r.id);
         const checkedVisible = visibleIds.filter(id => state.checkedIds.has(id)).length;
         els.selectAll.checked = visibleIds.length > 0 && checkedVisible === visibleIds.length;
         els.selectAll.indeterminate = checkedVisible > 0 && checkedVisible < visibleIds.length;
-        els.batchConfirmBtn.disabled = state.checkedIds.size === 0;
+        els.batchConfirmBtn.disabled = !state.rows.some(r => state.checkedIds.has(r.id) && r.status === 'factory_pending');
         els.batchCancelBtn.disabled = state.checkedIds.size === 0;
 
         els.totalText.textContent = `共 ${total} 条`;
@@ -2416,7 +2418,7 @@
 
       els.selectAll.addEventListener('change', e => {
         const pageRows = getFilteredRows().slice((state.page - 1) * state.pageSize, (state.page - 1) * state.pageSize + state.pageSize);
-        pageRows.filter(r => r.status === 'factory_pending').forEach(r => e.target.checked ? state.checkedIds.add(r.id) : state.checkedIds.delete(r.id));
+        pageRows.filter(r => ['factory_pending','awaiting_asn'].includes(r.status)).forEach(r => e.target.checked ? state.checkedIds.add(r.id) : state.checkedIds.delete(r.id));
         renderAll();
       });
 
@@ -2425,6 +2427,7 @@
         const handledAsns = new Set();
         [...state.checkedIds].forEach(id => {
           const row = state.rows.find(r => r.id === id);
+          if (row && row.status !== 'factory_pending') return;
           if (!row || handledAsns.has(row.asnNo)) { state.checkedIds.delete(id); return; }
           handledAsns.add(row.asnNo);
           if (advanceConfirm(id, true)) ok++; else fail++;

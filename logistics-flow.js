@@ -173,6 +173,7 @@
       vehiclePlate: items.map(r => r.vehiclePlate).find(Boolean) || '',
       pickupPerson: items.map(r => r.pickupPerson).find(Boolean) || '',
       pickupPhone: items.map(r => r.pickupPhone).find(Boolean) || '',
+      drivers: items.map(r => r.drivers).find(Array.isArray),
       deliveryMode: deliveryText(items[0].deliveryMode),
       logistics: items[0].logistics || '',
       planQty: items.reduce((s, r) => s + (Number(r.planQty) || 0), 0),
@@ -210,13 +211,14 @@
       commitQty: hasValue(r.confirmQty) ? Number(r.confirmQty).toLocaleString('zh-CN') : Number(r.promisedQty || 0).toLocaleString('zh-CN'),
       commitQtyNum: Number(hasValue(r.confirmQty) ? r.confirmQty : r.promisedQty || 0),
       commitShipDate: r.commitShipDate || r.shipDate || '', commitArriveDate: r.commitArriveDate || r.arrivalDate || '',
-      boxCount: Number(r.boxCount || 0), palletCount: Number(r.palletCount || 0), updateTime: r.updatedAt || '',
+      boxCount: Number(r.boxCount || 0), palletCount: Number(r.palletCount || 0), actualPackagingSet: !!r.actualPackagingSet, updateTime: r.updatedAt || '',
       status: ['platform_pending', 'factory_pending'].includes(r.status) ? 'factoryPending' : r.status === 'supplier_pending' ? 'pending' : r.status === 'pending_shipment' ? (r.stockReadyTime ? 'awaitPickup' : 'confirmed') : r.status === 'in_transit' ? 'shipped' : r.status,
       deliveryMethod: deliveryCode(r.deliveryMode), designatedLogistics: r.logistics || '', warehouseArea: r.warehouseArea || '1号库区',
       appointmentStatus: r.appointmentStatus || 'none', appointmentDate: r.appointmentDate || '', appointmentSlot: r.appointmentSlot || '',
       appointmentQty: hasValue(r.appointmentQty) ? Number(r.appointmentQty) : null,
       appointmentPalletQty: hasValue(r.appointmentPalletQty) ? Number(r.appointmentPalletQty) : null,
       logisticsProvider: r.logisticsProvider || pickupByAsn.get(r.asnNo)?.carrier || r.logistics || '',
+      drivers: Array.isArray(r.drivers) ? r.drivers : undefined,
       pickupPerson: r.pickupPerson || pickupByAsn.get(r.asnNo)?.driver || '', pickupPhone: r.pickupPhone || '',
       vehiclePlate: r.vehiclePlate || r.plate || pickupByAsn.get(r.asnNo)?.plate || '',
       actionHistory: Array.isArray(r.actionHistory) ? r.actionHistory : [],
@@ -234,7 +236,7 @@
       row.logistics = r.designatedLogistics || row.logistics || '';
       row.commitShipDate = r.commitShipDate || row.shipDate;
       row.commitArriveDate = r.commitArriveDate || row.arrivalDate;
-      row.boxCount = r.boxCount; row.palletCount = r.palletCount;
+      row.boxCount = r.boxCount; row.palletCount = r.palletCount; row.actualPackagingSet = !!r.actualPackagingSet;
       row.appointmentStatus = r.appointmentStatus || 'none'; row.appointmentDate = r.appointmentDate || '';
       row.appointmentQty = hasValue(r.appointmentQty) ? Number(r.appointmentQty) : null;
       row.appointmentPalletQty = hasValue(r.appointmentPalletQty) ? Number(r.appointmentPalletQty) : null;
@@ -244,6 +246,7 @@
       row.pickupPerson = r.pickupPerson || row.pickupPerson || ''; row.pickupPhone = r.pickupPhone || row.pickupPhone || '';
       row.vehiclePlate = r.vehiclePlate || row.vehiclePlate || '';
       row.deliveryAppointmentDate = r.deliveryAppointmentDate || row.deliveryAppointmentDate || '';
+      if (Array.isArray(r.drivers)) row.drivers = r.drivers.map(d => ({ ...d }));
       if (Array.isArray(r.batchDetails)) row.batchDetails = r.batchDetails;
       if (Array.isArray(r.actionHistory)) row.actionHistory = r.actionHistory;
       row.status = ['platformPending', 'factoryPending'].includes(r.status) ? 'factory_pending' : r.status === 'pending' ? 'supplier_pending' : ['confirmed', 'awaitPickup'].includes(r.status) ? 'pending_shipment' : r.status === 'shipped' ? 'in_transit' : r.status;

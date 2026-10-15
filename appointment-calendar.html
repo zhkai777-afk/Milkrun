@@ -336,7 +336,7 @@
   .receipt-table .supplier-cell { color: var(--text-2); }
   .receipt-table .number-cell { color: var(--primary); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
   .receipt-table .promise-cell { color: var(--text); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-  .actual-arrival { width: 84px; padding: 7px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--muted); color: var(--text); text-align: right; font-size: 13px; }
+  .actual-arrival { color: var(--text); font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
   .qty-diff { margin-top: 3px; color: var(--text-3); font-size: 11px; }
   .qty-diff.negative { color: var(--danger); }
 
@@ -383,6 +383,33 @@
     .receipt-dialog .modal-body { padding: 16px; }
     .receipt-map svg { min-height: 0; }
   }
+  .receipt-tabs { display:flex; gap:24px; border-bottom:1px solid var(--border); margin:0 0 20px; }
+  .receipt-tabs button { border:0; border-bottom:2px solid transparent; padding:12px 0; background:transparent; color:var(--text-3); font:inherit; cursor:pointer; }
+  .receipt-tabs button[aria-selected="true"] { color:var(--primary); border-bottom-color:var(--primary); font-weight:600; }
+  .receipt-tabs button:focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
+  .receipt-route-empty { min-height:280px; padding:40px 16px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border:1px dashed var(--border); border-radius:12px; background:var(--muted); }
+  .route-empty-icon { font-size:40px; color:var(--primary); margin-bottom:12px; }
+  .receipt-route-empty p, .route-demo-note { color:var(--text-3); font-size:13px; line-height:1.6; }
+  .receipt-route-empty p { margin:10px 0 20px; }
+  .route-demo-note { margin-bottom:12px; }
+  .receipt-meta-value { overflow-wrap:anywhere; }
+  .receipt-batch-row td { background:#f7faf9; padding:10px 12px 14px; }
+  .receipt-batches { display:flex; flex-direction:column; gap:8px; }
+  .receipt-batch { display:flex; flex-wrap:wrap; gap:8px 28px; font-size:12px; color:var(--text-3); }
+  .receipt-batch strong { color:var(--text); font-weight:500; overflow-wrap:anywhere; }
+  .receipt-batch span:first-child { min-width:180px; }
+  .receipt-batch-empty { color:var(--text-3); font-size:12px; }
+  .receipt-filters { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .receipt-filters label { flex:1; min-width:180px; font-size:12px; color:var(--text-2); }
+  .receipt-filters input { display:block; width:100%; box-sizing:border-box; margin-top:6px; padding:8px 10px; border:1px solid var(--border); border-radius:6px; font:inherit; background:#fff; color:var(--text); }
+  .receipt-filters input:focus { outline:2px solid var(--primary); outline-offset:1px; }
+  .receipt-result-count { margin-bottom:10px; color:var(--text-3); font-size:12px; }
+  .receipt-search-empty { padding:40px 16px; text-align:center; color:var(--text-3); background:var(--muted); border-radius:8px; }
+  .receipt-driver-section { margin-bottom:20px; }
+  .receipt-driver-section .receipt-section-title { margin-top:0; }
+  .receipt-driver-table { min-width:0; table-layout:fixed; }
+  .receipt-driver-table th:first-child { width:48px; }
+  .receipt-driver-table td { overflow-wrap:anywhere; vertical-align:top; }
 </style>
 </head>
 <body>
@@ -528,7 +555,8 @@ routeGroups.forEach(g => {
     type: g.deliveryMode === '直送' ? 'delivery' : 'pickup', status,
     supplier: g.supplierName, vip: false,
     asn: g.asnNo, po: g.voucher, eta: date + (first.appointmentSlot ? ' ' + first.appointmentSlot : ''),
-    delivery: g.deliveryMode === '直送' ? '供应商直送' : '物流商取货', logistics: first.logisticsProvider || first.logistics || '-',
+    delivery: g.deliveryMode === '直送' ? '供应商直送' : '工厂自提', logistics: first.logisticsProvider || first.logistics || '-',
+    drivers: first.drivers, driver: first.pickupPerson || '', driverPhone: first.pickupPhone || '', plate: first.vehiclePlate || '',
     registeredAt: first.shippedAt || first.stockReadyTime || first.updatedAt || '',
     items: g.items.map(item => ({
       materialCode: item.materialCode || '-', supplierName: item.supplierName || g.supplierName || '-',
@@ -537,10 +565,26 @@ routeGroups.forEach(g => {
         (LogisticsFlow.hasValue(item.promisedQty) ? Number(item.promisedQty) : Number(item.planQty) || 0),
       actualQty: LogisticsFlow.hasValue(item.actualArrivalQty) ? Number(item.actualArrivalQty) :
         (LogisticsFlow.hasValue(item.actualShipQty) ? Number(item.actualShipQty) : Number(item.promisedQty ?? item.planQty) || 0),
+      id: item.id, batchDetails: item.batchDetails, batchNo: item.batchNo, batches: item.batches,
       voucher: item.voucher || '-'
     }))
   });
 });
+
+// 页面独立演示记录：仅加入内存日历，不写入共享计划或登记存储。
+const demoPickupDate = Object.keys(appointments).sort((a,b) => new Date(a)-new Date(b))[0] || '2026-10-15';
+const demoPickup = {
+  demo: true, type:'pickup', status:'shipped', supplier:'宁波示例零部件有限公司（演示）',
+  asn:'DEMO-PICKUP-001', po:'DEMO-PO-001', eta:demoPickupDate, delivery:'工厂自提',
+  logistics:'示例物流有限公司（演示）', plate:'浙B·演示', registeredAt:demoPickupDate + ' 09:00',
+  drivers:[{name:'演示司机甲',phone:'未填写',plate:'浙B·演示01'},{name:'演示司机乙',phone:'未填写',plate:'浙B·演示02'}],
+  items:[
+    {materialCode:'DEMO-MAT-001',supplierName:'宁波示例零部件有限公司（演示）',voucher:'DEMO-PO-001',planQty:1000,promisedQty:1000,actualQty:1000,batchDetails:[{batchNo:'DEMO-B001',quantity:600,actualShipQty:600},{batchNo:'DEMO-B002',quantity:400,actualShipQty:400}]},
+    {materialCode:'DEMO-MAT-002',supplierName:'宁波示例零部件有限公司（演示）',voucher:'DEMO-PO-002',planQty:800,promisedQty:800,actualQty:800,batchDetails:[{batchNo:'DEMO-B003',quantity:800,actualShipQty:800}]},
+    {materialCode:'DEMO-MAT-003',supplierName:'宁波示例零部件有限公司（演示）',voucher:'DEMO-PO-002',planQty:500,promisedQty:500,actualQty:500,batchDetails:[]}
+  ]
+};
+(appointments[demoPickupDate] ||= []).push(demoPickup);
 
 const STATUS_MAP = {
   pending:  { label: '待发货', cls: 'pending',  icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' },
@@ -667,6 +711,7 @@ function renderAppointment(dateKey) {
 
 // ===== Receipt detail (same fields and records as the mobile warehouse view) =====
 let lastDetailTrigger = null;
+let currentReceiptDetail = null;
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[ch]));
@@ -683,7 +728,7 @@ function shortPartyName(value) {
 
 function resolveMobileReceipt(apt) {
   const isSupplier = apt.type === 'delivery';
-  const records = LogisticsFlow.read(isSupplier ? 'bw_supplier_deliveries' : 'bw_carrier_pickups', []);
+  const records = apt.demo ? [] : LogisticsFlow.read(isSupplier ? 'bw_supplier_deliveries' : 'bw_carrier_pickups', []);
   const aptCodes = new Set((apt.items || []).map(item => item.materialCode));
   const matched = Array.isArray(records) ? records.find(rec => {
     if (rec.asnNo === apt.asn || rec.no === apt.asn) return true;
@@ -698,15 +743,16 @@ function resolveMobileReceipt(apt) {
     kind: isSupplier ? 'supplier' : 'carrier',
     supplier: source.supplier || source.relSupplier || apt.supplier || '-',
     carrier: source.carrier || apt.logistics || '-',
-    mode: isSupplier ? '供应商直送' : '物流商取货',
+    mode: isSupplier ? '供应商直送' : '工厂自提',
     eta: source.eta || apt.eta || '-',
     time: source.time || apt.registeredAt || '',
     status: source.status || (apt.status === 'received' ? 'ok' : 'shipped'),
     receivedTime: source.receivedTime || '',
     distanceKm: source.distanceKm || (isSupplier ? 68 : 92),
-    plate: source.plate || '', driver: source.driver || '', trackNo: source.trackNo || '',
+    plate: source.plate || apt.plate || '', driver: source.driver || apt.driver || '',
+    drivers: Array.isArray(source.drivers) && source.drivers.length ? source.drivers : (Array.isArray(apt.drivers) && apt.drivers.length ? apt.drivers : [{ name: source.driver || apt.driver || '', phone: source.driverPhone || source.phone || apt.driverPhone || '' }]), trackNo: source.trackNo || '',
     items: (source.items?.length ? source.items : apt.items || []).map(item => {
-      const planItem = (apt.items || []).find(candidate => candidate.materialCode === item.materialCode || candidate.voucher === item.voucher) || {};
+      const planItem = (apt.items || []).find(candidate => (item.id && candidate.id === item.id) || (candidate.materialCode === item.materialCode && (!item.voucher || candidate.voucher === item.voucher))) || {};
       const planQty = Number(item.planQty ?? planItem.planQty) || 0;
       const promisedQty = Number(item.confirmQty ?? item.promisedQty ?? item.actualShipQty ?? planItem.promisedQty ?? planQty) || 0;
       const actualQty = Number(item.actualQty ?? item.actualArrivalQty ?? planItem.actualQty ?? item.actualShipQty ?? promisedQty) || 0;
@@ -714,6 +760,8 @@ function resolveMobileReceipt(apt) {
         materialCode: item.materialCode || planItem.materialCode || '-',
         supplierName: item.supplierName || planItem.supplierName || source.supplier || apt.supplier || '-',
         planQty, promisedQty, actualQty,
+        batchDetails: Array.isArray(item.batchDetails) ? item.batchDetails : planItem.batchDetails,
+        batchNo: item.batchNo ?? planItem.batchNo, batches: item.batches ?? planItem.batches,
         voucher: item.voucher || planItem.voucher || '-'
       };
     })
@@ -729,17 +777,33 @@ function receiptMetaHtml(rec) {
   ];
   if (rec.kind === 'carrier') {
     if (rec.supplier) fields.push(['关联供应商', rec.supplier]);
-    if (rec.plate) fields.push(['提货车牌', rec.plate]);
-    if (rec.driver) fields.push(['司机', rec.driver]);
     if (rec.trackNo) fields.push(['物流单号', rec.trackNo]);
   }
   return `<div class="receipt-meta">${fields.map(([label, value]) => `
-    <div class="receipt-meta-item"><div class="receipt-meta-label">${escapeHtml(label)}</div><div class="receipt-meta-value">${escapeHtml(value || '-')}</div></div>`).join('')}</div>`;
+    <div class="receipt-meta-item"><div class="receipt-meta-label">${escapeHtml(label)}</div><div class="receipt-meta-value">${escapeHtml(value || '-')}</div></div>`).join('')}</div>${rec.kind === 'carrier' ? receiptDriversHtml(rec) : ''}`;
+}
+
+function receiptDriversHtml(rec) {
+  const drivers = Array.isArray(rec.drivers) && rec.drivers.length ? rec.drivers : [{}];
+  return `<div class="receipt-driver-section"><div class="receipt-section-title">司机信息</div><div class="receipt-table-wrap"><table class="receipt-table receipt-driver-table" aria-label="司机信息">
+    <thead><tr><th scope="col">序号</th><th scope="col">车牌号</th><th scope="col">司机姓名</th><th scope="col">联系电话</th></tr></thead>
+    <tbody>${drivers.map((driver, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(driver.plate || driver.vehiclePlate || (drivers.length === 1 ? rec.plate : '') || '未填写')}</td><td>${escapeHtml(driver.name || '未填写')}</td><td>${escapeHtml(driver.phone || '未填写')}</td></tr>`).join('')}</tbody>
+  </table></div></div>`;
+}
+
+function receiptBatchesHtml(item, kind) {
+  const qty = value => value !== null && value !== undefined && String(value).trim() !== '' && Number.isFinite(Number(value)) ? formatQty(value) : '—';
+  let details = Array.isArray(item.batchDetails) ? item.batchDetails : [];
+  if (!Array.isArray(item.batchDetails)) {
+    details = (Array.isArray(item.batches) ? item.batches : item.batchNo ? [item.batchNo] : []).filter(Boolean).map(batchNo => ({batchNo}));
+  }
+  if (!details.length) return '<span class="receipt-batch-empty">物料批次：未维护</span>';
+  return `<div class="receipt-batches">${details.map(detail => `<div class="receipt-batch"><span>批次号 <strong>${escapeHtml(detail.batchNo || '未维护')}</strong></span><span>批次数量 <strong>${qty(detail.quantity)}</strong></span>${detail.actualShipQty != null ? `<span>${kind === 'carrier' ? '实际取货' : '实际发货'}数量 <strong>${qty(detail.actualShipQty)}</strong></span>` : ''}</div>`).join('')}</div>`;
 }
 
 function receiptItemsHtml(rec) {
   return `<div class="receipt-table-wrap"><table class="receipt-table">
-    <thead><tr><th>物料编号</th><th>供应商</th><th style="text-align:right">计划</th><th style="text-align:right">承诺</th><th>实际</th><th>凭证</th></tr></thead>
+    <thead><tr><th>物料编号</th><th>供应商</th><th style="text-align:right">计划</th><th style="text-align:right">承诺</th><th style="text-align:right">实际</th><th>凭证</th></tr></thead>
     <tbody>${rec.items.map(item => {
       const diff = item.planQty - item.actualQty;
       return `<tr>
@@ -747,9 +811,9 @@ function receiptItemsHtml(rec) {
         <td class="supplier-cell">${escapeHtml(item.supplierName)}</td>
         <td class="number-cell">${formatQty(item.planQty)}</td>
         <td class="promise-cell">${formatQty(item.promisedQty)}</td>
-        <td><input class="actual-arrival" type="number" min="0" value="${item.actualQty}" readonly aria-label="${escapeHtml(item.materialCode)} 实际数量"><div class="qty-diff ${diff ? 'negative' : ''}">${diff ? `${diff > 0 ? '缺' : '超'} ${formatQty(Math.abs(diff))}` : '持平'}</div></td>
+        <td style="text-align:right"><div class="actual-arrival">${formatQty(item.actualQty)}</div><div class="qty-diff ${diff ? 'negative' : ''}">${diff ? `${diff > 0 ? '缺' : '超'} ${formatQty(Math.abs(diff))}` : '持平'}</div></td>
         <td class="supplier-cell">${escapeHtml(item.voucher)}</td>
-      </tr>`;
+      </tr><tr class="receipt-batch-row"><td colspan="6">${receiptBatchesHtml(item, rec.kind)}</td></tr>`;
     }).join('')}</tbody>
   </table></div>`;
 }
@@ -778,10 +842,10 @@ function receiptMapHtml(rec) {
       <g class="map-label" opacity=".7"><text x="184" y="99">园区路</text><text x="424" y="184">物流大道</text><text x="326" y="42">沪昆高速</text><text x="572" y="213">宁波</text></g>
 
       <!-- Route casing and completed / remaining segments. -->
-      <path d="M92 196 C190 204 274 162 350 125 C430 86 498 78 548 70" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" opacity=".96"/>
-      <path d="M92 196 C190 204 274 162 350 125 C430 86 498 78 548 70" fill="none" stroke="#b8d6d2" stroke-width="5" stroke-linecap="round"/>
-      <path d="${delivered ? 'M92 196 C190 204 274 162 350 125 C430 86 498 78 548 70' : 'M92 196 C190 204 274 162 350 125'}" fill="none" stroke="url(#receiptRoute)" stroke-width="5" stroke-linecap="round"/>
-      ${delivered ? '' : '<path d="M350 125 C430 86 498 78 548 70" fill="none" stroke="#83bdb7" stroke-width="5" stroke-linecap="round" stroke-dasharray="4 8"/>'}
+      <path d="M92 196 L92 190 L170 190 L170 105 L548 105 L548 70" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" opacity=".96"/>
+      <path d="M92 196 L92 190 L170 190 L170 105 L548 105 L548 70" fill="none" stroke="#b8d6d2" stroke-width="5" stroke-linecap="round"/>
+      <path d="${delivered ? 'M92 196 L92 190 L170 190 L170 105 L548 105 L548 70' : 'M92 196 L92 190 L170 190 L170 105 L350 105'}" fill="none" stroke="url(#receiptRoute)" stroke-width="5" stroke-linecap="round"/>
+      ${delivered ? '' : '<path d="M350 105 L548 105 L548 70" fill="none" stroke="#83bdb7" stroke-width="5" stroke-linecap="round" stroke-dasharray="4 8"/>'}
 
       <!-- Compact start / destination nodes. -->
       <g transform="translate(92 196)" filter="url(#receiptShadow)"><circle r="10" fill="#fff" stroke="#15aa9e" stroke-width="3"/><circle r="3.5" fill="#15aa9e"/></g>
@@ -790,7 +854,7 @@ function receiptMapHtml(rec) {
       <text class="map-label strong" x="548" y="43" text-anchor="middle">博格华纳·宁波</text>
 
       <!-- Small live vehicle marker, sized as a status point rather than a hero icon. -->
-      <g transform="translate(${delivered ? 548 : 350} ${delivered ? 70 : 125})" filter="url(#receiptShadow)"><circle r="19" fill="none" stroke="#14b8a6" stroke-width="1.5" opacity=".22"><animate attributeName="r" values="18;25" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".24;0" dur="2s" repeatCount="indefinite"/></circle><circle r="15" fill="#fff" stroke="#0ea398" stroke-width="2.5"/><g transform="translate(-8 -5)" fill="#087f78"><rect y="2" width="11" height="7" rx="1.5"/><path d="M11 4h4.5l2.5 3.5V9h-7Z"/><circle cx="3.5" cy="11" r="1.7" fill="#334155"/><circle cx="14.5" cy="11" r="1.7" fill="#334155"/></g></g>
+      <g transform="translate(${delivered ? 548 : 350} ${delivered ? 70 : 105})" filter="url(#receiptShadow)"><circle r="19" fill="none" stroke="#14b8a6" stroke-width="1.5" opacity=".22"><animate attributeName="r" values="18;25" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".24;0" dur="2s" repeatCount="indefinite"/></circle><circle r="15" fill="#fff" stroke="#0ea398" stroke-width="2.5"/><g transform="translate(-8 -5)" fill="#087f78"><rect y="2" width="11" height="7" rx="1.5"/><path d="M11 4h4.5l2.5 3.5V9h-7Z"/><circle cx="3.5" cy="11" r="1.7" fill="#334155"/><circle cx="14.5" cy="11" r="1.7" fill="#334155"/></g></g>
     </svg>
   </div>`;
 }
@@ -812,17 +876,69 @@ function openReceiptDetail(dateKey, index, focusMap = false) {
   const apt = appointments[dateKey]?.[index];
   if (!apt) return;
   const rec = resolveMobileReceipt(apt);
+  currentReceiptDetail = rec;
   document.getElementById('receiptDetailBody').innerHTML = `
     ${receiptMetaHtml(rec)}
-    <div class="receipt-section-title">物料明细</div>${receiptItemsHtml(rec)}
-    <div class="receipt-section-title">物流地图与路线</div>${receiptMapHtml(rec)}
-    <div class="receipt-section-title">物流轨迹</div>${receiptTimelineHtml(rec)}`;
+    <div class="receipt-tabs" role="tablist" aria-label="预约详情">
+      <button id="receipt-route-tab" role="tab" aria-selected="true" aria-controls="receipt-route-panel" onclick="switchReceiptTab('route')" onkeydown="receiptTabKey(event, 'route')">物流路线</button>
+      <button id="receipt-items-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="receipt-items-panel" onclick="switchReceiptTab('items')" onkeydown="receiptTabKey(event, 'items')">物料明细</button>
+    </div>
+    <div id="receipt-route-panel" role="tabpanel" aria-labelledby="receipt-route-tab">
+      ${rec.kind === 'supplier' ? `<div class="receipt-route-empty"><div class="route-empty-icon" aria-hidden="true">⌁</div><strong>暂未接入物流路线</strong><p>本次预约为供应商直送，暂不提供路线与轨迹信息。</p><button class="btn-secondary" onclick="switchReceiptTab('items')">查看物料明细</button></div>` : `<div class="receipt-section-title">物流地图与路线</div><div class="route-demo-note">路线与轨迹为模拟展示，非实时定位</div>${receiptMapHtml(rec)}<div class="receipt-section-title">物流轨迹</div>${receiptTimelineHtml(rec)}`}
+    </div>
+    <div id="receipt-items-panel" role="tabpanel" aria-labelledby="receipt-items-tab" hidden>
+      <div class="receipt-filters">
+        <label>物料编号<input id="receiptMaterialQuery" type="search" placeholder="输入物料编号" oninput="filterReceiptItems()"></label>
+        <label>采购凭证<input id="receiptVoucherQuery" type="search" placeholder="输入采购凭证" oninput="filterReceiptItems()"></label>
+        <button class="btn" onclick="resetReceiptItems()">重置</button>
+      </div>
+      <div class="receipt-result-count" id="receiptResultCount" aria-live="polite">共 ${rec.items.length} 项物料</div>
+      <div id="receiptItemsResult">${receiptItemsHtml(rec)}</div>
+    </div>`;
   lastDetailTrigger = document.activeElement;
   const modal = document.getElementById('logisticsModal');
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
   modal.querySelector('.modal-close').focus();
-  if (focusMap) requestAnimationFrame(() => document.getElementById('receiptMapSection')?.scrollIntoView({ block: 'start' }));
+  document.getElementById('receiptDetailBody').scrollTop = 0;
+}
+
+function matchingReceiptItems(items, material, voucher) {
+  const m = String(material || '').trim().toLowerCase();
+  const v = String(voucher || '').trim().toLowerCase();
+  return items.filter(item => String(item.materialCode || '').toLowerCase().includes(m) && String(item.voucher || '').toLowerCase().includes(v));
+}
+
+function filterReceiptItems() {
+  if (!currentReceiptDetail) return;
+  const rec = currentReceiptDetail;
+  const items = matchingReceiptItems(rec.items, document.getElementById('receiptMaterialQuery').value, document.getElementById('receiptVoucherQuery').value);
+  document.getElementById('receiptResultCount').textContent = `共 ${rec.items.length} 项物料，匹配 ${items.length} 项`;
+  document.getElementById('receiptItemsResult').innerHTML = items.length ? receiptItemsHtml({...rec, items}) : '<div class="receipt-search-empty">没有匹配的物料，请调整条件或点击重置。</div>';
+}
+
+function resetReceiptItems() {
+  document.getElementById('receiptMaterialQuery').value = '';
+  document.getElementById('receiptVoucherQuery').value = '';
+  filterReceiptItems();
+}
+
+function switchReceiptTab(tab) {
+  ['route', 'items'].forEach(key => {
+    const active = key === tab;
+    const button = document.getElementById(`receipt-${key}-tab`);
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+    document.getElementById(`receipt-${key}-panel`).hidden = !active;
+  });
+}
+
+function receiptTabKey(event, current) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  const next = event.key === 'Home' ? 'route' : event.key === 'End' ? 'items' : current === 'route' ? 'items' : 'route';
+  switchReceiptTab(next);
+  document.getElementById(`receipt-${next}-tab`).focus();
 }
 
 function openLogisticsModal() {
