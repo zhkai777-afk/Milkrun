@@ -222,7 +222,7 @@
       pickupPerson: r.pickupPerson || pickupByAsn.get(r.asnNo)?.driver || '', pickupPhone: r.pickupPhone || '',
       vehiclePlate: r.vehiclePlate || r.plate || pickupByAsn.get(r.asnNo)?.plate || '',
       actionHistory: Array.isArray(r.actionHistory) ? r.actionHistory : [],
-      deliveryAppointmentDate: r.deliveryAppointmentDate || pickupByAsn.get(r.asnNo)?.eta || '', actualShipQty: r.actualShipQty,
+      deliveryAppointmentDate: r.deliveryAppointmentDate || pickupByAsn.get(r.asnNo)?.eta || '', actualShipQty: r.actualShipQty, dispatchQty: r.dispatchQty,
       batchDetails: Array.isArray(r.batchDetails) ? r.batchDetails : []
     }));
   }
@@ -232,6 +232,7 @@
     rows.forEach(row => {
       const r = map.get(row.id); if (!r) return;
       row.confirmQty = r.commitQtyNum;
+      if (r.dispatchQty != null) row.dispatchQty = Number(r.dispatchQty);
       row.deliveryMode = deliveryText(r.deliveryMethod);
       row.logistics = r.designatedLogistics || row.logistics || '';
       row.commitShipDate = r.commitShipDate || row.shipDate;

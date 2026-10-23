@@ -579,14 +579,14 @@
           <div class="stat-card-sub">计划与 ASN 承诺数量不一致</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-top"><span class="stat-card-label">待自提备货</span><div class="stat-card-icon teal"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div></div>
-          <div class="stat-card-value" style="color:var(--primary);" id="statSelf">0</div>
-          <div class="stat-card-sub">已确认待备货</div>
+          <div class="stat-card-top"><span class="stat-card-label">直送待预约</span><div class="stat-card-icon teal"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div></div>
+          <div class="stat-card-value" style="color:var(--primary);" id="statDirectPendingAppointment">0</div>
+          <div class="stat-card-sub">已确认直送，等待预约</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-top"><span class="stat-card-label">自提待取货</span><div class="stat-card-icon green"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 21 13 21 21 16 21 16 8"/><line x1="5" y1="12" x2="10" y2="12"/><line x1="4" y1="7" x2="8" y2="7"/></svg></div></div>
-          <div class="stat-card-value" style="color:var(--success);" id="statLogistics">0</div>
-          <div class="stat-card-sub">已推送物流商待取货</div>
+          <div class="stat-card-top"><span class="stat-card-label">自提待备货</span><div class="stat-card-icon green"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 21 13 21 21 16 21 16 8"/><line x1="5" y1="12" x2="10" y2="12"/><line x1="4" y1="7" x2="8" y2="7"/></svg></div></div>
+          <div class="stat-card-value" style="color:var(--success);" id="statSelfPendingStock">0</div>
+          <div class="stat-card-sub">已确认自提，等待备货</div>
         </div>
       </div>
       <div class="tab-bar" id="tabBar">
@@ -1192,8 +1192,8 @@
       function updateStats() {
         $('statPending').textContent = state.records.filter(r => r.status === 'pending').length;
         $('statPlatform').textContent = state.records.filter(r => r.status === 'factoryPending').length;
-        $('statSelf').textContent = state.records.filter(r => r.deliveryMethod === 'self' && r.status === 'confirmed').length;
-        $('statLogistics').textContent = state.records.filter(r => r.deliveryMethod === 'self' && r.status === 'awaitPickup').length;
+        $('statDirectPendingAppointment').textContent = state.records.filter(r => r.deliveryMethod === 'direct' && r.status === 'confirmed' && r.appointmentStatus !== 'scheduled').length;
+        $('statSelfPendingStock').textContent = state.records.filter(r => r.deliveryMethod === 'self' && r.status === 'confirmed').length;
       }
 
       // ===== 确认弹窗 =====
@@ -1268,14 +1268,14 @@
         return ((rec.actualPackagingSet && Number.isSafeInteger(value) && value >= 0) || value > 0) ? value : suggested;
       }
 
-      function packagingEditorHtml(rec) {
-        const suggested = suggestedPackagingCounts(rec);
+      function packagingEditorHtml(rec, qty = rec.commitQtyNum) {
+        const suggested = suggestedPackagingCounts(rec, qty);
         const boxCount = actualPackagingValue(rec, 'boxCount', suggested.boxCount);
         const palletCount = actualPackagingValue(rec, 'palletCount', suggested.palletCount);
         return '<div class="confirm-calc-pair">' +
           '<div><label class="confirm-calc-label" for="actualBox-'+rec.id+'">实际箱数</label><input class="confirm-calc-input actual-box-count" id="actualBox-'+rec.id+'" type="number" min="0" step="1" inputmode="numeric" value="'+boxCount+'" aria-label="'+rec.materialCode+' 实际箱数"></div>' +
           '<div><label class="confirm-calc-label" for="actualPallet-'+rec.id+'">实际托数</label><input class="confirm-calc-input actual-pallet-count" id="actualPallet-'+rec.id+'" type="number" min="0" step="1" inputmode="numeric" value="'+palletCount+'" aria-label="'+rec.materialCode+' 实际托数"></div>' +
-          '</div><div class="confirm-pack-standard">建议 '+formatInt(suggested.boxCount)+' 箱 · '+formatInt(suggested.palletCount)+' 托；标准 '+formatInt(rec.stdBoxQty)+'/箱 · '+formatInt(rec.stdPalletQty)+'/托</div>';
+          '</div><div class="confirm-pack-standard">标准装箱数：'+formatInt(suggested.boxCount)+' 箱 · 标准托数：'+formatInt(suggested.palletCount)+' 托</div>';
       }
 
       function readActualPackaging(container, materialCode) {
@@ -1897,27 +1897,27 @@
                 '<th class="material-col">物料信息</th><th class="date-col">计划发货日期</th><th class="date-col">计划到货日期</th>' +
                 '<th class="qty-col">计划发货数量</th><th class="qty-col">SAP 承诺发货数量</th>' +
                 (showSelfPickupFields ? '<th class="method-col">配送方式</th><th class="logistics-col">自提物流商</th>' : '') +
-                '<th class="calc-col">实际装箱/装托数量</th><th class="batch-col">批次号</th><th class="action-col">操作</th>' +
+                '<th class="qty-col">实际发货数量</th><th class="calc-col">实际装箱/装托数量</th><th class="batch-col">批次号</th><th class="action-col">操作</th>' +
               '</tr></thead><tbody>' + g.materials.map(r => {
           const cq = r.commitQtyNum;
           const dmCur = r.deliveryMethod || '';
           const suggested = suggestedPackagingCounts(r, cq);
           const boxCount = actualPackagingValue(r, 'boxCount', suggested.boxCount);
           const palletCount = actualPackagingValue(r, 'palletCount', suggested.palletCount);
-          return '<tr>' +
+          return '<tr data-dispatch-id="'+r.id+'">' +
             '<td><button type="button" class="confirm-material-code" data-material-desc="'+r.id+'" aria-label="查看物料 '+r.materialCode+' 的描述">'+r.materialCode+'</button><div class="confirm-material-po">采购凭证 '+(r.poNumber || '—')+'</div></td>' +
             '<td>'+r.shipDate+'</td>' +
             '<td>'+r.arriveDate+'</td>' +
             '<td class="qty-col">'+formatNumber(r.planQtyNum)+'</td>' +
             '<td class="qty-col"><span class="confirm-display-value qty">'+formatNumber(cq)+'</span></td>' +
             (showSelfPickupFields ? '<td><span class="delivery-method-value '+(dmCur ? '' : 'is-empty')+'">'+(dmCur==='self'?'自提':dmCur==='direct'?'直送':'未配置')+'</span></td><td><span class="confirm-display-value '+(dmCur==='self' ? '' : 'muted')+'">'+(dmCur==='self' ? (r.designatedLogistics || '未维护物流商') : '—')+'</span></td>' : '') +
-            '<td><div class="confirm-calc-pair"><div class="confirm-calc-value">'+formatInt(boxCount)+'<span>实际箱数</span></div><div class="confirm-calc-value">'+formatInt(palletCount)+'<span>实际托数</span></div></div><div class="confirm-pack-standard">标准 '+formatInt(r.stdBoxQty)+'/箱 · '+formatInt(r.stdPalletQty)+'/托</div></td>' +
+            dispatchEditorHtml(r) +
             '<td><span class="batch-summary '+(Array.isArray(r.batchDetails) && r.batchDetails.length ? '' : 'is-empty')+'">'+batchSummary(r)+'</span></td>' +
-            '<td><button type="button" class="batch-action" data-batch-edit="'+r.id+'">'+(r.status === 'confirmed' ? '维护批次' : '查看批次')+'</button></td>' +
+            '<td>'+(dispatchEditable(r) ? '<button type="button" class="batch-action" data-dispatch-save="'+r.id+'">保存数量</button> ' : '')+'<button type="button" class="batch-action" data-batch-edit="'+r.id+'">'+(r.status === 'confirmed' ? '维护批次' : '查看批次')+'</button></td>' +
           '</tr>';
         }).join('') +
               '</tbody></table></div>' +
-            '<div class="confirm-plan-help">SAP 承诺数量不可在此修改；实际装箱、装托数量由供应商确认时维护，标准装箱、装托数仅供核对。配送方式及指定物流商由供应商管理维护，预约时不可修改。</div>' +
+            '<div class="confirm-plan-help">SAP 承诺数量不可修改；实际发货数量默认等于承诺数量，修改后标准箱数、托数自动计算，实际箱数、托数可手动调整，点击“保存数量”生效。维护批次前请先保存数量。配送方式及指定物流商由供应商管理维护，预约时不可修改。</div>' +
           '</div>';
 
         const ids = g.materials.map(r => r.id);
@@ -1946,9 +1946,22 @@
         openModal('asnDetailModal');
       }
 
+      // 供应商维护的发货量独立保存，避免覆盖移动端登记的 actualShipQty。
+      function dispatchQuantity(r) {
+        return r.dispatchQty != null ? Number(r.dispatchQty) : Number(r.commitQtyNum || 0);
+      }
+      function dispatchEditable(r) {
+        return r.status === 'confirmed';
+      }
+      function dispatchEditorHtml(r) {
+        const disabled = dispatchEditable(r) ? '' : ' disabled';
+        return '<td><input class="confirm-calc-input dispatch-qty" type="number" min="0" step="0.001" value="'+dispatchQuantity(r)+'" aria-label="'+r.materialCode+' 实际发货数量"'+disabled+'></td>' +
+          '<td><fieldset style="border:0;padding:0;margin:0;min-width:0"'+disabled+'>'+packagingEditorHtml(r, dispatchQuantity(r))+'</fieldset></td>';
+      }
+
       function defaultBatchDetails(r) {
         if (Array.isArray(r.batchDetails) && r.batchDetails.length) return r.batchDetails;
-        return [{ batchNo: r.batchNo || '', quantity: r.commitQtyNum }];
+        return [{ batchNo: r.batchNo || '', quantity: dispatchQuantity(r) }];
       }
       function batchDetailRowsHtml(r, details, editable) {
         return details.map((detail, index) => editable
@@ -1968,7 +1981,7 @@
       function batchModalHtml(r, editable) {
         const details = defaultBatchDetails(r);
         const hasSavedDetails = Array.isArray(r.batchDetails) && r.batchDetails.length;
-        return '<div class="batch-editor-context"><div>物料编号<strong>'+r.materialCode+'</strong></div><div>采购凭证<strong>'+ (r.poNumber || '—') +'</strong></div><div>本次发货总数<strong>'+formatNumber(r.commitQtyNum)+'</strong></div></div>' +
+        return '<div class="batch-editor-context"><div>物料编号<strong>'+r.materialCode+'</strong></div><div>采购凭证<strong>'+ (r.poNumber || '—') +'</strong></div><div>本次发货总数<strong>'+formatNumber(dispatchQuantity(r))+'</strong></div></div>' +
           '<div class="batch-editor-body"><div data-batch-card="'+r.id+'">' +
           (editable ? '<div class="batch-detail-labels"><span>批次号 <b style="color:var(--danger)">*</b></span><span>批次数量 <b style="color:var(--danger)">*</b></span><span></span></div>' : '') +
           '<div class="batch-detail-rows">'+(!editable && !hasSavedDetails ? '<div class="batch-detail-readonly">暂未维护批次明细</div>' : batchDetailRowsHtml(r, details, editable))+'</div>' +
@@ -2003,7 +2016,7 @@
           saved.push({ batchNo: detail.batchNo, quantity });
         }
         const total = saved.reduce((sum, detail) => sum + detail.quantity, 0);
-        if (Math.abs(total - Number(r.commitQtyNum || 0)) > 1e-9) { setBatchCardError(card, '批次数量合计为 '+formatNumber(total)+'，需等于本次发货总数 '+formatNumber(r.commitQtyNum)); return false; }
+        if (total - dispatchQuantity(r) > 1e-9) { setBatchCardError(card, '批次数量合计为 '+formatNumber(total)+'，不能超过实际发货数量 '+formatNumber(dispatchQuantity(r))); return false; }
         r.batchDetails = saved; r.updateTime = fmtDt(new Date());
         persistRecords(); toast(r.materialCode + ' 批次明细已保存');
         return true;
@@ -2013,7 +2026,7 @@
           const r = state.records.find(item => item.id === id);
           const details = r && Array.isArray(r.batchDetails) ? r.batchDetails : [];
           const total = details.reduce((sum, detail) => sum + Number(detail.quantity || 0), 0);
-          if (!r || !details.length || details.some(detail => !detail.batchNo || !Number.isFinite(Number(detail.quantity)) || Number(detail.quantity) < 0) || Math.abs(total - Number(r.commitQtyNum || 0)) > 1e-9) {
+          if (!r || !details.length || details.some(detail => !detail.batchNo || !Number.isFinite(Number(detail.quantity)) || Number(detail.quantity) < 0) || Math.abs(total - dispatchQuantity(r)) > 1e-9) {
             toast('请先保存完整且数量合计一致的物料批次明细');
             return false;
           }
@@ -2096,7 +2109,33 @@
         else if (act === 'receive') { factoryReceive(ids); closeModal('asnDetailModal'); }
       });
 
+      $('asnDetailContent').addEventListener('input', e => {
+        if (!e.target.matches('.dispatch-qty')) return;
+        const row = e.target.closest('[data-dispatch-id]');
+        const r = state.records.find(r => r.id === row.dataset.dispatchId);
+        if (!r || !dispatchEditable(r) || e.target.value === '' || !e.target.validity.valid) return;
+        const suggested = suggestedPackagingCounts(r, Number(e.target.value));
+        row.querySelector('.confirm-pack-standard').textContent = '标准装箱数：'+formatInt(suggested.boxCount)+' 箱 · 标准托数：'+formatInt(suggested.palletCount)+' 托';
+      });
       $('asnDetailContent').addEventListener('click', e => {
+        const save = e.target.closest('[data-dispatch-save]');
+        if (save) {
+          const r = state.records.find(r => r.id === save.dataset.dispatchSave);
+          if (!r || !dispatchEditable(r)) return;
+          const row = save.closest('[data-dispatch-id]');
+          const input = row.querySelector('.dispatch-qty');
+          if (input.value === '' || !input.validity.valid || !Number.isFinite(Number(input.value))) { toast('实际发货数量需为非负数字，最多三位小数'); input.focus(); return; }
+          const packaging = readActualPackaging(row, r.materialCode);
+          if (!packaging) return;
+          const qty = Number(input.value);
+          const total = (r.batchDetails || []).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+          if (total > qty + 1e-9) { toast('已维护批次数量超过实际发货数量，请先调整批次'); return; }
+          r.dispatchQty = qty;
+          Object.assign(r, packaging, { actualPackagingSet: true, updateTime: fmtDt(new Date()) });
+          persistRecords(); toast('实际发货数量及箱托数量已保存');
+          return;
+        }
+
         const material = e.target.closest('[data-material-desc]');
         if (material) openMaterialDescription(material.dataset.materialDesc);
         const edit = e.target.closest('[data-batch-edit]');

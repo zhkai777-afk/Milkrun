@@ -697,7 +697,6 @@
       <div class="modal-head"><h3 id="reverseTitle">撤回计划</h3><button class="close-btn" type="button" data-close="reverseModal" aria-label="关闭"><svg class="icon" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14"/></svg></button></div>
       <div class="modal-body">
         <p class="confirm-copy" id="reverseText"></p>
-        <label class="field"><span>处理原因 <b class="required">*</b></span><textarea id="reverseReason" rows="3" maxlength="200" placeholder="请输入撤回原因"></textarea></label>
         <p class="form-hint">撤回后仅计划员可调整；ASN号保持不变，供应商将不能继续确认。</p>
       </div>
       <div class="modal-foot"><button class="btn" type="button" data-close="reverseModal">取消</button><button class="btn btn-danger" id="reverseConfirmBtn" type="button">确认撤回</button></div>
@@ -1748,19 +1747,16 @@
         const row = state.rows.find(r => r.id === id && r.status === 'supplier_pending');
         if (!row) return;
         state.pendingReverseId = id;
-        $('reverseReason').value = '';
         $('reverseText').textContent = `撤回物料「${row.materialCode}」后，供应商无法继续确认；计划将转为“待计划员调整”，ASN号保持不变。`;
         openModal('reverseModal');
       }
 
       function doReverse() {
         const row = state.rows.find(r => r.id === state.pendingReverseId);
-        const reason = $('reverseReason').value.trim();
         if (!row || row.status !== 'supplier_pending') { closeModal('reverseModal'); return; }
-        if (!reason) { toast('请输入撤回原因', 'error'); $('reverseReason').focus(); return; }
         const now = formatNow();
         if (!row.actionHistory) row.actionHistory = [];
-        row.actionHistory.push({ type: 'planner_withdrawn', label: '计划员撤回待调整', byRole: '工厂计划员', by: row.planner || '计划员', time: now, reason, fromStatus: 'supplier_pending', toStatus: 'planner_adjustment', revisionNo: Number(row.revisionNo || 0) });
+        row.actionHistory.push({ type: 'planner_withdrawn', label: '计划员撤回待调整', byRole: '工厂计划员', by: row.planner || '计划员', time: now, fromStatus: 'supplier_pending', toStatus: 'planner_adjustment', revisionNo: Number(row.revisionNo || 0) });
         row.status = 'planner_adjustment';
         row.updatedAt = now;
         state.pendingReverseId = null;

@@ -127,14 +127,7 @@
     .stat-card-icon.teal { background: var(--primary-soft); color: var(--primary); }
     .stat-card-icon.amber { background: var(--warning-soft); color: var(--warning); }
     .stat-card-icon.green { background: var(--success-soft); color: var(--success); }
-    .stat-card-value { font-size: 30px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
-    .stat-card-sub { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .stat-card-sub .count {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 1px 7px; border-radius: 10px;
-      background: var(--primary-soft); color: var(--primary);
-      font-size: 11px; font-weight: 600;
-    }
+    .stat-card-value { font-size: 30px; font-weight: 700; line-height: 1; }
 
     .tab-bar {
       display: flex; gap: 0;
@@ -407,7 +400,7 @@
             <div class="stat-card-icon teal"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="5" width="16" height="14" rx="2"/><path d="M21 9v6l-2 2v2h-2v-1H8v1H6v-2l-2-2V9"/><circle cx="7" cy="15" r="1.5"/><circle cx="14" cy="15" r="1.5"/></svg></div>
           </div>
           <div class="stat-card-value" id="statTodayPickup" style="color:var(--primary);">0</div>
-          <div class="stat-card-sub">今日已取货计划数 <span class="count" id="statTodayPicked">0</span></div>
+
         </div>
         <div class="stat-card">
           <div class="stat-card-top">
@@ -415,7 +408,7 @@
             <div class="stat-card-icon blue"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
           </div>
           <div class="stat-card-value" id="statTodaySuppliers" style="color:var(--info);">0</div>
-          <div class="stat-card-sub">7天待取货 <span class="count" id="statWeekPickup">0</span></div>
+
         </div>
         <div class="stat-card">
           <div class="stat-card-top">
@@ -423,7 +416,7 @@
             <div class="stat-card-icon amber"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 21 13 21 21 16 21 16 8"/><line x1="5" y1="12" x2="10" y2="12"/><line x1="4" y1="7" x2="8" y2="7"/></svg></div>
           </div>
           <div class="stat-card-value" id="statYesterdayDeliver" style="color:var(--warning);">0</div>
-          <div class="stat-card-sub">昨日送货供应商数 <span class="count" id="statYesterdaySuppliers">0</span></div>
+
         </div>
         <div class="stat-card">
           <div class="stat-card-top">
@@ -431,7 +424,7 @@
             <div class="stat-card-icon green"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
           </div>
           <div class="stat-card-value" id="statYesterdayDispatched" style="color:var(--success);">0</div>
-          <div class="stat-card-sub">已超期取货 <span class="count" id="statOverduePickup">0</span></div>
+
         </div>
       </div>
 
@@ -628,16 +621,16 @@
         return [...new Set((rec?.items || []).map(row => row.warehouseArea || '1号库区'))];
       }
 
-      // 供应商确认“自提”后即进入物流商自提预约；取货登记完成后进入取货记录。
+      // 自提ASN全部物料完成备货后才进入物流商预约；历史已取货记录继续保留。
       function loadSelfPickupRecords() {
         const pickupRows = LogisticsFlow.loadRows().filter(r => LogisticsFlow.deliveryText(r.deliveryMode) === '自提');
         return LogisticsFlow.byAsn(pickupRows)
-          .filter(g => g.items.every(r => ['pending_shipment','in_transit','received'].includes(r.status)))
+          .filter(g => g.items.every(r => ['in_transit','received'].includes(r.status) || (r.status === 'pending_shipment' && Boolean(r.stockReadyTime))))
           .map(g => {
             const picked = g.items.some(r => r.status === 'in_transit' || r.status === 'received');
             const appointmentDate = g.deliveryAppointmentDate || '';
             const stockReady = g.items.every(r => Boolean(r.stockReadyTime));
-            const statusCode = picked ? 'picked' : (stockReady ? 'ready' : (appointmentDate ? 'scheduled' : 'pending'));
+            const statusCode = picked ? 'picked' : (appointmentDate ? 'ready' : 'pending');
             return {
               id:g.asnNo, asnNo:g.asnNo, commitShipDate:g.shipDate, commitArriveDate:g.arrivalDate,
               supplierName:g.supplierName, supplierCode:g.supplierCode, materialCode:g.asnNo,
@@ -692,7 +685,7 @@
       function statusCell(r) {
         if (r.statusCode === 'picked') return '<span class="status-pill done">已取货' + (r.vehiclePlate ? ' · ' + escapeHtml(r.vehiclePlate) : '') + '</span>';
         if (r.statusCode === 'ready') return '<span class="status-pill ready">待取货</span>';
-        if (r.statusCode === 'scheduled') return '<span class="status-pill scheduled">已预约·待备货</span>';
+        if (r.statusCode === 'scheduled') return '<span class="status-pill scheduled">已预约·待取货</span>';
         return '<span class="status-pill pending">待预约</span>';
       }
 
@@ -748,13 +741,9 @@
         const pending = state.records.filter(r => r.flowStatus === 'pending');
         const picked = state.records.filter(r => r.flowStatus === 'picked');
         $('statTodayPickup').textContent = pending.filter(r => r.commitShipDate === today).length;
-        $('statTodayPicked').textContent = picked.filter(r => r.commitShipDate === today).length;
         $('statTodaySuppliers').textContent = new Set(pending.filter(r => r.commitShipDate === today).map(r => r.supplierCode)).size;
-        $('statWeekPickup').textContent = pending.length;
         $('statYesterdayDeliver').textContent = picked.length;
-        $('statYesterdaySuppliers').textContent = new Set(picked.map(r => r.supplierCode)).size;
         $('statYesterdayDispatched').textContent = picked.filter(r => r.vehiclePlate).length;
-        $('statOverduePickup').textContent = pending.filter(r => r.commitShipDate && r.commitShipDate < today).length;
       }
 
       function updateTabCounts() {
@@ -818,6 +807,7 @@
         if (!$('appointmentDrivers').children.length) addDriverRow();
       });
       function openAppointment(asnNo) {
+        refreshRecords();
         const rec = state.records.find(r => r.asnNo === asnNo && r.flowStatus === 'pending');
         if (!rec) return;
         state.activeAppointmentAsn = asnNo;
@@ -893,6 +883,12 @@
         const afterBooked = bookedAppointmentQty(date, areas, asnNo) + appointmentQty(rec);
         if (afterBooked > capacity) { toast('所选日期剩余数量不足，请选择其他日期'); return; }
         const rows = LogisticsFlow.loadRows();
+        const candidates = rows.filter(row => row.asnNo === asnNo && LogisticsFlow.deliveryText(row.deliveryMode) === '自提');
+        if (!candidates.length || !candidates.every(row => row.status === 'pending_shipment' && Boolean(row.stockReadyTime))) {
+          toast('该 ASN 尚未全部完成备货或状态已变化，请刷新后重试');
+          refreshRecords();
+          return;
+        }
         let changed = 0;
         rows.forEach(row => {
           if (row.asnNo !== asnNo || LogisticsFlow.deliveryText(row.deliveryMode) !== '自提' || row.status !== 'pending_shipment') return;
