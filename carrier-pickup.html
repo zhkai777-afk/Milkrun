@@ -93,6 +93,7 @@
       padding: 14px; box-shadow: var(--shadow-sm); cursor: pointer;
       transition: border-color .15s, background .15s;
     }
+    .pend-item:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .pend-item:has(input:checked) { border-color: var(--warning); background: var(--warning-soft); }
     .pend-check { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--warning); flex-shrink: 0; }
     .pend-body { flex: 1; min-width: 0; }
@@ -157,9 +158,22 @@
     .material-qty-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
     .qty-readonly span, .qty-input label { display: block; color: var(--text-3); font-size: 11px; margin-bottom: 4px; }
     .qty-readonly strong { display: block; min-height: 44px; line-height: 44px; color: var(--text); font-size: 15px; }
+    .qty-input input { width: 100%; min-width: 0; min-height: 44px; padding: 9px 10px; border: 1px solid var(--border-strong); border-radius: 7px; color: var(--text); font-size: 15px; text-align: right; background: var(--surface); outline: none; }
+    .qty-input input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); }
+    .qty-readonly small { display: block; font-size: 11px; color: var(--text-2); overflow-wrap: anywhere; }
+    .material-qty-row > div { min-width: 0; }
+    .batch-value { min-height: 44px; padding: 10px; border: 1px solid var(--border); border-radius: 7px; text-align: right; font-size: 15px; }
+    #ssList .ss-item { display: block; }
     .batch-section { border-top: 1px dashed var(--border); margin-top: 10px; padding-top: 10px; }
     .batch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .batch-head span { color: var(--text-3); font-size: 11px; }
+    .driver-table-wrap { margin-bottom: 16px; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    .driver-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+    .driver-table th, .driver-table td { padding: 10px 12px; text-align: left; overflow-wrap: anywhere; }
+    .driver-table th { background: var(--muted); color: var(--text-3); font-weight: 500; border-bottom: 1px solid var(--border); }
+    .driver-table th:first-child { width: 48px; }
+    .driver-table td { border-bottom: 1px solid var(--border); }
+    .driver-table tr:last-child td { border-bottom: 0; }
     .detail-record { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
     .detail-record-item { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; background: var(--muted); min-width: 0; }
     .detail-record-item.full { grid-column: 1 / -1; }
@@ -300,9 +314,11 @@
       </button>
     </div>
     <div class="sheet-body">
-      <div class="sel-summary">
-        <div class="ss-head"><span>ASN 物料明细（取货数量）</span><span id="ssCount"></span></div>
-        <div class="field-row" style="margin-top:10px"><div class="field"><label for="materialSearch">物料编号</label><input id="materialSearch" type="search" placeholder="输入物料编号"></div><div class="field"><label for="voucherSearch">采购凭证</label><input id="voucherSearch" type="search" placeholder="输入采购凭证"></div></div><div id="materialSearchEmpty" hidden>无匹配物料</div><div class="ss-list" id="ssList"></div>
+      <div class="asn-summary" id="pickupSummary"></div>
+      <div class="material-section">
+        <div class="material-head"><h3>ASN 物料清单</h3><span id="ssCount"></span></div>
+        <div class="search-fields"><input id="materialSearch" type="search" placeholder="物料编号" aria-label="物料编号"><input id="voucherSearch" type="search" placeholder="采购凭证" aria-label="采购凭证"></div>
+        <div id="materialSearchEmpty" class="empty-state" hidden>无匹配物料</div><div class="material-list" id="ssList"></div>
       </div>
       <div class="field">
         <label>ASN号<span class="req">*</span></label>
@@ -367,13 +383,13 @@
     </div>
     <div class="sheet-body">
       <div class="asn-summary" id="detailSummary"></div>
+      <div class="driver-table-wrap" id="detailDrivers"></div>
       <div class="material-section">
-        <div class="material-head"><h3>取货物料</h3><span id="detailCount"></span></div>
+        <div class="material-head"><h3>ASN 物料清单</h3><span id="detailCount"></span></div>
         <div class="search-fields"><input id="detailMaterialSearch" type="search" placeholder="物料编号" aria-label="物料编号模糊查询"><input id="detailVoucherSearch" type="search" placeholder="采购凭证" aria-label="采购凭证模糊查询"></div>
         <div id="detailSearchEmpty" class="empty-state" hidden>没有符合条件的物料</div>
         <div class="material-list" id="detailList"></div>
       </div>
-      <div class="detail-record" id="detailRecord"></div>
     </div>
   </div>
 
@@ -485,8 +501,8 @@
         list.innerHTML = `<div class="empty-state">${asnQuery() ? '无匹配 ASN' : '暂无可取货 ASN'}<br><span style="display:block;margin-top:6px;font-size:12px;">需先由物流商完成自提送货预约，并由供应商完成备货。</span></div>`;
       } else {
         list.innerHTML = pending.map(g => `
-          <label class="pend-item">
-            <input type="checkbox" class="pend-check" value="${escapeHtml(g.asnNo)}" ${selected.has(g.asnNo) ? 'checked' : ''}>
+          <div class="pend-item" role="button" tabindex="0" data-asn-no="${escapeHtml(g.asnNo)}" aria-label="查看 ${escapeHtml(g.asnNo)} 的待取货详情">
+            <input type="checkbox" class="pend-check" aria-label="选择 ${escapeHtml(g.asnNo)}" value="${escapeHtml(g.asnNo)}" ${selected.has(g.asnNo) ? 'checked' : ''}>
             <div class="pend-body">
               <div class="pend-top">
                 <span class="pend-code">${escapeHtml(g.asnNo)}</span>
@@ -495,7 +511,7 @@
               <div class="pend-sub">${escapeHtml(g.supplierName)} · ${g.items.length} 种物料</div>
               <div class="pend-meta">计划发货 ${escapeHtml(g.shipDate || '-')} · 计划到货 ${escapeHtml(g.arrivalDate || '-')}<span class="pend-tag transfer">自提</span></div>
             </div>
-          </label>`).join('');
+          </div>`).join('');
       }
       updateBar();
       updateSelectAll();
@@ -512,6 +528,16 @@
       sa.checked = pending.length > 0 && selected.has(pending[0].asnNo);
     }
 
+    document.getElementById('pendList').addEventListener('click', e => {
+      if (e.target.closest('.pend-check')) return;
+      const card = e.target.closest('.pend-item');
+      if (card) openPendingDetail(card.dataset.asnNo);
+    });
+    document.getElementById('pendList').addEventListener('keydown', e => {
+      if (e.target.closest('.pend-check')) return;
+      const card = e.target.closest('.pend-item');
+      if (card && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openPendingDetail(card.dataset.asnNo); }
+    });
     document.getElementById('pendList').addEventListener('change', e => {
       if (e.target.classList.contains('pend-check')) {
         selected.clear(); if (e.target.checked) selected.add(e.target.value); renderPending();
@@ -528,6 +554,14 @@
       if (tab) switchTab(tab.dataset.tab);
     });
 
+    function pickupBatchRows(item) {
+      return Array.isArray(item.batchDetails) && item.batchDetails.length ? item.batchDetails : [{ batchNo: '', quantity: item.dispatchQty ?? item.confirmQty ?? item.promisedQty ?? item.planQty ?? 0 }];
+    }
+    function pickupSummaryHtml(rec, supplier, appointment, arrival) {
+      return `<div class="asn-summary-code">${escapeHtml(rec.asnNo || rec.no || '-')}</div>
+        <div class="asn-summary-supplier">${escapeHtml(supplier || '-')}</div>
+        <div class="asn-summary-meta"><span>预约送货日期<b>${escapeHtml(appointment || '-')}</b></span><span>计划到货日期<b>${escapeHtml(arrival || '-')}</b></span></div>`;
+    }
     function openSheet() {
       const group = getSelectedItems()[0];
       if (!group) { toast('请先选择待取货 ASN'); return; }
@@ -537,7 +571,7 @@
       document.getElementById('carrier').value = logistics.length === 1 ? logistics[0] : '';
       document.getElementById('relSupplier').value = items[0].supplierName || '';
       document.getElementById('plate').value = group.vehiclePlate || '';
-      document.getElementById('driver').value = Array.isArray(group.drivers) ? group.drivers.map(d => [d.name,d.phone].filter(Boolean).join(' ')).join('；') : [group.pickupPerson, group.pickupPhone].filter(Boolean).join(' ');
+      document.getElementById('driver').value = Array.isArray(group.drivers) ? group.drivers.map(d => [d.plate || d.vehiclePlate,d.name,d.phone].filter(Boolean).join(' ')).join('；') : [group.pickupPerson, group.pickupPhone].filter(Boolean).join(' ');
       document.getElementById('trackNo').value = '';
       document.getElementById('deliveryDate').value = group.deliveryAppointmentDate || group.arrivalDate || '';
       document.getElementById('pickDate').value = group.shipDate || '';
@@ -545,8 +579,17 @@
       document.getElementById('remark').value = '';
       document.getElementById('materialSearch').value = ''; document.getElementById('voucherSearch').value = ''; document.getElementById('materialSearchEmpty').hidden = true;
       document.getElementById('ssCount').textContent = items.length + ' 种物料';
-      document.getElementById('ssList').innerHTML = items.map((i, index) => (Array.isArray(i.batchDetails) && i.batchDetails.length ? i.batchDetails : [{ batchNo:'', quantity:'' }]).map((detail, batchIndex) => `
-        <div class="ss-item" data-material="${escapeHtml(i.materialCode || '')}" data-voucher="${escapeHtml(i.voucher || '')}"><span>${escapeHtml(i.materialCode)} · 采购凭证 ${escapeHtml(i.voucher || '—')} · 批次 ${escapeHtml(detail.batchNo || '暂未维护')}<br><span style="color:var(--text-3)">批次数量：${escapeHtml(formatNum(detail.quantity))}</span></span><input id="actual_${index}_${batchIndex}" type="number" min="0" step="any" value="${Number(detail.quantity)||0}" aria-label="${escapeHtml(i.materialCode)} ${escapeHtml(detail.batchNo || '未维护批次')} 实际取货数量" style="width:110px;padding:7px;border:1px solid #d9e2dc;border-radius:6px;text-align:right"></div>`).join('')).join('');
+      document.getElementById('pickupSummary').innerHTML = pickupSummaryHtml(group, group.supplierName, group.deliveryAppointmentDate, group.arrivalDate);
+      document.getElementById('ssList').innerHTML = items.map((i, index) => `
+        <div class="material-card ss-item" data-material="${escapeHtml(i.materialCode || '')}" data-voucher="${escapeHtml(i.voucher || '')}">
+          <div class="material-card-head"><div class="material-code">${escapeHtml(i.materialCode || '-')}</div><span class="material-index">${index + 1}/${items.length}</span></div>
+          <div class="material-voucher">采购凭证：${escapeHtml(i.voucher || '-')}</div>
+          <div class="batch-section"><div class="batch-head"><span>批次取货明细</span></div>${pickupBatchRows(i).map((detail, batchIndex) => `
+            <div class="material-qty-row">
+              <div class="qty-readonly"><span>批次号</span><strong>${escapeHtml(detail.batchNo || '暂未维护')}</strong><small>${i.batchDetails?.length ? '批次数量' : '实际发货数量'} ${escapeHtml(formatNum(detail.quantity))}</small></div>
+              <div class="qty-input"><label for="actual_${index}_${batchIndex}">实际取货数量</label><input id="actual_${index}_${batchIndex}" type="number" min="0" step="any" inputmode="decimal" value="${Number(detail.quantity)||0}" aria-label="${escapeHtml(i.materialCode)} ${escapeHtml(detail.batchNo || '无批次')} 实际取货数量"></div>
+            </div>`).join('')}</div>
+        </div>`).join('');
       document.getElementById('sheetMask').classList.add('show');
       document.getElementById('sheet').classList.add('show');
     }
@@ -572,7 +615,17 @@
       const savedBatchDetails = [];
       for (let index = 0; index < items.length; index++) {
         const details = Array.isArray(items[index].batchDetails) ? items[index].batchDetails : [];
-        if (!details.length || details.some(detail => !String(detail.batchNo || '').trim() || !Number.isFinite(Number(detail.quantity)) || Number(detail.quantity) < 0)) {
+        if (!details.length) {
+          const input = document.getElementById('actual_' + index + '_0');
+          const value = Number(input.value);
+          if (input.value === '' || !Number.isFinite(value) || value < 0) {
+            input.focus(); toast('请填写有效的实际取货数量'); return;
+          }
+          quantities[index] = value;
+          savedBatchDetails[index] = [];
+          continue;
+        }
+        if (details.some(detail => !String(detail.batchNo || '').trim() || !Number.isFinite(Number(detail.quantity)) || Number(detail.quantity) < 0)) {
           toast('请由供应商先维护完整的批次明细'); return;
         }
         const actualDetails = [];
@@ -655,14 +708,24 @@
     function displayQty(value) {
       return value == null || value === '' || !Number.isFinite(Number(value)) ? '-' : formatNum(value);
     }
+    function openPendingDetail(asnNo) {
+      const group = getPending().find(item => item.asnNo === asnNo);
+      if (!group) { toast('该 ASN 状态已变化，请刷新后重试'); return; }
+      renderPickupDetail({ ...group, relSupplier: group.supplierName }, true);
+    }
     function openShippedDetail(pickupNo, asnNo) {
       const rec = loadDeliveries().find(item => String(item.pickupNo || '') === String(pickupNo || '') && String(item.asnNo || item.no || '') === String(asnNo || ''));
       if (!rec) { toast('未找到该取货记录'); return; }
+      renderPickupDetail(rec, false);
+    }
+    function pickupDriversHtml(rec) {
+      const drivers = Array.isArray(rec.drivers) && rec.drivers.length ? rec.drivers : [{ plate: rec.vehiclePlate || rec.plate, name: rec.pickupPerson || rec.driver, phone: rec.pickupPhone }];
+      return `<table class="driver-table" aria-label="车辆与司机信息"><thead><tr><th>序号</th><th>车牌号</th><th>司机姓名</th><th>联系方式</th></tr></thead><tbody>${drivers.map((driver, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(driver.plate || driver.vehiclePlate || (drivers.length === 1 ? rec.vehiclePlate || rec.plate : '') || '未填写')}</td><td>${escapeHtml(driver.name || '未填写')}</td><td>${escapeHtml(driver.phone || '未填写')}</td></tr>`).join('')}</tbody></table>`;
+    }
+    function renderPickupDetail(rec, pending) {
       const items = Array.isArray(rec.items) ? rec.items : [];
-      document.getElementById('detailTitle').textContent = '取货详情 · ' + (rec.asnNo || rec.no || '-');
-      document.getElementById('detailSummary').innerHTML = `
-        <div class="asn-summary-code">${escapeHtml(rec.asnNo || rec.no || '-')}</div>
-        <div class="asn-summary-supplier">${escapeHtml(rec.relSupplier || items[0]?.supplierName || '-')}</div>`;
+      document.getElementById('detailTitle').textContent = (pending ? '待取货详情 · ' : '取货详情 · ') + (rec.asnNo || rec.no || '-');
+      document.getElementById('detailSummary').innerHTML = pickupSummaryHtml(rec, rec.relSupplier || items[0]?.supplierName, pending ? rec.deliveryAppointmentDate : rec.eta, rec.arrivalDate || items[0]?.arrivalDate);
       document.getElementById('detailCount').textContent = items.length + ' 种物料';
       document.getElementById('detailList').innerHTML = items.length ? items.map((item, index) => `
         <div class="material-card">
@@ -670,14 +733,13 @@
           <div class="material-voucher">采购凭证：${escapeHtml(item.voucher || '-')}</div>
           <div class="material-qty-row">
             <div class="qty-readonly"><span>承诺发货数量</span><strong>${escapeHtml(displayQty(item.promisedQty))}</strong></div>
-            <div class="qty-readonly"><span>实际取货数量</span><strong>${escapeHtml(displayQty(item.actualShipQty))}</strong></div>
+            <div class="qty-readonly"><span>${pending ? '实际发货数量' : '实际取货数量'}</span><strong>${escapeHtml(displayQty(pending ? (item.dispatchQty ?? item.confirmQty ?? item.promisedQty ?? item.planQty) : item.actualShipQty))}</strong></div>
           </div>
-          <div class="batch-section"><div class="batch-head"><span>批次号 / 批次数量</span></div><div class="material-voucher">${escapeHtml(displayBatchDetails(item) || '-')}</div></div>
+          <div class="batch-section"><div class="batch-head"><span>批次取货明细</span></div>${pickupBatchRows(item).map(detail => `
+            <div class="material-qty-row"><div class="qty-readonly"><span>批次号</span><strong>${escapeHtml(detail.batchNo || '暂未维护')}</strong><small>${item.batchDetails?.length ? '批次数量' : (pending ? '实际发货数量' : '承诺发货数量')} ${escapeHtml(displayQty(detail.quantity))}</small></div>
+            <div class="qty-readonly"><span>${pending ? '实际发货数量' : '实际取货数量'}</span><div class="batch-value">${escapeHtml(displayQty(pending ? detail.quantity : (item.batchDetails?.length ? detail.actualShipQty : item.actualShipQty)))}</div></div></div>`).join('')}</div>
         </div>`).join('') : '<div class="empty-state">该记录未保存物料明细</div>';
-      document.getElementById('detailRecord').innerHTML = `
-        <div class="detail-record-item"><span>取货单号</span><b>${escapeHtml(rec.pickupNo || '-')}</b></div>
-        <div class="detail-record-item"><span>登记时间</span><b>${escapeHtml(rec.time || '-')}</b></div>
-        <div class="detail-record-item full"><span>备注</span><b>${escapeHtml(rec.remark || '-')}</b></div>`;
+      document.getElementById('detailDrivers').innerHTML = pickupDriversHtml(rec);
       document.getElementById('detailMask').classList.add('show');
       document.getElementById('detailSheet').classList.add('show');
       setupMaterialSearch('detail', items);

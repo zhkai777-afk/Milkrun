@@ -2026,7 +2026,8 @@
           const r = state.records.find(item => item.id === id);
           const details = r && Array.isArray(r.batchDetails) ? r.batchDetails : [];
           const total = details.reduce((sum, detail) => sum + Number(detail.quantity || 0), 0);
-          if (!r || !details.length || details.some(detail => !detail.batchNo || !Number.isFinite(Number(detail.quantity)) || Number(detail.quantity) < 0) || Math.abs(total - dispatchQuantity(r)) > 1e-9) {
+          if (r && !details.length) continue;
+          if (!r || details.some(detail => !detail.batchNo || !Number.isFinite(Number(detail.quantity)) || Number(detail.quantity) < 0) || Math.abs(total - dispatchQuantity(r)) > 1e-9) {
             toast('请先保存完整且数量合计一致的物料批次明细');
             return false;
           }

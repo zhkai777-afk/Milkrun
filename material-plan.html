@@ -143,11 +143,8 @@
     /* 待发货页签：同样隐藏实际到货相关列 */
     .tab-pending_shipment .col-arrival,
     .tab-pending_shipment .col-arrivalgap { display: none; }
-    /* 运输中页签：实际到货列切换为「发货」口径（仅表头文案变化，数据列不变） */
-    .tab-in_transit .col-arrival .hd-arrival,
-    .tab-in_transit .col-arrivalgap .hd-arrival { display: none; }
-    .tab-in_transit .col-arrival .hd-ship,
-    .tab-in_transit .col-arrivalgap .hd-ship { display: inline; }
+    /* 运输中页签：保留实际发货数量，不展示实际发货缺口列。 */
+    .tab-in_transit .col-arrivalgap { display: none; }
     /* 发货登记日期：默认隐藏，仅运输中 / 已收货显示 */
     .col-shipreg { display: none; }
     .tab-in_transit .col-shipreg,
@@ -521,8 +518,8 @@
                 <th class="col-num">计划发货数量</th>
                 <th class="col-num">承诺发货数量<span class="th-sub">ASN导入数量</span></th>
                 <th class="col-num">计划与承诺差异</th>
-                <th class="col-num col-arrival"><span class="hd-arrival">实际到货数量</span><span class="hd-ship">实际发货数量</span></th>
-                <th class="col-num col-arrivalgap"><span class="hd-arrival">实际到货缺口</span><span class="hd-ship">实际发货缺口</span></th>
+                <th class="col-num col-arrival">实际发货数量</th>
+                <th class="col-num col-arrivalgap">实际收货数量</th>
                 <th class="col-time col-shipreg">发货登记日期</th>
                 <th class="col-num">标准装箱数量</th>
                 <th class="col-num">标准装托数量</th>
@@ -1120,7 +1117,7 @@
       }
 
       function displayedActualQty(row) {
-        return state.activeTab === 'in_transit' ? row.actualShipQty : row.actualArrivalQty;
+        return row.actualShipQty;
       }
 
       function gapTag(row) {
@@ -1252,7 +1249,7 @@
                 <td class="col-num">${formatNumber(r.promisedQty)}${(gap !== null && gap > 0) ? ' <span class="warn-tag">承诺不足</span>' : ''}${isAdjusted(r) ? ` <button class="adj-badge" data-history="${r.id}" type="button">已调整</button>` : ''}</td>
                 <td class="col-num">${diffHtml}</td>
                 <td class="col-num col-arrival">${formatNumber(displayedActualQty(r))}</td>
-                <td class="col-num col-arrivalgap">${actualGapTag(r)}</td>
+                <td class="col-num col-arrivalgap">${formatNumber(r.actualArrivalQty)}</td>
                 <td class="col-time col-shipreg">${escapeHtml(r.shipmentRegDate || '')}</td>
                 <td class="col-num">${formatNumber(r.perBoxQty)}</td>
                 <td class="col-num">${formatNumber(r.perPalletQty)}</td>

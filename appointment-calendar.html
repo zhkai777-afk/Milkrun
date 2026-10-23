@@ -773,7 +773,7 @@ function receiptMetaHtml(rec) {
     ['ASN号', rec.asnNo || rec.no || '-'],
     ['类型', rec.mode],
     [rec.kind === 'supplier' ? '供应商' : '物流商', rec.kind === 'supplier' ? rec.supplier : rec.carrier],
-    [rec.kind === 'supplier' ? '预计到货' : '预计取货', rec.eta]
+    ['预计到货', rec.eta]
   ];
   if (rec.kind === 'carrier') {
     if (rec.supplier) fields.push(['关联供应商', rec.supplier]);

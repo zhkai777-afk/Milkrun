@@ -268,7 +268,11 @@
     .appointment-capacity-row.over-limit .remaining { color: var(--danger); }
     .appointment-capacity-empty { padding: 9px 0 2px; color: var(--text-3); font-size: 12px; }
     #asnDetailMaterialBody tr[hidden] { display: none; }
-    .driver-entry { margin: 0 24px; align-items: end; }
+    .vehicle-table-wrap { margin: 0 24px 12px; overflow-x: auto; }
+    .vehicle-table { width: 100%; min-width: 620px; border-collapse: collapse; }
+    .vehicle-table th, .vehicle-table td { padding: 10px 12px; border: 1px solid var(--border); text-align: left; }
+    .vehicle-table th { background: var(--canvas); color: var(--text-2); font-size: 12px; }
+    .vehicle-table th:last-child { width: 80px; }
     #addAppointmentDriver { margin: 0 24px 12px; }
     .appointment-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
     .appointment-field label { color: var(--text-2); font-size: 12px; font-weight: 500; }
@@ -508,14 +512,13 @@
           <div class="appointment-capacity-card" id="logisticsCapacityCard" aria-live="polite"></div>
         </div>
         <div class="section-title-bar">车辆与司机信息</div>
-        <div class="appointment-form-row vehicle-form-row">
-          <div class="appointment-field">
-            <label for="appointmentPlate"><span style="color:var(--danger);">*</span> 送货车牌号</label>
-            <input type="text" id="appointmentPlate" placeholder="如 浙B·12345" autocomplete="off">
-          </div>
+        <div class="vehicle-table-wrap">
+          <table class="vehicle-table" aria-label="车辆与司机信息">
+            <thead><tr><th><span style="color:var(--danger);">*</span> 车牌号</th><th>司机姓名（选填）</th><th>联系方式（选填）</th><th>操作</th></tr></thead>
+            <tbody id="appointmentDrivers"></tbody>
+          </table>
         </div>
-        <div id="appointmentDrivers"></div>
-        <button type="button" class="btn" id="addAppointmentDriver">添加司机</button>
+        <button type="button" class="btn" id="addAppointmentDriver">添加车辆</button>
         <div class="vehicle-hint">确认预约后，预约日期、车牌号及已填写的司机信息将按 ASN 同步至供应商端，并带入后续取货登记。</div>
         <div class="section-title-bar">ASN 物料明细</div>
         <div class="appointment-table-wrap">
@@ -794,10 +797,9 @@
       }
 
       function addDriverRow(driver = {}) {
-        const el = document.createElement('div');
-        el.className = 'appointment-form-row driver-entry';
-        el.style.marginBottom = '10px';
-        el.innerHTML = '<div class="appointment-field"><label>司机姓名（选填）<input data-driver-name type="text" placeholder="请输入司机姓名" value="'+escapeHtml(driver.name || '')+'"></label></div><div class="appointment-field"><label>司机联系电话（选填）<input data-driver-phone type="tel" placeholder="请输入联系电话" value="'+escapeHtml(driver.phone || '')+'"></label></div><button class="btn" type="button" data-remove-driver>移除司机</button>';
+        const el = document.createElement('tr');
+        el.className = 'driver-entry';
+        el.innerHTML = '<td><div class="appointment-field"><input data-driver-plate aria-label="车牌号（必填）" type="text" placeholder="如 浙B·12345" value="'+escapeHtml(driver.plate || driver.vehiclePlate || '')+'"></div></td><td><div class="appointment-field"><input data-driver-name aria-label="司机姓名（选填）" type="text" placeholder="请输入司机姓名" value="'+escapeHtml(driver.name || '')+'"></div></td><td><div class="appointment-field"><input data-driver-phone aria-label="联系方式（选填）" type="tel" placeholder="请输入联系方式" value="'+escapeHtml(driver.phone || '')+'"></div></td><td><button class="btn" type="button" data-remove-driver>移除</button></td>';
         $('appointmentDrivers').appendChild(el);
       }
       $('addAppointmentDriver').addEventListener('click', () => addDriverRow());
@@ -820,9 +822,8 @@
           '<td class="amount">' + formatNumber(item.confirmQty ?? item.promisedQty) + '</td>' +
           '<td class="amount">' + formatNumber(appointmentQty(item)) + '</td></tr>').join('');
         $('appointmentDate').value = rec.appointmentDate || rec.commitArriveDate || '';
-        $('appointmentPlate').value = rec.vehiclePlate || '';
         $('appointmentDrivers').innerHTML = '';
-        const drivers = Array.isArray(rec.drivers) ? rec.drivers : [{ name: rec.driverName, phone: rec.driverPhone }];
+        const drivers = Array.isArray(rec.drivers) && rec.drivers.length ? rec.drivers.map(d => ({ ...d, plate: d.plate || d.vehiclePlate || (rec.drivers.length === 1 ? rec.vehiclePlate : '') })) : [{ plate: rec.vehiclePlate, name: rec.driverName, phone: rec.driverPhone }];
         (drivers.length ? drivers : [{}]).forEach(addDriverRow);
         $('appointmentDateHelp').textContent = '已默认选中计划到货日期 ' + (rec.commitArriveDate || '—') + '，可根据实际运力调整。';
         updateSelectedCapacity();
@@ -870,13 +871,14 @@
       function submitAppointment() {
         const asnNo = state.activeAppointmentAsn;
         const date = $('appointmentDate').value;
-        const plate = $('appointmentPlate').value.trim().toUpperCase();
-        const drivers = [...$('appointmentDrivers').querySelectorAll('.driver-entry')].map(el => ({ name: el.querySelector('[data-driver-name]').value.trim(), phone: el.querySelector('[data-driver-phone]').value.trim() })).filter(d => d.name || d.phone);
+        const drivers = [...$('appointmentDrivers').querySelectorAll('.driver-entry')].map(el => ({ plate: el.querySelector('[data-driver-plate]').value.trim().toUpperCase(), name: el.querySelector('[data-driver-name]').value.trim(), phone: el.querySelector('[data-driver-phone]').value.trim() }));
         const driver = drivers.map(d => d.name || '未填写姓名').join(' / ');
         const phone = drivers.map(d => d.phone || '未填写电话').join(' / ');
         if (!asnNo) return;
         if (!date) { toast('请选择预约送货日期'); $('appointmentDate').focus(); return; }
-        if (!plate) { toast('请填写送货车牌号'); $('appointmentPlate').focus(); return; }
+        const missingPlate = drivers.findIndex(d => !d.plate);
+        if (missingPlate !== -1) { toast('请填写第 ' + (missingPlate + 1) + ' 行车牌号'); $('appointmentDrivers').querySelectorAll('[data-driver-plate]')[missingPlate].focus(); return; }
+        const plate = [...new Set(drivers.map(d => d.plate))].join(' / ');
         const rec = state.records.find(r => r.asnNo === asnNo);
         const areas = appointmentAreas(rec);
         const capacity = areas.reduce((sum, area) => sum + capacityForWarehouseArea(area, date), 0);
