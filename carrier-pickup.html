@@ -156,13 +156,12 @@
     .material-index { flex-shrink: 0; color: var(--text-3); font-size: 11px; background: var(--muted); padding: 2px 7px; border-radius: 8px; }
     .material-voucher { color: var(--text-3); font-size: 11px; margin-top: 8px; overflow-wrap: anywhere; }
     .material-qty-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
-    .qty-readonly span, .qty-input label { display: block; color: var(--text-3); font-size: 11px; margin-bottom: 4px; }
+    .qty-readonly span { display: block; color: var(--text-3); font-size: 11px; margin-bottom: 4px; }
     .qty-readonly strong { display: block; min-height: 44px; line-height: 44px; color: var(--text); font-size: 15px; }
-    .qty-input input { width: 100%; min-width: 0; min-height: 44px; padding: 9px 10px; border: 1px solid var(--border-strong); border-radius: 7px; color: var(--text); font-size: 15px; text-align: right; background: var(--surface); outline: none; }
-    .qty-input input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7,134,141,.1); }
+    .pickup-actual { text-align: right; }
     .qty-readonly small { display: block; font-size: 11px; color: var(--text-2); overflow-wrap: anywhere; }
     .material-qty-row > div { min-width: 0; }
-    .batch-value { min-height: 44px; padding: 10px; border: 1px solid var(--border); border-radius: 7px; text-align: right; font-size: 15px; }
+    .batch-value { min-height: 44px; padding: 10px; border: none; text-align: right; font-size: 15px; }
     #ssList .ss-item { display: block; }
     .batch-section { border-top: 1px dashed var(--border); margin-top: 10px; padding-top: 10px; }
     .batch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -584,10 +583,10 @@
         <div class="material-card ss-item" data-material="${escapeHtml(i.materialCode || '')}" data-voucher="${escapeHtml(i.voucher || '')}">
           <div class="material-card-head"><div class="material-code">${escapeHtml(i.materialCode || '-')}</div><span class="material-index">${index + 1}/${items.length}</span></div>
           <div class="material-voucher">采购凭证：${escapeHtml(i.voucher || '-')}</div>
-          <div class="batch-section"><div class="batch-head"><span>批次取货明细</span></div>${pickupBatchRows(i).map((detail, batchIndex) => `
+          <div class="batch-section"><div class="batch-head"><span>批次取货明细</span></div>${pickupBatchRows(i).map(detail => `
             <div class="material-qty-row">
               <div class="qty-readonly"><span>批次号</span><strong>${escapeHtml(detail.batchNo || '暂未维护')}</strong><small>${i.batchDetails?.length ? '批次数量' : '实际发货数量'} ${escapeHtml(formatNum(detail.quantity))}</small></div>
-              <div class="qty-input"><label for="actual_${index}_${batchIndex}">实际取货数量</label><input id="actual_${index}_${batchIndex}" type="number" min="0" step="any" inputmode="decimal" value="${Number(detail.quantity)||0}" aria-label="${escapeHtml(i.materialCode)} ${escapeHtml(detail.batchNo || '无批次')} 实际取货数量"></div>
+              <div class="qty-readonly pickup-actual"><span>实际取货数量</span><strong>${escapeHtml(formatNum(detail.quantity))}</strong></div>
             </div>`).join('')}</div>
         </div>`).join('');
       document.getElementById('sheetMask').classList.add('show');
@@ -616,27 +615,23 @@
       for (let index = 0; index < items.length; index++) {
         const details = Array.isArray(items[index].batchDetails) ? items[index].batchDetails : [];
         if (!details.length) {
-          const input = document.getElementById('actual_' + index + '_0');
-          const value = Number(input.value);
-          if (input.value === '' || !Number.isFinite(value) || value < 0) {
-            input.focus(); toast('请填写有效的实际取货数量'); return;
+          const source = pickupBatchRows(items[index])[0].quantity;
+          const value = Number(source);
+          if (source === '' || source == null || !Number.isFinite(value) || value < 0) {
+            toast('请由供应商先维护有效的发货数量'); return;
           }
           quantities[index] = value;
           savedBatchDetails[index] = [];
           continue;
         }
-        if (details.some(detail => !String(detail.batchNo || '').trim() || !Number.isFinite(Number(detail.quantity)) || Number(detail.quantity) < 0)) {
+        if (details.some(detail => !detail || !String(detail.batchNo || '').trim() || detail.quantity == null || detail.quantity === '' || !Number.isFinite(Number(detail.quantity)) || Number(detail.quantity) < 0)) {
           toast('请由供应商先维护完整的批次明细'); return;
         }
-        const actualDetails = [];
-        for (let batchIndex = 0; batchIndex < details.length; batchIndex++) {
-          const input = document.getElementById('actual_' + index + '_' + batchIndex);
-          const value = Number(input.value);
-          if (input.value === '' || !Number.isFinite(value) || value < 0) {
-            input.focus(); toast('请填写有效的批次实际取货数量'); return;
-          }
-          actualDetails.push({ batchNo: details[batchIndex].batchNo, quantity: Number(details[batchIndex].quantity), actualShipQty: value });
-        }
+        const actualDetails = details.map(detail => ({
+          batchNo: detail.batchNo,
+          quantity: Number(detail.quantity),
+          actualShipQty: Number(detail.quantity)
+        }));
         quantities[index] = actualDetails.reduce((sum, detail) => sum + detail.actualShipQty, 0);
         savedBatchDetails[index] = actualDetails;
       }

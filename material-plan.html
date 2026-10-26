@@ -158,6 +158,11 @@
     .diff-tag.same { color: #388951; background: var(--success-soft); }
     .diff-tag.diff { color: #b73238; background: var(--danger-soft); }
     .diff-tag.missing { color: #7b8590; background: #eef1f4; }
+    .material-code-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 126px; }
+    .basis-tag { display: inline-flex; align-items: center; min-height: 20px; padding: 1px 7px; border: 1px solid transparent; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1.45; white-space: nowrap; }
+    .basis-tag.supplier { color: var(--primary-dark); background: var(--primary-soft); border-color: #b9e3e5; }
+    .basis-tag.plan { color: var(--text-2); background: #f2f4f6; border-color: var(--border-strong); }
+    .basis-tag.mixed { color: #8a5c13; background: var(--warning-soft); border-color: #f1d9ad; }
 
     .empty { padding: 64px 20px; text-align: center; color: var(--text-3); }
     .empty .icon { width: 34px; height: 34px; margin-bottom: 8px; color: #b8c0ca; }
@@ -326,6 +331,7 @@
     .material-detail { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; min-height: calc(100dvh - 230px); }
     .material-detail-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); background: #fbfcfd; }
     .material-detail-head h2 { margin: 0; font-size: 17px; }
+    .material-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     .material-detail-head .md-sub { color: var(--text-3); font-size: 12px; margin-top: 3px; }
     .material-summary { display: flex; gap: 22px; flex-wrap: wrap; }
     .material-summary .ms-item { text-align: right; }
@@ -1035,6 +1041,20 @@
         if (n === null || n === undefined || n === '') return '—';
         return Number(n).toLocaleString('zh-CN');
       }
+      function isSupplierCommitmentBased(row) {
+        const supplier = LogisticsFlow.supplierFor(row || {});
+        if (supplier && typeof supplier.supplierShipmentBased === 'boolean') return supplier.supplierShipmentBased;
+        return row?.supplierShipmentBased === true || row?.confirmationSource === 'supplier-asn-switch';
+      }
+      function quantityBasisText(row) {
+        return isSupplierCommitmentBased(row) ? '供应商承诺为准' : '物料计划为准';
+      }
+      function quantityBasisTag(row) {
+        const supplierBased = isSupplierCommitmentBased(row);
+        const text = quantityBasisText(row);
+        const title = supplierBased ? '该物料按供应商承诺发货数量执行' : '该物料按物料计划数量执行';
+        return `<span class="basis-tag ${supplierBased ? 'supplier' : 'plan'}" title="${title}" aria-label="数量依据：${text}">${text}</span>`;
+      }
       function makeKey(materialCode, voucher) { return `${String(materialCode).trim()}|${String(voucher).trim()}`; }
       function makeAsnGroupKey(row) {
         return `${String(row.sapSupplierCode || row.supplierName || '').trim()}|${String(row.arrivalDate || '').trim()}`;
@@ -1237,7 +1257,7 @@
             return `
               <tr class="${diff !== null && diff !== 0 ? 'diff' : ''}" data-id="${r.id}" data-status="${r.status}">
                 <td class="col-check"><input class="check row-check" type="checkbox" data-id="${r.id}" aria-label="选择${escapeHtml(r.materialCode)}" ${state.checkedIds.has(r.id) ? 'checked' : ''} ${isViewOnly ? 'disabled' : ''}></td>
-                <td>${escapeHtml(r.materialCode)}</td>
+                <td><div class="material-code-cell"><span>${escapeHtml(r.materialCode)}</span>${quantityBasisTag(r)}</div></td>
                 <td>${escapeHtml(r.sapSupplierCode)}</td>
                 <td class="col-supplier" title="${escapeHtml(r.supplierName)}"><span class="cell-two-lines">${escapeHtml(r.supplierName)}</span></td>
                 <td>${escapeHtml(r.planner)}</td>
@@ -1374,7 +1394,7 @@
         $('materialDayBody').innerHTML = `<div class="day-plan-table-wrap"><table class="day-plan-table"><thead><tr><th>供应商</th><th>物料编号</th><th>采购凭证</th><th>ASN号</th><th class="num">计划数量</th><th class="num">承诺数量</th><th class="num">差异</th><th>配送方式</th><th>指定物流商</th><th>状态</th></tr></thead><tbody>${rows.map(r => {
           const diff = getDiff(r);
           const status = STATUS_MAP[r.status] || STATUS_MAP.confirming;
-          return `<tr><td class="supplier">${escapeHtml(r.supplierName || '-')}</td><td>${escapeHtml(r.materialCode || '-')}</td><td class="voucher">${escapeHtml(r.voucher || '-')}</td><td class="asn">${escapeHtml(r.asnNo || '-')}</td><td class="num">${formatNumber(r.planQty)}</td><td class="num">${formatNumber(r.promisedQty)}</td><td class="num">${diff === null ? '未承诺' : `${diff > 0 ? '+' : ''}${formatNumber(diff)}`}</td><td>${escapeHtml(r.deliveryMode || '-')}</td><td>${escapeHtml(r.logistics || '-')}</td><td><span class="badge ${status.class}">${escapeHtml(status.label)}</span></td></tr>`;
+          return `<tr><td class="supplier">${escapeHtml(r.supplierName || '-')}</td><td><div class="material-code-cell"><span>${escapeHtml(r.materialCode || '-')}</span>${quantityBasisTag(r)}</div></td><td class="voucher">${escapeHtml(r.voucher || '-')}</td><td class="asn">${escapeHtml(r.asnNo || '-')}</td><td class="num">${formatNumber(r.planQty)}</td><td class="num">${formatNumber(r.promisedQty)}</td><td class="num">${diff === null ? '未承诺' : `${diff > 0 ? '+' : ''}${formatNumber(diff)}`}</td><td>${escapeHtml(r.deliveryMode || '-')}</td><td>${escapeHtml(r.logistics || '-')}</td><td><span class="badge ${status.class}">${escapeHtml(status.label)}</span></td></tr>`;
         }).join('')}</tbody></table></div>`;
         openModal('materialDayModal');
       }
@@ -1414,6 +1434,12 @@
         const totalPlan = rows.reduce((s, r) => s + (Number(r.planQty) || 0), 0);
         const totalPromised = rows.reduce((s, r) => s + (Number(r.promisedQty) || 0), 0);
         const totalGap = totalPlan - totalPromised;
+        const basisValues = new Set(rows.map(isSupplierCommitmentBased));
+        const basisTag = q.material
+          ? (basisValues.size === 1
+            ? quantityBasisTag(first)
+            : '<span class="basis-tag mixed" title="当前结果包含不同数量依据" aria-label="数量依据：包含两种规则">包含多种数量依据</span>')
+          : '';
         const byDate = new Map();
         rows.forEach(r => {
           if (!byDate.has(r.shipDate)) byDate.set(r.shipDate, []);
@@ -1445,7 +1471,7 @@
         const trailing = (7 - ((leading + daysInMonth) % 7)) % 7;
         for (let i = 0; i < trailing; i++) cells += `<div class="cal-cell blank"></div>`;
         detail.innerHTML = `
-          <div class="material-detail-head"><div><h2>${escapeHtml(q.material)}</h2><div class="md-sub">${escapeHtml(q.supplier)} · SAP ${escapeHtml(first.sapSupplierCode || '-')}</div></div><div class="material-summary"><div class="ms-item"><div class="ms-label">计划总量</div><div class="ms-value">${formatNumber(totalPlan)}</div></div><div class="ms-item"><div class="ms-label">承诺总量</div><div class="ms-value">${formatNumber(totalPromised)}</div></div><div class="ms-item"><div class="ms-label">缺口总量</div><div class="ms-value ${totalGap > 0 ? 'gap' : ''}">${gapTagForValue(totalGap)}</div></div></div></div>
+          <div class="material-detail-head"><div><div class="material-heading"><h2>${escapeHtml(q.material || '物料计划日历')}</h2>${basisTag}</div><div class="md-sub">${escapeHtml(q.supplier || '全部供应商')} · SAP ${escapeHtml(first.sapSupplierCode || '-')}</div></div><div class="material-summary"><div class="ms-item"><div class="ms-label">计划总量</div><div class="ms-value">${formatNumber(totalPlan)}</div></div><div class="ms-item"><div class="ms-label">承诺总量</div><div class="ms-value">${formatNumber(totalPromised)}</div></div><div class="ms-item"><div class="ms-label">缺口总量</div><div class="ms-value ${totalGap > 0 ? 'gap' : ''}">${gapTagForValue(totalGap)}</div></div></div></div>
           <div class="cal-toolbar"><button class="page-btn" data-cal="prev" type="button" aria-label="上个月">‹</button><span class="cal-title">${monthTitle}</span><button class="page-btn" data-cal="next" type="button" aria-label="下个月">›</button><span class="cal-legend">每个日期显示：<b>计</b>划数量 · 供应商<b>诺</b>发货数量 · 红色为缺口</span></div>
           <div class="cal-grid cal-head">${weekDays.map(w => `<div>${w}</div>`).join('')}</div><div class="cal-grid">${cells}</div>`;
       }
@@ -1494,18 +1520,19 @@
       function renderPlanDetail(row) {
         const isShipping = row?.status === 'in_transit';
         const actualQty = isShipping ? row?.actualShipQty : row?.actualArrivalQty;
-        const actualGap = actualQty === null || actualQty === undefined || actualQty === ''
+        const actualGap = !isShipping || actualQty === null || actualQty === undefined || actualQty === ''
           ? null
           : (Number(row?.planQty) || 0) - Number(actualQty);
         const promisedDiff = getDiff(row);
         const actualGapText = actualGap === null
-          ? (isShipping ? '未登记发货' : '未到货')
-          : `${actualGap > 0 ? '缺口 +' : actualGap < 0 ? (isShipping ? '超发货 ' : '超收货 ') : ''}${actualGap === 0 ? '无缺口' : formatNumber(Math.abs(actualGap))}`;
+          ? '未登记发货'
+          : `${actualGap > 0 ? '缺口 +' : actualGap < 0 ? '超发货 ' : ''}${actualGap === 0 ? '无缺口' : formatNumber(Math.abs(actualGap))}`;
         const value = raw => {
           const empty = raw === null || raw === undefined || raw === '';
           return `<div class="detail-value${empty ? ' empty' : ''}">${empty ? '-' : escapeHtml(String(raw))}</div>`;
         };
         const item = (label, raw, full = false) => `<div class="detail-item${full ? ' full-width' : ''}"><div class="detail-label">${label}</div>${value(raw)}</div>`;
+        const basisItem = () => `<div class="detail-item"><div class="detail-label">数量依据</div><div class="detail-value">${quantityBasisTag(row)}</div></div>`;
         const section = (title, content) => `<section class="detail-section"><div class="detail-section-title">${title}</div><div class="detail-grid">${content}</div></section>`;
         $('planDetail').innerHTML = [
           section('基础信息', [
@@ -1520,9 +1547,10 @@
           section('数量与承诺', [
             item('计划发货数量', row?.planQty),
             item('承诺发货数量', row?.promisedQty),
+            basisItem(),
             item('计划与承诺差异', promisedDiff === null ? '未承诺' : `${promisedDiff > 0 ? '+' : ''}${formatNumber(promisedDiff)}`),
             item(isShipping ? '实际发货数量' : '实际到货数量', actualQty),
-            item(isShipping ? '实际发货缺口' : '实际到货缺口', actualGapText),
+            ...(isShipping ? [item('实际发货缺口', actualGapText)] : []),
             item('标准装箱数量', row?.perBoxQty),
             item('标准装托数量', row?.perPalletQty),
             item('箱数', calcBoxCount(row)),
