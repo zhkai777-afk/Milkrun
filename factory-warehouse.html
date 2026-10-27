@@ -277,6 +277,10 @@
 
 .receipt-list,.receipt-view{min-width:0}.receipt-list{background:white;border:1px solid var(--border);border-radius:8px;max-height:65vh}.receipt-list th,.material-scroll th{position:sticky;top:0;background:var(--muted);z-index:1}.receipt-list tr.selected{background:var(--primary-soft)}.receipt-list input[type=checkbox]{accent-color:var(--primary);width:16px;height:16px}.receipt-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}.receipt-toolbar button{background:var(--primary);color:white;border:0;border-radius:6px;padding:10px 16px;min-height:38px;cursor:pointer}.receipt-toolbar button:disabled{opacity:.5;cursor:not-allowed}.material-scroll,.import-results{overflow:auto;max-height:55vh}.material-scroll table{min-width:950px;width:100%;border-collapse:collapse}.material-scroll td,.material-scroll th,.import-results td,.import-results th{padding:12px;border-bottom:1px solid var(--border);text-align:left}.receipt-tag{display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;white-space:nowrap;background:#fff4df;color:#91621e}.receipt-tag.done{background:#edf8ef;color:#287b46}.receipt-metrics{margin-bottom:16px;background:white;padding:12px;border:1px solid var(--border);border-radius:8px}.receipt-metrics summary{cursor:pointer}.receipt-help{color:var(--text-2);font-size:13px}button:focus-visible,input:focus-visible,tr:focus-visible{outline:3px solid #07868d55;outline-offset:2px}
 .page-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}.page-heading #importReceipts{background:var(--primary);color:white;border:0;border-radius:6px;padding:10px 16px;min-height:38px;cursor:pointer;white-space:nowrap}.page-heading #importReceipts:hover{background:var(--primary-dark)}.page-heading #importReceipts:disabled{opacity:.5;cursor:wait}.welcome .receipt-help{margin:12px 0 0;line-height:1.6}
+
+.material-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin:16px 0}.material-filters label{display:flex;flex:1 1 150px;flex-direction:column;gap:6px}.material-filters input,.receipt-quantity{min-height:38px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface);color:var(--text);font:inherit;width:100%;min-width:0}.material-filters button,.receipt-toolbar #batchReceive{min-height:38px;padding:8px 14px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer}.material-scroll table{min-width:1250px}.receipt-quantity{width:112px}.material-scroll input[type=checkbox]{width:16px;height:16px;accent-color:var(--primary)}.receipt-operation{position:sticky;right:0;background:var(--surface);box-shadow:-2px 0 3px #27313a08}.material-scroll th.receipt-operation{z-index:2;background:var(--muted)}.manual-receive{min-height:38px;white-space:nowrap;color:var(--text);padding:6px 8px;border:0;background:none;cursor:pointer}.manual-receive:hover{color:var(--primary)}.manual-receive:disabled{opacity:.5;cursor:wait}
+.receipt-sidebar{min-width:0}.material-filters.asn-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto;align-items:end;gap:8px;margin:0 0 8px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px}.asn-filters label{min-width:0;gap:4px}.asn-filter-actions{display:flex;align-items:center;gap:6px}.asn-filter-actions button{padding:8px;white-space:nowrap}
+.receipt-dialog{width:min(560px,calc(100vw - 32px));max-height:85vh;margin:auto;padding:0;border:1px solid var(--border);border-radius:8px;color:var(--text);background:var(--surface);box-shadow:var(--shadow);overflow:auto}.receipt-dialog::backdrop{background:rgba(27,39,51,.4)}.receipt-dialog-head,.receipt-dialog-foot{display:flex;align-items:center;gap:12px;padding:16px 24px}.receipt-dialog-head{justify-content:space-between;border-bottom:1px solid var(--border)}.receipt-dialog-head h2{font-size:18px}.receipt-dialog-head button{min-width:38px;min-height:38px;border:0;background:none;font-size:24px;color:var(--text-2);cursor:pointer}.receipt-dialog-body{padding:16px 24px}.receipt-dialog-body>p{margin:0 0 16px}.receipt-dialog-item{padding:12px 0;border-bottom:1px solid var(--border)}.receipt-dialog-item p{margin:0 0 8px;overflow-wrap:anywhere}.receipt-dialog-item label{display:flex;align-items:center;gap:6px;margin-bottom:6px}.receipt-dialog-item input{width:100%;min-height:38px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:6px;font:inherit;color:var(--text);background:var(--surface)}.receipt-dialog-item input[aria-invalid=true]{border-color:var(--danger)}.receipt-field-error{color:var(--danger);font-size:13px;min-height:0;margin-top:6px}.receipt-dialog-foot{justify-content:flex-end;border-top:1px solid var(--border)}.receipt-dialog-foot button{min-height:38px;padding:8px 16px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer}.receipt-dialog-foot #confirmReceiptDialog{background:var(--primary);border-color:var(--primary);color:white}.receipt-dialog-foot button:disabled{opacity:.5;cursor:wait}
 </style>
 </head>
 <body>
@@ -305,7 +309,7 @@
 
     <!-- Welcome -->
     <div class="welcome">
-      <div class="page-heading"><div class="welcome-greeting">收货管理台</div><button id="importReceipts" type="button">导入收货明细</button></div>
+      <div class="page-heading"><div class="welcome-greeting">收货管理台</div><button id="importReceipts" type="button">导入SAP收货明细</button></div>
       <div class="welcome-meta" id="welcomeMeta">
         <span>宁波博格华纳</span>
         <span class="dot"></span>
@@ -313,7 +317,7 @@
         <span class="dot"></span>
         <strong id="pendingStrong">待收货 0 笔</strong>
       </div>
-      <p class="receipt-help">支持一次导入多个 ASN 的收货明细，无需先勾选 ASN。CSV必填：ASN号、物料编号、实际收货数量；同物料多行时须提供采购凭证。</p>
+      <p class="receipt-help">支持一次导入多个 ASN 的SAP收货明细，无需先勾选 ASN。CSV必填：ASN号、物料编号、实际收货数量；同物料多行时须提供采购凭证。</p>
       <input id="receiptImport" type="file" accept=".csv" hidden>
     </div>
 
@@ -325,7 +329,13 @@
     </div>
 
     <!-- Receipt List -->
-    <div class="receipt-workspace"><div class="receipt-list" id="receiptList"></div><section id="receiptView" class="receipt-view"><p>请选择左侧 ASN 查看物料。</p></section></div>
+    <div class="receipt-workspace"><div class="receipt-sidebar">
+      <form id="asnSearch" class="material-filters asn-filters">
+        <label>ASN号<input id="asnFilterNo" type="search" placeholder="ASN号" aria-label="左侧ASN号筛选"></label>
+        <label>供应商名称<input id="asnFilterSupplier" type="search" placeholder="供应商名称" aria-label="左侧供应商名称筛选"></label>
+        <div class="asn-filter-actions"><button type="submit">查询</button><button id="resetAsnFilters" type="button">重置</button></div>
+      </form>
+      <div class="receipt-list" id="receiptList"></div></div><section id="receiptView" class="receipt-view"><p>请选择左侧 ASN 查看物料。</p></section></div>
 
   </div>
 
@@ -342,6 +352,13 @@
     <div class="sheet-foot" id="detailFoot"></div>
   </div>
 
+  <dialog id="receiptDialog" class="receipt-dialog" aria-labelledby="receiptDialogTitle">
+    <form id="receiptDialogForm" novalidate>
+      <div class="receipt-dialog-head"><h2 id="receiptDialogTitle">手动收货</h2><button type="button" id="closeReceiptDialog" aria-label="关闭收货弹窗">×</button></div>
+      <div class="receipt-dialog-body"><p class="receipt-help">请输入实际收货数量，确认后完成收货；允许与系统数量存在差异。</p><div id="receiptDialogItems"></div><p id="receiptDialogError" class="receipt-field-error" role="alert"></p></div>
+      <div class="receipt-dialog-foot"><button type="button" id="cancelReceiptDialog">取消</button><button type="submit" id="confirmReceiptDialog">确认收货</button></div>
+    </form>
+  </dialog>
   <div class="toast" id="toast"></div>
 
   <script>
@@ -444,6 +461,37 @@
     /* ── Render ── */
     let receiptDraft={},selectedAsn=''; // 旧详情兼容变量；首页使用多选集合
     const selectedAsns=new Set();
+    const selectedMaterials=new Set(),quantityDrafts=new Map();
+    let asnFilters={asnNo:'',supplierName:''};
+    function visibleAsnGroups(groups){
+      const includes=(value,query)=>String(value||'').toLowerCase().includes(query.trim().toLowerCase());
+      return groups.filter(g=>(curFilter==='all'||(curFilter==='ok')===g.complete)&&includes(g.asnNo,asnFilters.asnNo)&&g.records.some(r=>includes(r.supplier||r.relSupplier||'',asnFilters.supplierName)));
+    }
+    let materialFilters={materialCode:'',voucher:''};
+    function materialKey(i){return JSON.stringify([i.kind,i.recordNo,i.itemIndex]);}
+    function filteredMaterials(groups){return groups.filter(g=>selectedAsns.has(g.asnNo)).flatMap(g=>g.items).filter(i=>Object.entries(materialFilters).every(([key,value])=>String(i[key]||'').toLowerCase().includes(value.trim().toLowerCase())));}
+    function saveReceiptStores(sup,car,plans){
+      const keys=[SUP_KEY,CAR_KEY,PLAN_KEY],values=[sup,car,plans],before=keys.map(k=>localStorage.getItem(k));
+      try{keys.forEach((k,i)=>localStorage.setItem(k,JSON.stringify(values[i])));}catch(e){keys.forEach((k,i)=>{try{before[i]===null?localStorage.removeItem(k):localStorage.setItem(k,before[i]);}catch(ignore){}});throw new Error('保存失败，请重试；本次未确认成功');}
+    }
+    function finishReceiptRecords(sup,car,plans,time){
+      [...sup,...car].forEach(rec=>{const linked=plans.filter(p=>p.asnNo===(rec.asnNo||rec.no)&&p.status!=='cancelled');if(rec.items.length&&rec.items.every(i=>i.receiptStatus==='received'||rec.status==='ok')&&linked.every(p=>p.status==='received')){rec.status='ok';rec.receivedTime=rec.receivedTime||time;}});
+    }
+    function manualReceive(keys){
+      const items=filteredMaterials(asnReceipts()).filter(i=>keys.includes(materialKey(i)));
+      if(!items.length)throw new Error('请先勾选当前列表物料');
+      const changes=items.map(i=>{const value=quantityDrafts.has(materialKey(i))?quantityDrafts.get(materialKey(i)):i.actualQty;
+        if(value==null||String(value).trim()===''||!Number.isFinite(Number(value))||Number(value)<0)throw new Error(i.asnNo+' / '+i.materialCode+'：请输入非负的实际收货数量');
+        if(i.ambiguous)throw new Error(i.asnNo+' / '+i.materialCode+'：关联计划不唯一，不能收货');
+        return {item:i,qty:Number(value)};});
+      const sup=loadSup(),car=loadCar(),plans=readPlans(),time=nowStr();
+      changes.forEach(({item:i,qty})=>{const rec=(i.kind==='supplier'?sup:car).find(r=>r.no===i.recordNo),target=rec.items[i.itemIndex];
+        target.actualQty=qty;target.receiptStatus='received';target.receivedTime=time;target.receiptSource='manual';
+        plans.filter(p=>p.asnNo===i.asnNo&&p.status!=='cancelled'&&identityMatch(i,p)).forEach(p=>{p.actualArrivalQty=qty;p.status='received';p.receivedTime=time;});});
+      finishReceiptRecords(sup,car,plans,time);saveReceiptStores(sup,car,plans);
+      items.forEach(i=>{quantityDrafts.delete(materialKey(i));selectedMaterials.delete(materialKey(i));});
+      return items.length;
+    }
     let lastImport=[],importBusy=false;
     function readPlans(){const rows=JSON.parse(localStorage.getItem(PLAN_KEY)||'[]');if(!Array.isArray(rows))throw new Error('计划数据格式错误');return rows;}
     function identityMatch(a,b){return a.materialCode===b.materialCode&&(!a.voucher||a.voucher===b.voucher);}
@@ -456,12 +504,12 @@
       const groups=asnReceipts(),ok=groups.filter(g=>g.complete).length,pending=groups.length-ok;
       [['cAll',groups.length],['cPending',pending],['cOk',ok]].forEach(([id,v])=>document.getElementById(id).textContent=v);
       document.getElementById('pendingStrong').textContent='待收货 '+pending+' 笔';
-      const shown=groups.filter(g=>curFilter==='all'||(curFilter==='ok')===g.complete),visible=new Set(shown.map(g=>g.asnNo));
+      const shown=visibleAsnGroups(groups),visible=new Set(shown.map(g=>g.asnNo));
       [...selectedAsns].forEach(asn=>{if(!visible.has(asn))selectedAsns.delete(asn);});
-      const wrap=document.getElementById('receiptList');wrap.innerHTML='<table><thead><tr><th><input id="selectAllAsns" type="checkbox" aria-label="选择当前列表全部ASN"></th><th>ASN / 供应商</th><th>收货进度</th><th>状态</th></tr></thead><tbody>'+shown.map(g=>'<tr tabindex="0" data-asn="'+esc(g.asnNo)+'" class="'+(selectedAsns.has(g.asnNo)?'selected':'')+'"><td><input type="checkbox" aria-label="选择 '+esc(g.asnNo)+'" '+(selectedAsns.has(g.asnNo)?'checked':'')+'></td><td><strong>'+esc(g.asnNo)+'</strong><br>'+esc(g.records[0].supplier||g.records[0].relSupplier||'—')+'</td><td>'+g.items.filter(i=>i.complete).length+'/'+g.items.length+'项</td><td><span class="receipt-tag '+(g.complete?'done':'')+'">'+(g.complete?'已收货':'待收货')+'</span></td></tr>').join('')+'</tbody></table>'+(shown.length?'':'<p class="empty-state">暂无记录</p>');
+      const wrap=document.getElementById('receiptList');wrap.innerHTML='<table><thead><tr><th><input id="selectAllAsns" type="checkbox" aria-label="选择当前列表全部ASN"></th><th>ASN / 供应商</th><th>收货进度</th><th>状态</th></tr></thead><tbody>'+shown.map(g=>'<tr tabindex="0" data-asn="'+esc(g.asnNo)+'" class="'+(selectedAsns.has(g.asnNo)?'selected':'')+'"><td><input type="checkbox" aria-label="选择 '+esc(g.asnNo)+'" '+(selectedAsns.has(g.asnNo)?'checked':'')+'></td><td><strong>'+esc(g.asnNo)+'</strong><br>'+esc(g.records[0].supplier||g.records[0].relSupplier||'—')+'</td><td>'+g.items.filter(i=>i.complete).length+'/'+g.items.length+'项</td><td><span class="receipt-tag '+(g.complete?'done':'')+'">'+(g.complete?'已收货':'待收货')+'</span></td></tr>').join('')+'</tbody></table>'+(shown.length?'':'<p class="empty-state">无匹配ASN，请调整筛选条件。</p>');
       wrap.querySelectorAll('[data-asn]').forEach(tr=>{tr.onclick=e=>{if(e.target.type==='checkbox'){e.target.checked?selectedAsns.add(tr.dataset.asn):selectedAsns.delete(tr.dataset.asn);}else{selectedAsns.clear();selectedAsns.add(tr.dataset.asn);}renderAll();};tr.onkeydown=e=>{if(e.target!==tr)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();tr.click();}};});
       const all=document.getElementById('selectAllAsns');all.checked=shown.length>0&&shown.every(g=>selectedAsns.has(g.asnNo));all.indeterminate=selectedAsns.size>0&&!all.checked;all.disabled=!shown.length;all.onchange=()=>{shown.forEach(g=>all.checked?selectedAsns.add(g.asnNo):selectedAsns.delete(g.asnNo));renderAll();};
-      const importButton=document.getElementById('importReceipts');importButton.disabled=importBusy;importButton.textContent=importBusy?'导入处理中…':'导入收货明细';
+      const importButton=document.getElementById('importReceipts');importButton.disabled=importBusy;importButton.textContent=importBusy?'导入处理中…':'导入SAP收货明细';
       showMaterials(groups);
     }
     function promisedQuantity(item){
@@ -469,10 +517,70 @@
       return value==null||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
     }
     function showMaterials(groups){
-      const chosen=groups.filter(g=>selectedAsns.has(g.asnNo)),items=chosen.flatMap(g=>g.items);
-      document.getElementById('receiptView').innerHTML='<div class="receipt-toolbar"><div><h2>物料列表</h2>已选择 '+chosen.length+' 个 ASN，共 '+items.length+' 条物料</div></div><p class="receipt-help">左侧选择仅控制物料展示；顶部全局导入按文件中的 ASN 匹配收货，数量一致后直接完成收货。</p>'+(!items.length?'<p class="empty-state">请选择左侧 ASN 查看物料。</p>':'<div class="material-scroll"><table><thead><tr><th>ASN号</th><th>物料编号 / 描述</th><th>采购凭证</th><th>供应商承诺数量</th><th>实收数量</th><th>匹配结果</th><th>收货状态</th></tr></thead><tbody>'+items.map(i=>'<tr><td>'+esc(i.asnNo)+'</td><td>'+esc(i.materialCode)+'<br>'+esc(i.plan?.materialDesc||i.plan?.materialName||i.materialDesc||'—')+'</td><td>'+esc(i.voucher||'—')+'</td><td>'+(promisedQuantity(i)==null?'—':fmt(promisedQuantity(i)))+'</td><td>'+(i.actualQty==null?'—':fmt(i.actualQty))+'</td><td>'+esc(lastImport.findLast(r=>r.asnNo===i.asnNo&&r.materialCode===i.materialCode&&(!r.voucher||r.voucher===i.voucher))?.reason||(i.complete?'已核对':'未导入'))+'</td><td><span class="receipt-tag '+(i.complete?'done':'')+'">'+(i.complete?'已收货':'待收货')+'</span></td></tr>').join('')+'</tbody></table></div>')+(lastImport.length?'<h3>最近导入结果：成功 '+lastImport.filter(r=>r.result==='成功').length+'，跳过 '+lastImport.filter(r=>r.result==='跳过').length+'，失败 '+lastImport.filter(r=>r.result==='失败').length+'</h3><div class="import-results"><table><thead><tr><th>文件行</th><th>ASN / 物料</th><th>结果</th><th>原因</th></tr></thead><tbody>'+lastImport.map(r=>'<tr><td>'+r.line+'</td><td>'+esc(r.asnNo)+' / '+esc(r.materialCode)+'</td><td>'+r.result+'</td><td>'+esc(r.reason)+'</td></tr>').join('')+'</tbody></table></div>':'');
-
+      const chosen=groups.filter(g=>selectedAsns.has(g.asnNo)),total=chosen.flatMap(g=>g.items),items=filteredMaterials(groups),visible=new Set(items.map(materialKey));
+      [...selectedMaterials].forEach(k=>{if(!visible.has(k))selectedMaterials.delete(k);});
+      const qty=v=>v==null||String(v).trim()===''||!Number.isFinite(Number(v))?'—':fmt(v);
+      document.getElementById('receiptView').innerHTML=`
+        <h2>物料列表</h2><p>已选择 ${chosen.length} 个 ASN，共 ${total.length} 条物料；筛选结果 ${items.length} 条</p>
+        <form id="materialSearch" class="material-filters">${[['materialCode','物料编号'],['voucher','采购凭证']].map(([key,label])=>`<label>${label}<input name="${key}" aria-label="${label}筛选" type="search" placeholder="请输入${label}" value="${esc(materialFilters[key])}"></label>`).join('')}<button type="submit">查询</button><button type="button" id="resetMaterialFilters">重置</button></form>
+        <div class="receipt-toolbar"><span>已勾选 ${selectedMaterials.size} 条物料</span><button type="button" id="batchReceive" ${!selectedMaterials.size||importBusy?'disabled':''}>批量收货</button></div>
+        <p class="receipt-help">通过“手动收货”或“调整实收”弹窗填写实际收货数量并确认，允许数量差异；批量收货仅处理当前筛选结果中勾选的物料。SAP导入按全量ASN匹配，数量一致后自动完成收货。</p>
+        ${!items.length?`<p class="empty-state">${total.length?'无匹配物料，请调整筛选条件。':'请选择左侧 ASN 查看物料。'}</p>`:`<div class="material-scroll"><table><thead><tr><th><input id="selectAllMaterials" type="checkbox" aria-label="选择当前筛选全部物料"></th><th>物料编号 / 描述</th><th>采购凭证</th><th>计划发货数量</th><th>供应商承诺数量</th><th>实际收货数量</th><th>SAP导入数量</th><th>匹配结果</th><th>收货状态</th><th class="receipt-operation">操作</th></tr></thead><tbody>${items.map((i,index)=>{
+          const key=materialKey(i);
+          return `<tr><td><input type="checkbox" data-material-index="${index}" aria-label="选择物料 ${esc(i.asnNo)} ${esc(i.materialCode)} ${esc(i.voucher||'')}" ${selectedMaterials.has(key)?'checked':''}></td><td>${esc(i.materialCode)}<br>${esc(i.plan?.materialDesc||i.plan?.materialName||i.materialDesc||'—')}</td><td>${esc(i.voucher||'—')}</td><td>${qty(i.plan?.planQty??i.planQty)}</td><td>${qty(promisedQuantity(i))}</td><td>${qty(i.actualQty)}</td><td>${qty(i.sapImportedQty)}</td><td>${esc(i.receiptSource==='manual'?'人工确认':lastImport.findLast(r=>r.asnNo===i.asnNo&&r.materialCode===i.materialCode&&(!r.voucher||r.voucher===i.voucher))?.reason||(i.complete?'已核对':'未导入'))}</td><td><span class="receipt-tag ${i.complete?'done':''}">${i.complete?'已收货':'待收货'}</span></td><td class="receipt-operation"><button type="button" class="manual-receive" data-receive-index="${index}" ${importBusy?'disabled':''}>${i.complete?'调整实收':'手动收货'}</button></td></tr>`;
+        }).join('')}</tbody></table></div>`}
+        ${lastImport.length?'<h3>最近导入结果：成功 '+lastImport.filter(r=>r.result==='成功').length+'，跳过 '+lastImport.filter(r=>r.result==='跳过').length+'，失败 '+lastImport.filter(r=>r.result==='失败').length+'</h3><div class="import-results"><table><thead><tr><th>文件行</th><th>ASN / 物料</th><th>结果</th><th>原因</th></tr></thead><tbody>'+lastImport.map(r=>'<tr><td>'+r.line+'</td><td>'+esc(r.asnNo)+' / '+esc(r.materialCode)+'</td><td>'+r.result+'</td><td>'+esc(r.reason)+'</td></tr>').join('')+'</tbody></table></div>':''}`;
+      const view=document.getElementById('receiptView');
+      document.getElementById('materialSearch').onsubmit=e=>{e.preventDefault();view.querySelectorAll('[name]').forEach(input=>materialFilters[input.name]=input.value);showMaterials(asnReceipts());};
+      document.getElementById('resetMaterialFilters').onclick=()=>{materialFilters={materialCode:'',voucher:''};showMaterials(asnReceipts());};
+      document.getElementById('batchReceive').onclick=()=>openReceiptDialog([...selectedMaterials]);
+      view.querySelectorAll('[data-receive-index]').forEach(button=>{button.onclick=()=>openReceiptDialog([materialKey(items[Number(button.dataset.receiveIndex)])]);});
+      view.querySelectorAll('[data-material-index]').forEach(input=>{input.onchange=()=>{const key=materialKey(items[Number(input.dataset.materialIndex)]);input.checked?selectedMaterials.add(key):selectedMaterials.delete(key);showMaterials(asnReceipts());};});
+      const all=document.getElementById('selectAllMaterials');
+      if(items.length){all.checked=selectedMaterials.size===items.length;all.indeterminate=selectedMaterials.size>0&&!all.checked;all.onchange=()=>{items.forEach(i=>all.checked?selectedMaterials.add(materialKey(i)):selectedMaterials.delete(materialKey(i)));showMaterials(asnReceipts());};}
     }
+
+    let receiptDialogKeys=[],receiptDialogBusy=false;
+    function openReceiptDialog(keys){
+      if(importBusy||receiptDialogBusy)return;
+      const items=filteredMaterials(asnReceipts()).filter(i=>keys.includes(materialKey(i)));
+      if(!items.length){toast('请先勾选当前列表物料');return;}
+      receiptDialogKeys=items.map(materialKey);
+      receiptDialogKeys.forEach(k=>quantityDrafts.delete(k));
+      const title=items.length>1?'批量收货':items[0].complete?'调整实收':'手动收货';
+      document.getElementById('receiptDialogTitle').textContent=title;
+      document.getElementById('confirmReceiptDialog').textContent=items.length===1&&items[0].complete?'确认调整':'确认收货';
+      document.getElementById('receiptDialogError').textContent='';
+      const displayQty=value=>value==null||String(value).trim()===''||!Number.isFinite(Number(value))?'—':fmt(value);
+      document.getElementById('receiptDialogItems').innerHTML=items.map((i,index)=>`<div class="receipt-dialog-item">${items.length>1?`<p><strong>${esc(i.materialCode)}</strong> · ${esc(i.voucher||'—')} · ${esc(i.asnNo)}</p>`:''}<p class="receipt-help">计划数量：${displayQty(i.plan?.planQty??i.planQty)} · 承诺发货数量：${displayQty(promisedQuantity(i))}</p><label for="receiptDialogQty_${index}">实际收货数量 <span aria-hidden="true">*</span></label><input id="receiptDialogQty_${index}" data-dialog-quantity="${index}" aria-label="实际收货数量 ${esc(i.asnNo)} ${esc(i.materialCode)} ${esc(i.voucher||'')}" aria-describedby="receiptDialogQtyError_${index}" type="number" min="0" step="any" required value="${esc(i.actualQty??'')}" placeholder="请输入实际收货数量"><div id="receiptDialogQtyError_${index}" class="receipt-field-error"></div></div>`).join('');
+      document.getElementById('receiptDialog').showModal();
+    }
+    function closeReceiptDialog(){
+      if(receiptDialogBusy)return;
+      receiptDialogKeys.forEach(k=>quantityDrafts.delete(k));receiptDialogKeys=[];
+      document.getElementById('receiptDialog').close();
+    }
+    document.getElementById('receiptDialogForm').onsubmit=e=>{
+      e.preventDefault();if(receiptDialogBusy||!receiptDialogKeys.length)return;
+      const inputs=[...document.getElementById('receiptDialogItems').querySelectorAll('[data-dialog-quantity]')];
+      let firstInvalid=null;
+      document.getElementById('receiptDialogError').textContent='';
+      inputs.forEach((input,index)=>{const valid=input.value.trim()!==''&&Number.isFinite(Number(input.value))&&Number(input.value)>=0;
+        input.setAttribute('aria-invalid',String(!valid));document.getElementById('receiptDialogQtyError_'+index).textContent=valid?'':'请输入非负的实际收货数量';
+        if(!valid&&!firstInvalid)firstInvalid=input;
+      });
+      if(firstInvalid){firstInvalid.focus();return;}
+      receiptDialogBusy=true;const button=document.getElementById('confirmReceiptDialog');button.disabled=true;
+      try{
+        inputs.forEach((input,index)=>quantityDrafts.set(receiptDialogKeys[index],input.value));
+        const count=manualReceive(receiptDialogKeys);
+        receiptDialogBusy=false;closeReceiptDialog();renderAll();toast('已确认收货 '+count+' 条物料');
+      }catch(error){document.getElementById('receiptDialogError').textContent=error.message;}
+      finally{receiptDialogBusy=false;button.disabled=false;}
+    };
+    document.getElementById('cancelReceiptDialog').onclick=closeReceiptDialog;
+    document.getElementById('closeReceiptDialog').onclick=closeReceiptDialog;
+    document.getElementById('receiptDialog').oncancel=e=>{e.preventDefault();closeReceiptDialog();};
 
     function findReceipt(id){
       const [kind, no] = id.split('|');
@@ -793,6 +901,17 @@
       renderAll();
     }
 
+    document.getElementById('asnSearch').onsubmit=e=>{
+      e.preventDefault();
+      asnFilters={asnNo:document.getElementById('asnFilterNo').value,supplierName:document.getElementById('asnFilterSupplier').value};
+      renderAll();
+    };
+    document.getElementById('resetAsnFilters').onclick=()=>{
+      asnFilters={asnNo:'',supplierName:''};
+      document.getElementById('asnFilterNo').value='';document.getElementById('asnFilterSupplier').value='';
+      renderAll();
+    };
+
     /* ── Filter ── */
     document.getElementById('filterTabs').addEventListener('click', e=>{
       const btn = e.target.closest('.filter-tab');
@@ -816,7 +935,7 @@
       if(!rows.length)throw new Error('文件没有收货明细');
       const groups=asnReceipts(),plans=readPlans(),sup=loadSup(),car=loadCar(),time=nowStr();
       const counts=new Map();rows.forEach(r=>{const k=JSON.stringify([r.asnNo,r.materialCode,r.voucher]);counts.set(k,(counts.get(k)||0)+1);});
-      const claimed=new Set();
+      const claimed=new Set();let sapChanged=false;
       const results=rows.map(r=>{
         const fail=reason=>({...r,result:'失败',reason});
         if(!r.asnNo||!r.materialCode)return fail('ASN号和物料编号必填');
@@ -828,19 +947,17 @@
         const item=candidates[0],key=JSON.stringify([item.kind,item.recordNo,item.itemIndex]);
         if(claimed.has(key))return fail('文件多行指向同一系统明细');claimed.add(key);
         if(item.ambiguous)return fail('共享计划存在重复明细，无法唯一回写');
+        const record=(item.kind==='supplier'?sup:car).find(x=>x.no===item.recordNo),target=record.items[item.itemIndex];
+        target.sapImportedQty=r.qty;sapChanged=true;
         if(item.complete)return r.qty===Number(item.actualQty)?{...r,result:'跳过',reason:'已收货且数量相同'}:fail('已收货数量冲突，不覆盖');
         if(!Number.isFinite(item.expected)||r.qty!==item.expected)return fail('数量不一致，系统数量 '+item.expected);
-        const record=(item.kind==='supplier'?sup:car).find(x=>x.no===item.recordNo),target=record.items[item.itemIndex];
+        target.receiptSource='sap';
         target.actualQty=r.qty;target.receiptStatus='received';target.receivedTime=time;
         const matched=plans.filter(p=>p.asnNo===r.asnNo&&p.status!=='cancelled'&&identityMatch(item,p));
         matched.forEach(p=>{p.actualArrivalQty=r.qty;p.status='received';p.receivedTime=time;});
         return {...r,result:'成功',reason:'匹配一致，已收货'};
       });
-      if(results.some(r=>r.result==='成功')){
-        [...sup,...car].forEach(rec=>{const asn=rec.asnNo||rec.no,linked=plans.filter(p=>p.asnNo===asn&&p.status!=='cancelled');if(rec.items.length&&rec.items.every(i=>i.receiptStatus==='received'||rec.status==='ok')&&linked.every(p=>p.status==='received')){rec.status='ok';rec.receivedTime=rec.receivedTime||time;}});
-        const keys=[SUP_KEY,CAR_KEY,PLAN_KEY],before=keys.map(k=>localStorage.getItem(k));
-        try{localStorage.setItem(SUP_KEY,JSON.stringify(sup));localStorage.setItem(CAR_KEY,JSON.stringify(car));localStorage.setItem(PLAN_KEY,JSON.stringify(plans));}catch(e){keys.forEach((k,i)=>{try{before[i]===null?localStorage.removeItem(k):localStorage.setItem(k,before[i]);}catch(ignore){}});throw new Error('保存失败，请重试；本次未确认成功');}
-      }
+      if(sapChanged){finishReceiptRecords(sup,car,plans,time);saveReceiptStores(sup,car,plans);}
       lastImport=results;return results;
     }
     document.getElementById('importReceipts').onclick=()=>{if(!importBusy)document.getElementById('receiptImport').click();};
